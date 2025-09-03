@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Phone, MapPin } from "lucide-react";
-import supremeLogo from "@/assets/supreme-logo.png";
+const supremeLogo = "/lovable-uploads/ce367a19-282b-4c2e-a287-ee81e326a182.png";
 
 export const Header = () => {
   return (
