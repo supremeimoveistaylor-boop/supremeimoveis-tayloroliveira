@@ -71,7 +71,7 @@ export const FeaturedProperties = () => {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {properties.map((property) => (
             <Card key={property.id} className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-card border-0 shadow-lg">
               <CardHeader className="p-0">
@@ -109,7 +109,7 @@ export const FeaturedProperties = () => {
                   </h3>
                   <div className="flex items-center text-muted-foreground text-sm mb-2">
                     <MapPin className="h-4 w-4 mr-1" />
-                    {property.location}
+                    <span className="line-clamp-1">{property.location}</span>
                   </div>
                   <div className="text-2xl font-bold text-accent">
                     {property.price}
@@ -129,7 +129,7 @@ export const FeaturedProperties = () => {
                     <Car className="h-4 w-4 mr-1" />
                     {property.parking}
                   </div>
-                  <div className="font-medium">
+                  <div className="font-medium text-xs">
                     {property.area}
                   </div>
                 </div>

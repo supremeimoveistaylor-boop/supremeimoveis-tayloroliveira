@@ -29,9 +29,9 @@ export const About = () => {
   return (
     <section id="sobre" className="py-16 bg-gradient-to-br from-primary via-black-soft to-primary">
       <div className="container mx-auto px-4">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           {/* Content */}
-          <div>
+          <div className="text-center lg:text-left">
             <h2 className="text-3xl md:text-4xl font-bold text-white-soft mb-6">
               Por que escolher a <span className="text-accent">Supreme Imóveis</span>?
             </h2>
@@ -44,7 +44,7 @@ export const About = () => {
             
             <div className="mb-8">
               <h3 className="text-xl font-semibold text-accent mb-4">Nossa Especialidade</h3>
-              <ul className="text-gray-300 space-y-2">
+              <ul className="text-gray-300 space-y-2 text-left">
                 <li>• Propriedades residenciais de alto padrão</li>
                 <li>• Apartamentos modernos no centro da cidade</li>
                 <li>• Fazendas e propriedades rurais produtivas</li>
@@ -52,13 +52,15 @@ export const About = () => {
               </ul>
             </div>
 
-            <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 font-semibold">
-              Conheça Nossa História
-            </Button>
+            <div className="text-center lg:text-left">
+              <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 font-semibold">
+                Conheça Nossa História
+              </Button>
+            </div>
           </div>
 
           {/* Features Grid */}
-          <div className="grid sm:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-8 lg:mt-0">
             {features.map((feature, index) => (
               <Card key={index} className="bg-white-soft/10 backdrop-blur-sm border-white-soft/20 hover:bg-white-soft/20 transition-all duration-300">
                 <CardContent className="p-6 text-center">

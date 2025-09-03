@@ -41,7 +41,7 @@ export const Contact = () => {
                   <Mail className="h-5 w-5 text-accent mt-1" />
                   <div>
                     <p className="font-medium text-white-soft">E-mail</p>
-                    <p className="text-gray-300">supremeimoveis.taylor@gmail.com</p>
+                    <p className="text-gray-300 break-all">supremeimoveis.taylor@gmail.com</p>
                   </div>
                 </div>
                 

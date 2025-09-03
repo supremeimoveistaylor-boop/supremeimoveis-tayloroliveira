@@ -17,19 +17,19 @@ export const Hero = () => {
       </div>
 
       <div className="container mx-auto px-4 relative z-10">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+        <div className="flex flex-col items-center text-center space-y-8">
           {/* Hero Content */}
-          <div className="text-center lg:text-left">
+          <div className="text-center">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white-soft mb-6 leading-tight">
               Encontre o <span className="text-accent">Imóvel dos Seus Sonhos</span> em Goiânia - Goiás
             </h1>
-            <p className="text-xl text-gray-300 mb-8 max-w-2xl">
+            <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto text-center">
               Especialistas em propriedades de qualidade na região de Goiânia - Goiás. 
               Mais de 15 anos conectando pessoas aos seus lares ideais.
             </p>
             
             {/* Stats */}
-            <div className="flex flex-wrap justify-center lg:justify-start gap-8 mb-8">
+            <div className="flex flex-wrap justify-center gap-8 mb-8">
               <div className="text-center">
                 <div className="text-3xl font-bold text-accent">500+</div>
                 <div className="text-sm text-gray-300">Imóveis Vendidos</div>
@@ -44,7 +44,7 @@ export const Hero = () => {
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 font-semibold px-8">
                 Ver Propriedades
               </Button>
@@ -55,7 +55,7 @@ export const Hero = () => {
           </div>
 
           {/* Search Card */}
-          <div className="flex justify-center lg:justify-end">
+          <div className="flex justify-center mt-12 lg:mt-0">
             <Card className="p-6 w-full max-w-md bg-white-soft/95 backdrop-blur-sm shadow-2xl">
               <div className="text-center mb-6">
                 <h3 className="text-2xl font-bold text-primary mb-2">Busque seu Imóvel</h3>

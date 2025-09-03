@@ -28,40 +28,40 @@ export const Header = () => {
 
       {/* Main navigation */}
       <div className="container mx-auto px-4 py-4">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           {/* Logo */}
           <div className="flex items-center">
             <img 
               src={supremeLogo} 
               alt="Supreme Negócios Imobiliários" 
-              className="h-12 md:h-16 w-auto"
+              className="h-10 md:h-12 lg:h-16 w-auto"
             />
           </div>
 
           {/* Navigation */}
-          <nav className="hidden md:flex items-center space-x-8">
-            <a href="#inicio" className="text-white-soft hover:text-accent transition-colors font-medium">
+          <nav className="hidden lg:flex items-center space-x-6 xl:space-x-8">
+            <a href="#inicio" className="text-white-soft hover:text-accent transition-colors font-medium text-sm xl:text-base">
               Início
             </a>
-            <a href="#comprar" className="text-white-soft hover:text-accent transition-colors font-medium">
+            <a href="#comprar" className="text-white-soft hover:text-accent transition-colors font-medium text-sm xl:text-base">
               Comprar
             </a>
-            <a href="#alugar" className="text-white-soft hover:text-accent transition-colors font-medium">
+            <a href="#alugar" className="text-white-soft hover:text-accent transition-colors font-medium text-sm xl:text-base">
               Alugar
             </a>
-            <a href="#rurais" className="text-white-soft hover:text-accent transition-colors font-medium">
+            <a href="#rurais" className="text-white-soft hover:text-accent transition-colors font-medium text-sm xl:text-base">
               Propriedades Rurais
             </a>
-            <a href="#sobre" className="text-white-soft hover:text-accent transition-colors font-medium">
+            <a href="#sobre" className="text-white-soft hover:text-accent transition-colors font-medium text-sm xl:text-base">
               Sobre Nós
             </a>
-            <a href="#contato" className="text-white-soft hover:text-accent transition-colors font-medium">
+            <a href="#contato" className="text-white-soft hover:text-accent transition-colors font-medium text-sm xl:text-base">
               Contato
             </a>
           </nav>
 
           {/* CTA Button */}
-          <Button variant="default" className="bg-accent text-accent-foreground hover:bg-accent/90 font-semibold">
+          <Button variant="default" className="bg-accent text-accent-foreground hover:bg-accent/90 font-semibold text-sm md:text-base px-4 md:px-6">
             Anuncie seu Imóvel
           </Button>
         </div>
