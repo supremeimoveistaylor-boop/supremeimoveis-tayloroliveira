@@ -14,7 +14,7 @@ export const Footer = () => {
               className="h-12 w-auto"
             />
             <p className="text-gray-300 text-sm leading-relaxed">
-              Há mais de 15 anos conectando pessoas aos seus lares ideais em Patos de Minas e região. 
+              Há mais de 15 anos conectando pessoas aos seus lares ideais em Goiânia - Goiás e região. 
               Especialistas em propriedades de qualidade.
             </p>
             <div className="flex space-x-4">
@@ -62,17 +62,17 @@ export const Footer = () => {
             <div className="space-y-3 text-sm">
               <div className="flex items-center space-x-2">
                 <Phone className="h-4 w-4 text-accent" />
-                <span className="text-gray-300">(34) 3821-2345</span>
+                <span className="text-gray-300">(62) 99991-8353</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Mail className="h-4 w-4 text-accent" />
-                <span className="text-gray-300">contato@supremeimoveis.com.br</span>
+                <span className="text-gray-300">supremeimoveis.taylor@gmail.com</span>
               </div>
               <div className="flex items-start space-x-2">
                 <MapPin className="h-4 w-4 text-accent mt-0.5" />
                 <span className="text-gray-300">
-                  Rua Major Gote, 123<br />
-                  Centro - Patos de Minas, MG
+                  Goiânia - Goiás<br />
+                  CEP: 74000-000
                 </span>
               </div>
             </div>

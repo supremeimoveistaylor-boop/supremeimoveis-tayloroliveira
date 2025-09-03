@@ -36,7 +36,7 @@ export const About = () => {
               Por que escolher a <span className="text-accent">Supreme Imóveis</span>?
             </h2>
             <p className="text-lg text-gray-300 mb-8 leading-relaxed">
-              Há mais de 15 anos no mercado imobiliário de Patos de Minas, a Supreme Negócios Imobiliários 
+              Há mais de 15 anos no mercado imobiliário de Goiânia - Goiás, a Supreme Negócios Imobiliários 
               se consolidou como referência em qualidade, confiança e resultados. Nossa missão é conectar 
               pessoas aos seus lares ideais, oferecendo o melhor atendimento e as melhores oportunidades 
               do mercado regional.

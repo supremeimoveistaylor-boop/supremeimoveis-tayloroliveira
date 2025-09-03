@@ -21,10 +21,10 @@ export const Hero = () => {
           {/* Hero Content */}
           <div className="text-center lg:text-left">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white-soft mb-6 leading-tight">
-              Encontre o <span className="text-accent">Imóvel dos Seus Sonhos</span> em Patos de Minas
+              Encontre o <span className="text-accent">Imóvel dos Seus Sonhos</span> em Goiânia - Goiás
             </h1>
             <p className="text-xl text-gray-300 mb-8 max-w-2xl">
-              Especialistas em propriedades de qualidade na região de Patos de Minas. 
+              Especialistas em propriedades de qualidade na região de Goiânia - Goiás. 
               Mais de 15 anos conectando pessoas aos seus lares ideais.
             </p>
             
@@ -95,12 +95,13 @@ export const Hero = () => {
                   <SelectTrigger>
                     <SelectValue placeholder="Bairro" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="centro">Centro</SelectItem>
-                    <SelectItem value="jardins">Jardins</SelectItem>
-                    <SelectItem value="morada-do-sol">Morada do Sol</SelectItem>
-                    <SelectItem value="caicaras">Caiçaras</SelectItem>
-                  </SelectContent>
+                    <SelectContent>
+                      <SelectItem value="centro">Centro</SelectItem>
+                      <SelectItem value="setor-bueno">Setor Bueno</SelectItem>
+                      <SelectItem value="setor-oeste">Setor Oeste</SelectItem>
+                      <SelectItem value="jardim-goias">Jardim Goiás</SelectItem>
+                      <SelectItem value="alphaville">Alphaville</SelectItem>
+                    </SelectContent>
                 </Select>
 
                 {/* Price Range */}

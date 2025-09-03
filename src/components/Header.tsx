@@ -12,11 +12,11 @@ export const Header = () => {
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-2">
                 <Phone className="h-4 w-4 text-accent" />
-                <span className="text-white-soft">(34) 3821-2345</span>
+                <span className="text-white-soft">(62) 99991-8353</span>
               </div>
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-accent" />
-                <span className="text-white-soft">Patos de Minas, MG</span>
+                <span className="text-white-soft">Goiânia, GO</span>
               </div>
             </div>
             <div className="hidden md:block">

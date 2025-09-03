@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Phone, Mail, MapPin, Clock, MessageSquare } from "lucide-react";
+import { Phone, Mail, MapPin, Clock, MessageSquare, Instagram } from "lucide-react";
 
 export const Contact = () => {
   return (
@@ -33,8 +33,7 @@ export const Contact = () => {
                   <Phone className="h-5 w-5 text-accent mt-1" />
                   <div>
                     <p className="font-medium text-white-soft">Telefone</p>
-                    <p className="text-gray-300">(34) 3821-2345</p>
-                    <p className="text-gray-300">(34) 99999-8888</p>
+                    <p className="text-gray-300">(62) 99991-8353</p>
                   </div>
                 </div>
                 
@@ -42,8 +41,7 @@ export const Contact = () => {
                   <Mail className="h-5 w-5 text-accent mt-1" />
                   <div>
                     <p className="font-medium text-white-soft">E-mail</p>
-                    <p className="text-gray-300">contato@supremeimoveis.com.br</p>
-                    <p className="text-gray-300">vendas@supremeimoveis.com.br</p>
+                    <p className="text-gray-300">supremeimoveis.taylor@gmail.com</p>
                   </div>
                 </div>
                 
@@ -52,9 +50,8 @@ export const Contact = () => {
                   <div>
                     <p className="font-medium text-white-soft">Endereço</p>
                     <p className="text-gray-300">
-                      Rua Major Gote, 123<br />
-                      Centro - Patos de Minas, MG<br />
-                      CEP: 38700-000
+                      Goiânia - Goiás<br />
+                      CEP: 74000-000
                     </p>
                   </div>
                 </div>
@@ -70,10 +67,22 @@ export const Contact = () => {
                   </div>
                 </div>
 
-                <div className="pt-4">
-                  <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90 font-semibold">
+                <div className="pt-4 space-y-3">
+                  <Button 
+                    className="w-full bg-accent text-accent-foreground hover:bg-accent/90 font-semibold"
+                    onClick={() => window.open('https://wa.me/5562999918353', '_blank')}
+                  >
                     <MessageSquare className="h-4 w-4 mr-2" />
                     WhatsApp
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    className="w-full border-accent text-accent hover:bg-accent hover:text-accent-foreground font-semibold"
+                    onClick={() => window.open('https://instagram.com/supremeimoveis', '_blank')}
+                  >
+                    <Instagram className="h-4 w-4 mr-2" />
+                    Instagram
                   </Button>
                 </div>
               </CardContent>
