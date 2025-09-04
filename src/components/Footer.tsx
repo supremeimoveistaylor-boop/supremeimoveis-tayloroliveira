@@ -62,7 +62,7 @@ export const Footer = () => {
             <div className="space-y-3 text-sm">
               <div className="flex items-center space-x-2">
                 <Phone className="h-4 w-4 text-accent" />
-                <span className="text-gray-300">(62) 99991-8353</span>
+                <a href="https://wa.me/5562999918353" target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-accent transition-colors">(62) 99991-8353</a>
               </div>
               <div className="flex items-center space-x-2">
                 <Mail className="h-4 w-4 text-accent" />

@@ -33,7 +33,7 @@ export const Contact = () => {
                   <Phone className="h-5 w-5 text-accent mt-1" />
                   <div>
                     <p className="font-medium text-white-soft">Telefone</p>
-                    <p className="text-gray-300">(62) 99991-8353</p>
+                    <a href="https://wa.me/5562999918353" target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-accent transition-colors">(62) 99991-8353</a>
                   </div>
                 </div>
                 

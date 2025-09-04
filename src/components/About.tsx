@@ -62,7 +62,7 @@ export const About = () => {
               <Button 
                 size="lg" 
                 className="bg-accent text-accent-foreground hover:bg-accent/90 font-semibold"
-                onClick={() => window.open('https://wa.me/5562999918353?text=Olá Taylor! Tenho interesse em conhecer seus imóveis.', '_blank')}
+                onClick={() => window.open('https://wa.me/5562999918353', '_blank')}
               >
                 Fale com Taylor
               </Button>

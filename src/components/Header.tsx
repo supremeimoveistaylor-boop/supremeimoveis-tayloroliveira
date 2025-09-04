@@ -13,7 +13,7 @@ export const Header = () => {
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-2">
                 <Phone className="h-4 w-4 text-accent" />
-                <span className="text-white-soft">(62) 99991-8353</span>
+                <a href="https://wa.me/5562999918353" target="_blank" rel="noopener noreferrer" className="text-white-soft hover:text-accent transition-colors">(62) 99991-8353</a>
               </div>
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-accent" />

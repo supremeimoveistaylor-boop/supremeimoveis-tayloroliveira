@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 export const FloatingWhatsApp = () => {
   const handleWhatsAppClick = () => {
     // Link editável do WhatsApp - substitua pelo seu link personalizado
-    window.open('https://wa.me/5562999918353?text=Olá! Tenho interesse em conhecer os imóveis da Supreme Negócios Imobiliários.', '_blank');
+    window.open('https://wa.me/5562999918353', '_blank');
   };
 
   return (
