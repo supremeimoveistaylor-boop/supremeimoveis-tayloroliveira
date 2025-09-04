@@ -32,29 +32,35 @@ export const About = () => {
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           {/* Content */}
           <div className="text-center lg:text-left">
-            <h2 className="text-3xl md:text-4xl font-bold text-white-soft mb-6">
-              Por que escolher a <span className="text-accent">Supreme Imóveis</span>?
+            <h2 className="text-3xl md:text-4xl font-bold text-white-soft mb-6 text-center lg:text-left">
+              Conheça <span className="text-accent">Taylor Oliveira</span>
             </h2>
-            <p className="text-lg text-gray-300 mb-8 leading-relaxed">
-              Há mais de 15 anos no mercado imobiliário de Goiânia - Goiás, a Supreme Negócios Imobiliários 
-              se consolidou como referência em qualidade, confiança e resultados. Nossa missão é conectar 
-              pessoas aos seus lares ideais, oferecendo o melhor atendimento e as melhores oportunidades 
-              do mercado regional.
+            <p className="text-lg text-gray-300 mb-8 leading-relaxed text-center lg:text-left">
+              Taylor Oliveira, especialista em imóveis de médio e alto padrão, atuando por 8 anos em coordenação 
+              de lançamentos em construtoras de Goiânia e Anápolis. Hoje sendo um dos sócios da Supreme 
+              Empreendimentos Imobiliários, atuando diretamente na captação e venda de imóveis de terceiros, 
+              casas em condomínio fechado e imóveis de construtoras, lançamentos e imóveis prontos.
+            </p>
+            <p className="text-lg text-gray-300 mb-8 leading-relaxed text-center lg:text-left">
+              Um consultor que faz a diferença no mercado imobiliário, agindo com responsabilidade e confiança. 
+              Para morar ou investir você tem uma pessoa altamente capacitada para te ajudar.
             </p>
             
-            <div className="mb-8">
-              <h3 className="text-xl font-semibold text-accent mb-4">Nossa Especialidade</h3>
-              <ul className="text-gray-300 space-y-2 text-left">
-                <li>• Propriedades residenciais de alto padrão</li>
-                <li>• Apartamentos modernos no centro da cidade</li>
-                <li>• Fazendas e propriedades rurais produtivas</li>
-                <li>• Terrenos para investimento e construção</li>
+            <div className="mb-8 text-center lg:text-left">
+              <h3 className="text-xl font-semibold text-accent mb-4">Especialidades</h3>
+              <ul className="text-gray-300 space-y-2">
+                <li>• Imóveis de médio e alto padrão</li>
+                <li>• Coordenação de lançamentos imobiliários</li>
+                <li>• Captação e venda de imóveis de terceiros</li>
+                <li>• Casas em condomínios fechados</li>
+                <li>• Imóveis de construtoras e lançamentos</li>
+                <li>• Imóveis prontos para morar</li>
               </ul>
             </div>
 
             <div className="text-center lg:text-left">
               <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 font-semibold">
-                Conheça Nossa História
+                Fale com Taylor
               </Button>
             </div>
           </div>

@@ -1,5 +1,5 @@
 import { Facebook, Instagram, Linkedin, Phone, Mail, MapPin } from "lucide-react";
-const supremeLogo = "/lovable-uploads/ce367a19-282b-4c2e-a287-ee81e326a182.png";
+const supremeLogo = "/lovable-uploads/8ab96aad-518c-449a-982a-50d7595470f9.png";
 
 export const Footer = () => {
   return (
@@ -71,8 +71,9 @@ export const Footer = () => {
               <div className="flex items-start space-x-2">
                 <MapPin className="h-4 w-4 text-accent mt-0.5" />
                 <span className="text-gray-300">
-                  Goiânia - Goiás<br />
-                  CEP: 74000-000
+                  Av T-2 número 816 Sala 06<br />
+                  Setor Bueno<br />
+                  CEP: 74210-010 - Goiânia - Goiás
                 </span>
               </div>
             </div>
