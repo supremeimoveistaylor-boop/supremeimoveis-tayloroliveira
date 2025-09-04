@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { Phone, MapPin } from "lucide-react";
+import { Phone, MapPin, MessageCircle } from "lucide-react";
+import { Link } from "react-router-dom";
 const supremeLogo = "/lovable-uploads/04663de4-8269-49df-b13d-565420c29dd2.png";
 
 export const Header = () => {
@@ -60,10 +61,18 @@ export const Header = () => {
             </a>
           </nav>
 
-          {/* CTA Button */}
-          <Button variant="default" className="bg-accent text-accent-foreground hover:bg-accent/90 font-semibold text-sm md:text-base px-4 md:px-6">
-            Anuncie seu Imóvel
-          </Button>
+          {/* CTA Buttons */}
+          <div className="flex gap-3 items-center">
+            <Link to="/chat">
+              <Button variant="outline" className="border-accent text-accent hover:bg-accent hover:text-accent-foreground font-semibold text-sm px-4 py-2 flex items-center gap-2">
+                <MessageCircle className="h-4 w-4" />
+                Chat
+              </Button>
+            </Link>
+            <Button variant="default" className="bg-accent text-accent-foreground hover:bg-accent/90 font-semibold text-sm md:text-base px-4 md:px-6">
+              Anuncie seu Imóvel
+            </Button>
+          </div>
         </div>
       </div>
     </header>
