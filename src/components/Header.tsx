@@ -1,8 +1,11 @@
 import { Button } from "@/components/ui/button";
-import { Phone, MapPin } from "lucide-react";
+import { Phone, MapPin, User } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 const supremeLogo = "/lovable-uploads/48d0f209-18da-491c-a526-dc841441b972.png";
 
 export const Header = () => {
+  const { user } = useAuth();
+
   return (
     <header className="bg-primary text-primary-foreground shadow-lg sticky top-0 z-50">
       {/* Top bar with contact info */}
@@ -62,8 +65,30 @@ export const Header = () => {
 
           {/* CTA Buttons */}
           <div className="flex gap-3 items-center">
-            <Button variant="default" className="bg-accent text-accent-foreground hover:bg-accent/90 font-semibold text-sm md:text-base px-4 md:px-6">
-              Anuncie seu Imóvel
+            {user ? (
+              <Button 
+                variant="outline" 
+                className="border-accent text-accent hover:bg-accent hover:text-accent-foreground"
+                onClick={() => window.location.href = '/dashboard'}
+              >
+                <User className="mr-2 h-4 w-4" />
+                Painel
+              </Button>
+            ) : (
+              <Button 
+                variant="outline" 
+                className="border-accent text-accent hover:bg-accent hover:text-accent-foreground"
+                onClick={() => window.location.href = '/auth'}
+              >
+                Entrar
+              </Button>
+            )}
+            <Button 
+              variant="default" 
+              className="bg-green-600 hover:bg-green-700 text-white font-semibold text-sm md:text-base px-4 md:px-6"
+              onClick={() => window.open('https://wa.me/5562999918353', '_blank')}
+            >
+              Falar com Especialista
             </Button>
           </div>
         </div>
