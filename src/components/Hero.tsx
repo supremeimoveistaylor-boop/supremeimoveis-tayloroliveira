@@ -48,7 +48,12 @@ export const Hero = () => {
               <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 font-semibold px-8">
                 Ver Propriedades
               </Button>
-              <Button size="lg" variant="outline" className="border-accent text-accent hover:bg-accent hover:text-accent-foreground">
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="border-accent text-accent hover:bg-accent hover:text-accent-foreground"
+                onClick={() => window.open('https://wa.me/5562999918353', '_blank')}
+              >
                 Falar com Especialista
               </Button>
             </div>

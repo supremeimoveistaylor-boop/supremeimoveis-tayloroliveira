@@ -35,7 +35,7 @@ export const Header = () => {
             <img 
               src={supremeLogo} 
               alt="Supreme Negócios Imobiliários" 
-              className="h-10 md:h-12 lg:h-16 w-auto"
+              className="h-20 md:h-24 lg:h-32 w-auto"
             />
           </div>
 

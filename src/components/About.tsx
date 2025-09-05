@@ -36,7 +36,7 @@ export const About = () => {
               Conheça <span className="text-accent">Taylor Oliveira</span>
             </h2>
             <p className="text-lg text-gray-300 mb-8 leading-relaxed text-center lg:text-left">
-              Taylor Oliveira, especialista em imóveis de médio e alto padrão, atuando por 8 anos em coordenação 
+              Taylor Oliveira, especialista em imóveis de médio e alto padrão, atuando por 13 anos em coordenação 
               de lançamentos em construtoras de Goiânia e Anápolis. Hoje sendo um dos sócios da Supreme 
               Empreendimentos Imobiliários, atuando diretamente na captação e venda de imóveis de terceiros, 
               casas em condomínio fechado e imóveis de construtoras, lançamentos e imóveis prontos.
