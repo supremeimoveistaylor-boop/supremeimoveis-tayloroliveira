@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Phone, MapPin } from "lucide-react";
-const supremeLogo = "/lovable-uploads/04663de4-8269-49df-b13d-565420c29dd2.png";
+const supremeLogo = "/lovable-uploads/1a8a5a8c-fc7f-49e0-9b35-0c1dcd8d46e6.png";
 
 export const Header = () => {
   return (
@@ -33,8 +33,8 @@ export const Header = () => {
           <div className="flex items-center">
             <img 
               src={supremeLogo} 
-              alt="Supreme Negócios Imobiliários" 
-              className="h-32 md:h-40 lg:h-48 xl:h-56 w-auto"
+              alt="Supreme Empreendimentos Imobiliários" 
+              className="h-auto w-auto max-h-32 md:max-h-40 lg:max-h-48"
             />
           </div>
 
