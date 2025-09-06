@@ -177,7 +177,7 @@ const EditProperty = () => {
         .update({
           title: formData.get('title') as string,
           description: formData.get('description') as string,
-          price: parseFloat(formData.get('price') as string),
+          price: parseFloat(formData.get('price')?.toString().replace(/\./g, '').replace(/,/g, '.') || '0'),
           location: formData.get('location') as string,
           property_type: formData.get('property_type') as string,
           purpose: formData.get('purpose') as string,
@@ -250,10 +250,23 @@ const EditProperty = () => {
                   <Input
                     id="price"
                     name="price"
-                    type="number"
-                    step="0.01"
-                    defaultValue={property.price}
+                    type="text"
+                    defaultValue={property.price.toLocaleString('pt-BR', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2
+                    })}
                     required
+                    onChange={(e) => {
+                      // Format input as user types
+                      let value = e.target.value.replace(/\D/g, '');
+                      if (value) {
+                        value = (parseInt(value) / 100).toLocaleString('pt-BR', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                        });
+                        e.target.value = value;
+                      }
+                    }}
                   />
                 </div>
               </div>

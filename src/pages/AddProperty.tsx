@@ -105,7 +105,7 @@ const AddProperty = () => {
           user_id: user.id,
           title: formData.get('title') as string,
           description: formData.get('description') as string,
-          price: parseFloat(formData.get('price') as string),
+          price: parseFloat(formData.get('price')?.toString().replace(/\./g, '').replace(/,/g, '.') || '0'),
           location: formData.get('location') as string,
           property_type: formData.get('property_type') as string,
           purpose: formData.get('purpose') as string,
@@ -192,10 +192,20 @@ const AddProperty = () => {
                   <Input
                     id="price"
                     name="price"
-                    type="number"
-                    step="0.01"
-                    placeholder="Ex: 350000.00"
+                    type="text"
+                    placeholder="Ex: 350.000,00"
                     required
+                    onChange={(e) => {
+                      // Format input as user types
+                      let value = e.target.value.replace(/\D/g, '');
+                      if (value) {
+                        value = (parseInt(value) / 100).toLocaleString('pt-BR', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                        });
+                        e.target.value = value;
+                      }
+                    }}
                   />
                 </div>
               </div>

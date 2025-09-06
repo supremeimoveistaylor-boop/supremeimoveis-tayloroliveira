@@ -55,8 +55,14 @@ export const FeaturedProperties = () => {
   };
 
   const formatPrice = (price: number, purpose: string) => {
-    const formatted = price.toLocaleString('pt-BR');
-    return purpose === 'rent' ? `R$ ${formatted}/mês` : `R$ ${formatted}`;
+    const formatted = new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(price);
+    
+    return purpose === 'rent' ? `${formatted}/mês` : formatted;
   };
 
   const translatePropertyType = (type: string) => {

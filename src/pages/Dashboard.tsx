@@ -218,7 +218,12 @@ const Dashboard = () => {
                   <CardContent>
                     <p className="text-sm text-muted-foreground mb-2">{property.location}</p>
                     <p className="text-2xl font-bold text-primary mb-4">
-                      R$ {property.price.toLocaleString('pt-BR')}
+                      {new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                      }).format(property.price)}
                     </p>
                     
                     {property.bedrooms && (
