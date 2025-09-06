@@ -99,6 +99,15 @@ const EditProperty = () => {
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
+    const totalImages = existingImages.length + selectedImages.length + files.length;
+    if (totalImages > 20) {
+      toast({
+        title: "Limite excedido",
+        description: "Máximo de 20 imagens por imóvel",
+        variant: "destructive",
+      });
+      return;
+    }
     setSelectedImages(prev => [...prev, ...files]);
   };
 
@@ -456,7 +465,7 @@ const EditProperty = () => {
                   <div className="text-center">
                     <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                     <div className="text-sm text-muted-foreground mb-4">
-                      Adicionar novas imagens
+                      Adicionar novas imagens (máximo 20 fotos total)
                     </div>
                     <input
                       type="file"

@@ -40,6 +40,14 @@ const AddProperty = () => {
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
+    if (selectedImages.length + files.length > 20) {
+      toast({
+        title: "Limite excedido",
+        description: "Máximo de 20 imagens por imóvel",
+        variant: "destructive",
+      });
+      return;
+    }
     setSelectedImages(prev => [...prev, ...files]);
   };
 
@@ -358,7 +366,7 @@ const AddProperty = () => {
                   <div className="text-center">
                     <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                     <div className="text-sm text-muted-foreground mb-4">
-                      Clique para selecionar ou arraste as imagens aqui
+                      Clique para selecionar ou arraste as imagens aqui (máximo 20 fotos)
                     </div>
                     <input
                       type="file"
