@@ -194,7 +194,10 @@ export const FeaturedProperties = () => {
                       </div>
                       {property.area && (
                         <div className="font-medium text-xs">
-                          {property.area}m²
+                          {property.area.toLocaleString('pt-BR', {
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 2
+                          })}m²
                         </div>
                       )}
                     </div>

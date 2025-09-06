@@ -177,14 +177,14 @@ const EditProperty = () => {
         .update({
           title: formData.get('title') as string,
           description: formData.get('description') as string,
-          price: parseFloat(formData.get('price')?.toString().replace(/\./g, '').replace(/,/g, '.') || '0'),
+          price: parseFloat(formData.get('price')?.toString().replace(/[^\d,]/g, '').replace(/,/g, '.') || '0'),
           location: formData.get('location') as string,
           property_type: formData.get('property_type') as string,
           purpose: formData.get('purpose') as string,
           bedrooms: parseInt(formData.get('bedrooms') as string) || null,
           bathrooms: parseInt(formData.get('bathrooms') as string) || null,
           parking_spaces: parseInt(formData.get('parking_spaces') as string) || null,
-          area: parseFloat(formData.get('area') as string) || null,
+          area: parseFloat(formData.get('area')?.toString().replace(/,/g, '.') || '0') || null,
           amenities,
           images: allImages,
           status: formData.get('status') as string,
@@ -251,20 +251,26 @@ const EditProperty = () => {
                     id="price"
                     name="price"
                     type="text"
-                    defaultValue={property.price.toLocaleString('pt-BR', {
+                    defaultValue={new Intl.NumberFormat('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL',
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2
-                    })}
+                    }).format(property.price)}
                     required
                     onChange={(e) => {
-                      // Format input as user types
+                      // Remove all non-digits
                       let value = e.target.value.replace(/\D/g, '');
                       if (value) {
-                        value = (parseInt(value) / 100).toLocaleString('pt-BR', {
+                        // Convert to number and format as Brazilian currency
+                        const numValue = parseFloat(value) / 100;
+                        const formatted = new Intl.NumberFormat('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL',
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2
-                        });
-                        e.target.value = value;
+                        }).format(numValue);
+                        e.target.value = formatted;
                       }
                     }}
                   />
@@ -372,10 +378,22 @@ const EditProperty = () => {
                   <Input
                     id="area"
                     name="area"
-                    type="number"
+                    type="text"
                     step="0.01"
                     min="0"
-                    defaultValue={property.area || ''}
+                    defaultValue={property.area ? property.area.toString().replace('.', ',') : ''}
+                    onChange={(e) => {
+                      // Format area input with Brazilian decimal separator
+                      let value = e.target.value.replace(/[^\d,]/g, '');
+                      if (value.includes(',')) {
+                        const parts = value.split(',');
+                        if (parts[1] && parts[1].length > 2) {
+                          parts[1] = parts[1].substring(0, 2);
+                        }
+                        value = parts.join(',');
+                      }
+                      e.target.value = value;
+                    }}
                   />
                 </div>
               </div>

@@ -105,14 +105,14 @@ const AddProperty = () => {
           user_id: user.id,
           title: formData.get('title') as string,
           description: formData.get('description') as string,
-          price: parseFloat(formData.get('price')?.toString().replace(/\./g, '').replace(/,/g, '.') || '0'),
+          price: parseFloat(formData.get('price')?.toString().replace(/[^\d,]/g, '').replace(/,/g, '.') || '0'),
           location: formData.get('location') as string,
           property_type: formData.get('property_type') as string,
           purpose: formData.get('purpose') as string,
           bedrooms: parseInt(formData.get('bedrooms') as string) || null,
           bathrooms: parseInt(formData.get('bathrooms') as string) || null,
           parking_spaces: parseInt(formData.get('parking_spaces') as string) || null,
-          area: parseFloat(formData.get('area') as string) || null,
+          area: parseFloat(formData.get('area')?.toString().replace(/,/g, '.') || '0') || null,
           amenities,
           images: [], // Will be updated after image upload
         })
@@ -193,17 +193,21 @@ const AddProperty = () => {
                     id="price"
                     name="price"
                     type="text"
-                    placeholder="Ex: 350.000,00"
+                    placeholder="Ex: R$ 350.000,00"
                     required
                     onChange={(e) => {
-                      // Format input as user types
+                      // Remove all non-digits
                       let value = e.target.value.replace(/\D/g, '');
                       if (value) {
-                        value = (parseInt(value) / 100).toLocaleString('pt-BR', {
+                        // Convert to number and format as Brazilian currency
+                        const numValue = parseFloat(value) / 100;
+                        const formatted = new Intl.NumberFormat('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL',
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2
-                        });
-                        e.target.value = value;
+                        }).format(numValue);
+                        e.target.value = formatted;
                       }
                     }}
                   />
@@ -222,12 +226,12 @@ const AddProperty = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="location">Localização *</Label>
-                <Input
-                  id="location"
-                  name="location"
-                  placeholder="Ex: Centro, Goiânia - GO"
-                  required
-                />
+                  <Input
+                    id="location"
+                    name="location"
+                    placeholder="Ex: Centro, Patos de Minas - MG"
+                    required
+                  />
               </div>
 
               {/* Property Type and Purpose */}
@@ -297,10 +301,22 @@ const AddProperty = () => {
                   <Input
                     id="area"
                     name="area"
-                    type="number"
+                    type="text"
                     step="0.01"
                     min="0"
-                    placeholder="0.00"
+                    placeholder="Ex: 250,50"
+                    onChange={(e) => {
+                      // Format area input with Brazilian decimal separator
+                      let value = e.target.value.replace(/[^\d,]/g, '');
+                      if (value.includes(',')) {
+                        const parts = value.split(',');
+                        if (parts[1] && parts[1].length > 2) {
+                          parts[1] = parts[1].substring(0, 2);
+                        }
+                        value = parts.join(',');
+                      }
+                      e.target.value = value;
+                    }}
                   />
                 </div>
               </div>

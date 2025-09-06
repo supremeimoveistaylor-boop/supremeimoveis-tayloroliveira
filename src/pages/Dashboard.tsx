@@ -230,7 +230,10 @@ const Dashboard = () => {
                       <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
                         <span>{property.bedrooms} quartos</span>
                         <span>{property.bathrooms} banheiros</span>
-                        {property.area && <span>{property.area}m²</span>}
+                        {property.area && <span>{property.area.toLocaleString('pt-BR', {
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 2
+                        })}m²</span>}
                       </div>
                     )}
 
