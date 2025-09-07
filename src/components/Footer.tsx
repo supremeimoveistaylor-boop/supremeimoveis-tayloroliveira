@@ -21,7 +21,7 @@ export const Footer = () => {
               <a href="#" className="text-gray-300 hover:text-accent transition-colors">
                 <Facebook className="h-5 w-5" />
               </a>
-              <a href="#" className="text-gray-300 hover:text-accent transition-colors">
+              <a href="https://www.instagram.com/taylorimoveis/" target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-accent transition-colors">
                 <Instagram className="h-5 w-5" />
               </a>
               <a href="#" className="text-gray-300 hover:text-accent transition-colors">

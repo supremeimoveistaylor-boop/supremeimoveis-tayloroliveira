@@ -79,7 +79,7 @@ export const Contact = () => {
                   <Button 
                     variant="outline" 
                     className="w-full border-accent text-accent hover:bg-accent hover:text-accent-foreground font-semibold"
-                    onClick={() => window.open('https://instagram.com/supremeimoveis', '_blank')}
+                    onClick={() => window.open('https://www.instagram.com/taylorimoveis/', '_blank')}
                   >
                     <Instagram className="h-4 w-4 mr-2" />
                     Instagram
