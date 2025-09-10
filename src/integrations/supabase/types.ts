@@ -145,6 +145,72 @@ export type Database = {
       }
     }
     Views: {
+      properties_public: {
+        Row: {
+          amenities: string[] | null
+          area: number | null
+          bathrooms: number | null
+          bedrooms: number | null
+          created_at: string | null
+          description: string | null
+          featured: boolean | null
+          id: string | null
+          images: string[] | null
+          location: string | null
+          parking_spaces: number | null
+          price: number | null
+          property_type: string | null
+          purpose: string | null
+          status: string | null
+          title: string | null
+          updated_at: string | null
+          whatsapp_link: string | null
+          youtube_link: string | null
+        }
+        Insert: {
+          amenities?: string[] | null
+          area?: number | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          created_at?: string | null
+          description?: string | null
+          featured?: boolean | null
+          id?: string | null
+          images?: string[] | null
+          location?: string | null
+          parking_spaces?: number | null
+          price?: number | null
+          property_type?: string | null
+          purpose?: string | null
+          status?: string | null
+          title?: string | null
+          updated_at?: string | null
+          whatsapp_link?: string | null
+          youtube_link?: string | null
+        }
+        Update: {
+          amenities?: string[] | null
+          area?: number | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          created_at?: string | null
+          description?: string | null
+          featured?: boolean | null
+          id?: string | null
+          images?: string[] | null
+          location?: string | null
+          parking_spaces?: number | null
+          price?: number | null
+          property_type?: string | null
+          purpose?: string | null
+          status?: string | null
+          title?: string | null
+          updated_at?: string | null
+          whatsapp_link?: string | null
+          youtube_link?: string | null
+        }
+        Relationships: []
+      }
       public_properties: {
         Row: {
           amenities: string[] | null
