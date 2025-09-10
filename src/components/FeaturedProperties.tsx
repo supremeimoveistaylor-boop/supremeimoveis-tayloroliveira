@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Bed, Bath, Car, MapPin, Heart, Edit, MessageCircle } from "lucide-react";
+import { Bed, Bath, Car, MapPin, Heart, Edit, MessageCircle, Play } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
@@ -23,6 +23,7 @@ interface Property {
   status: string;
   user_id?: string;
   whatsapp_link: string;
+  youtube_link: string;
 }
 
 export const FeaturedProperties = () => {
@@ -149,6 +150,15 @@ export const FeaturedProperties = () => {
                           onClick={() => window.open(property.whatsapp_link, '_blank')}
                         >
                           <MessageCircle className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {property.youtube_link && (
+                        <Button
+                          size="sm"
+                          className="rounded-full p-2 bg-red-500 hover:bg-red-600 text-white border-none"
+                          onClick={() => window.open(property.youtube_link, '_blank')}
+                        >
+                          <Play className="h-4 w-4" />
                         </Button>
                       )}
                       {user && user.id === property.user_id && (

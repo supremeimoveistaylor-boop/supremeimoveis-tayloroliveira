@@ -196,6 +196,8 @@ const EditProperty = () => {
           amenities,
           images: allImages,
           status: formData.get('status') as string,
+          whatsapp_link: formData.get('whatsapp_link') as string || null,
+          youtube_link: formData.get('youtube_link') as string || null,
         })
         .eq('id', property.id);
 
@@ -303,6 +305,34 @@ const EditProperty = () => {
                   defaultValue={property.location}
                   required
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="whatsapp_link">Link do WhatsApp</Label>
+                <Input
+                  id="whatsapp_link"
+                  name="whatsapp_link"
+                  type="url"
+                  defaultValue={(property as any).whatsapp_link || ''}
+                  placeholder="Ex: https://wa.me/5534999887766"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Cole o link do seu WhatsApp para facilitar o contato dos clientes
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="youtube_link">Vídeo do YouTube</Label>
+                <Input
+                  id="youtube_link"
+                  name="youtube_link"
+                  type="url"
+                  defaultValue={(property as any).youtube_link || ''}
+                  placeholder="Ex: https://youtube.com/watch?v=..."
+                />
+                <p className="text-sm text-muted-foreground">
+                  Cole o link do vídeo do YouTube do imóvel (opcional)
+                </p>
               </div>
 
               {/* Property Type and Purpose */}
