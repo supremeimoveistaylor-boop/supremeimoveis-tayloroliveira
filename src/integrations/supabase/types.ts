@@ -65,6 +65,7 @@ export type Database = {
           updated_at: string
           user_id: string
           whatsapp_link: string | null
+          youtube_link: string | null
         }
         Insert: {
           amenities?: string[] | null
@@ -86,6 +87,7 @@ export type Database = {
           updated_at?: string
           user_id: string
           whatsapp_link?: string | null
+          youtube_link?: string | null
         }
         Update: {
           amenities?: string[] | null
@@ -107,6 +109,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           whatsapp_link?: string | null
+          youtube_link?: string | null
         }
         Relationships: []
       }

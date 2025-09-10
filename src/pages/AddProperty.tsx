@@ -116,6 +116,7 @@ const AddProperty = () => {
           amenities,
           images: [], // Will be updated after image upload
           whatsapp_link: formData.get('whatsapp_link') as string || null,
+          youtube_link: formData.get('youtube_link') as string || null,
         })
         .select()
         .single();
@@ -245,6 +246,19 @@ const AddProperty = () => {
                 />
                 <p className="text-sm text-muted-foreground">
                   Cole o link do seu WhatsApp para facilitar o contato dos clientes
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="youtube_link">Vídeo do YouTube</Label>
+                <Input
+                  id="youtube_link"
+                  name="youtube_link"
+                  type="url"
+                  placeholder="Ex: https://youtube.com/watch?v=..."
+                />
+                <p className="text-sm text-muted-foreground">
+                  Cole o link do vídeo do YouTube do imóvel (opcional)
                 </p>
               </div>
 
