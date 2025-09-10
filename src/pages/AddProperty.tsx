@@ -34,9 +34,10 @@ const AddProperty = () => {
     );
   }
 
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
+  // Temporarily removed authentication check
+  // if (!user) {
+  //   return <Navigate to="/auth" replace />;
+  // }
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -102,7 +103,7 @@ const AddProperty = () => {
       const { data: property, error: propertyError } = await supabase
         .from('properties')
         .insert({
-          user_id: user.id,
+          user_id: '00000000-0000-0000-0000-000000000000', // Temporary user ID
           title: formData.get('title') as string,
           description: formData.get('description') as string,
           price: parseFloat(formData.get('price')?.toString().replace(/[^\d,]/g, '').replace(/,/g, '.') || '0'),

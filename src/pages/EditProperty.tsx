@@ -47,10 +47,10 @@ const EditProperty = () => {
   ];
 
   useEffect(() => {
-    if (user && id) {
+    if (id) {
       fetchProperty();
     }
-  }, [user, id]);
+  }, [id]);
 
   const fetchProperty = async () => {
     try {
@@ -58,7 +58,6 @@ const EditProperty = () => {
         .from('properties')
         .select('*')
         .eq('id', id)
-        .eq('user_id', user?.id)
         .single();
 
       if (error) throw error;
@@ -85,9 +84,10 @@ const EditProperty = () => {
     );
   }
 
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
+  // Temporarily removed authentication check
+  // if (!user) {
+  //   return <Navigate to="/auth" replace />;
+  // }
 
   if (!property) {
     return (

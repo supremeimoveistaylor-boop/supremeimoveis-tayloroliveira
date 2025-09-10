@@ -31,17 +31,15 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
-      fetchProperties();
-    }
-  }, [user]);
+    // Temporarily fetch all properties without user restriction
+    fetchProperties();
+  }, []);
 
   const fetchProperties = async () => {
     try {
       const { data, error } = await supabase
         .from('properties')
         .select('*')
-        .eq('user_id', user?.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -90,9 +88,10 @@ const Dashboard = () => {
     );
   }
 
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
+  // Temporarily removed authentication check
+  // if (!user) {
+  //   return <Navigate to="/auth" replace />;
+  // }
 
   return (
     <div className="min-h-screen bg-background">
@@ -109,9 +108,10 @@ const Dashboard = () => {
                 <Plus className="mr-2 h-4 w-4" />
                 Adicionar Imóvel
               </Button>
-              <Button variant="outline" onClick={signOut}>
+              {/* Temporarily hidden logout button */}
+              {/* <Button variant="outline" onClick={signOut}>
                 Sair
-              </Button>
+              </Button> */}
             </div>
           </div>
         </div>
