@@ -2,10 +2,11 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Bed, Bath, Car, MapPin, Heart, Edit, MessageCircle, Play } from "lucide-react";
+import { Bed, Bath, Car, MapPin, Heart, Edit, MessageCircle, Play, Camera } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
+import { ImageModal } from "@/components/ImageModal";
 
 interface Property {
   id: string;
@@ -30,6 +31,15 @@ export const FeaturedProperties = () => {
   const { user } = useAuth();
   const [properties, setProperties] = useState<Property[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedImages, setSelectedImages] = useState<string[]>([]);
+  const [selectedPropertyTitle, setSelectedPropertyTitle] = useState<string>("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const openImageModal = (images: string[], title: string) => {
+    setSelectedImages(images);
+    setSelectedPropertyTitle(title);
+    setIsModalOpen(true);
+  };
 
   useEffect(() => {
     fetchProperties();
@@ -124,11 +134,22 @@ export const FeaturedProperties = () => {
                 <CardHeader className="p-0">
                   <div className="relative overflow-hidden rounded-t-lg">
                     {property.images && property.images.length > 0 ? (
-                      <img
-                        src={property.images[0]}
-                        alt={property.title}
-                        className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
+                      <div 
+                        className="relative cursor-pointer group"
+                        onClick={() => openImageModal(property.images, property.title)}
+                      >
+                        <img
+                          src={property.images[0]}
+                          alt={property.title}
+                          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                        {property.images.length > 1 && (
+                          <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                            <Camera className="h-3 w-3" />
+                            {property.images.length}
+                          </div>
+                        )}
+                      </div>
                     ) : (
                       <div className="w-full h-48 bg-muted flex items-center justify-center">
                         <span className="text-muted-foreground">Sem imagem</span>
@@ -244,6 +265,13 @@ export const FeaturedProperties = () => {
           </div>
         )}
       </div>
+
+      <ImageModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        images={selectedImages}
+        propertyTitle={selectedPropertyTitle}
+      />
     </section>
   );
 };
