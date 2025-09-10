@@ -25,7 +25,7 @@ export const Header = () => {
               </div>
             </div>
             <div className="hidden md:block">
-              <span className="text-accent font-medium">Especialistas em Imóveis de Qualidade</span>
+              <span className="text-accent font-medium">Especialista em Imóveis de Qualidade e Com Segurança</span>
             </div>
           </div>
         </div>
