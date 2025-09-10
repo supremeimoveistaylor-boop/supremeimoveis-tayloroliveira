@@ -164,6 +164,8 @@ export type Database = {
           status: string | null
           title: string | null
           updated_at: string | null
+          whatsapp_link: string | null
+          youtube_link: string | null
         }
         Insert: {
           amenities?: string[] | null
@@ -183,6 +185,8 @@ export type Database = {
           status?: string | null
           title?: string | null
           updated_at?: string | null
+          whatsapp_link?: string | null
+          youtube_link?: string | null
         }
         Update: {
           amenities?: string[] | null
@@ -202,6 +206,8 @@ export type Database = {
           status?: string | null
           title?: string | null
           updated_at?: string | null
+          whatsapp_link?: string | null
+          youtube_link?: string | null
         }
         Relationships: []
       }
