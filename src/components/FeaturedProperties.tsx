@@ -37,7 +37,7 @@ export const FeaturedProperties = () => {
   const fetchProperties = async () => {
     try {
       const { data, error } = await supabase
-        .from('public_properties')
+        .from('properties_public')
         .select('*')
         .order('created_at', { ascending: false });
 
