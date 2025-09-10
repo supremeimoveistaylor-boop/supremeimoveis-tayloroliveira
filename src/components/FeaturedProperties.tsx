@@ -21,7 +21,7 @@ interface Property {
   area: number;
   images: string[];
   status: string;
-  user_id: string;
+  user_id?: string;
   whatsapp_link: string;
 }
 
@@ -37,9 +37,8 @@ export const FeaturedProperties = () => {
   const fetchProperties = async () => {
     try {
       const { data, error } = await supabase
-        .from('properties')
+        .from('public_properties')
         .select('*')
-        .eq('status', 'active')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
