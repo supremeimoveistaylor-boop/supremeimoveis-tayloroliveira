@@ -16,6 +16,11 @@ const AddProperty = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+
+  // Redirect if not authenticated
+  if (!user && !loading) {
+    return <Navigate to="/auth" replace />;
+  }
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [amenities, setAmenities] = useState<string[]>([]);
   const [newAmenity, setNewAmenity] = useState('');
@@ -33,11 +38,6 @@ const AddProperty = () => {
       </div>
     );
   }
-
-  // Temporarily removed authentication check
-  // if (!user) {
-  //   return <Navigate to="/auth" replace />;
-  // }
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -103,7 +103,7 @@ const AddProperty = () => {
       const { data: property, error: propertyError } = await supabase
         .from('properties')
         .insert({
-          user_id: '00000000-0000-0000-0000-000000000000', // Temporary user ID
+          user_id: user?.id || '00000000-0000-0000-0000-000000000000',
           title: formData.get('title') as string,
           description: formData.get('description') as string,
           price: parseFloat(formData.get('price')?.toString().replace(/[^\d,]/g, '').replace(/,/g, '.') || '0'),

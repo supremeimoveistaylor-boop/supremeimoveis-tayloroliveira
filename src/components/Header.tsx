@@ -68,14 +68,16 @@ export const Header = () => {
           {/* CTA Buttons */}
           <div className="flex gap-3 items-center">
             {/* Temporarily always show dashboard button */}
-            <Button 
-              variant="outline" 
-              className="border-accent text-accent hover:bg-accent hover:text-accent-foreground"
-              onClick={() => navigate('/dashboard')}
-            >
-              <User className="mr-2 h-4 w-4" />
-              Painel
-            </Button>
+            {user && (
+              <Button 
+                variant="outline" 
+                className="border-accent text-accent hover:bg-accent hover:text-accent-foreground"
+                onClick={() => navigate('/dashboard')}
+              >
+                <User className="mr-2 h-4 w-4" />
+                Painel
+              </Button>
+            )}
             <Button 
               variant="default" 
               className="bg-green-600 hover:bg-green-700 text-white font-semibold text-sm md:text-base px-4 md:px-6"

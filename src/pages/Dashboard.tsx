@@ -31,16 +31,23 @@ const Dashboard = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Redirect if not authenticated
+  if (!user && !loading) {
+    return <Navigate to="/auth" replace />;
+  }
+
   useEffect(() => {
-    // Temporarily fetch all properties without user restriction
     fetchProperties();
-  }, []);
+  }, [user]);
 
   const fetchProperties = async () => {
+    if (!user) return;
+    
     try {
       const { data, error } = await supabase
         .from('properties')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -89,11 +96,6 @@ const Dashboard = () => {
     );
   }
 
-  // Temporarily removed authentication check
-  // if (!user) {
-  //   return <Navigate to="/auth" replace />;
-  // }
-
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -109,10 +111,9 @@ const Dashboard = () => {
                 <Plus className="mr-2 h-4 w-4" />
                 Adicionar Imóvel
               </Button>
-              {/* Temporarily hidden logout button */}
-              {/* <Button variant="outline" onClick={signOut}>
+              <Button variant="outline" onClick={signOut}>
                 Sair
-              </Button> */}
+              </Button>
             </div>
           </div>
         </div>

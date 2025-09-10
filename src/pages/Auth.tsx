@@ -4,11 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 
 const Auth = () => {
-  const { user, signIn, loading } = useAuth();
+  const { user, signIn, signUp, resetPassword, loading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('signin');
 
   // Redirect if already authenticated
   if (user && !loading) {
@@ -27,6 +29,35 @@ const Auth = () => {
     setIsLoading(false);
   };
 
+  const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+    const fullName = formData.get('fullName') as string;
+    
+    const { error } = await signUp(email, password, fullName);
+    
+    if (!error) {
+      setActiveTab('signin');
+    }
+    
+    setIsLoading(false);
+  };
+
+  const handleResetPassword = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get('email') as string;
+    
+    await resetPassword(email);
+    setIsLoading(false);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -41,39 +72,120 @@ const Auth = () => {
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl text-center">Supreme Imobiliária</CardTitle>
           <CardDescription className="text-center">
-            Acesso ao sistema
+            Sistema de gestão de imóveis
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSignIn} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Usuário</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                defaultValue="supremeempreendimentos@supreme.com"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                defaultValue="supreme@2025"
-                required
-              />
-            </div>
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isLoading}
-            >
-              {isLoading ? "Entrando..." : "Entrar"}
-            </Button>
-          </form>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="signin">Entrar</TabsTrigger>
+              <TabsTrigger value="signup">Cadastrar</TabsTrigger>
+              <TabsTrigger value="reset">Recuperar</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="signin" className="space-y-4">
+              <form onSubmit={handleSignIn} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="signin-email">Email</Label>
+                  <Input
+                    id="signin-email"
+                    name="email"
+                    type="email"
+                    placeholder="seu@email.com"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signin-password">Senha</Label>
+                  <Input
+                    id="signin-password"
+                    name="password"
+                    type="password"
+                    placeholder="Sua senha"
+                    required
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Entrando..." : "Entrar"}
+                </Button>
+              </form>
+            </TabsContent>
+            
+            <TabsContent value="signup" className="space-y-4">
+              <form onSubmit={handleSignUp} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="signup-name">Nome Completo</Label>
+                  <Input
+                    id="signup-name"
+                    name="fullName"
+                    type="text"
+                    placeholder="Seu nome completo"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-email">Email</Label>
+                  <Input
+                    id="signup-email"
+                    name="email"
+                    type="email"
+                    placeholder="seu@email.com"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-password">Senha</Label>
+                  <Input
+                    id="signup-password"
+                    name="password"
+                    type="password"
+                    placeholder="Mínimo 6 caracteres"
+                    minLength={6}
+                    required
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Cadastrando..." : "Cadastrar"}
+                </Button>
+                <p className="text-sm text-muted-foreground text-center">
+                  Você receberá um email de confirmação
+                </p>
+              </form>
+            </TabsContent>
+            
+            <TabsContent value="reset" className="space-y-4">
+              <form onSubmit={handleResetPassword} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="reset-email">Email</Label>
+                  <Input
+                    id="reset-email"
+                    name="email"
+                    type="email"
+                    placeholder="seu@email.com"
+                    required
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Enviando..." : "Enviar Link de Recuperação"}
+                </Button>
+                <p className="text-sm text-muted-foreground text-center">
+                  Você receberá um email com instruções para redefinir sua senha
+                </p>
+              </form>
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
     </div>

@@ -40,6 +40,11 @@ const EditProperty = () => {
   const [amenities, setAmenities] = useState<string[]>([]);
   const [newAmenity, setNewAmenity] = useState('');
 
+  // Redirect if not authenticated
+  if (!user && !loading) {
+    return <Navigate to="/auth" replace />;
+  }
+
   const predefinedAmenities = [
     'Piscina', 'Academia', 'Churrasqueira', 'Playground', 'Salão de Festas',
     'Portaria 24h', 'Elevador', 'Garagem', 'Jardim', 'Varanda',
@@ -47,17 +52,20 @@ const EditProperty = () => {
   ];
 
   useEffect(() => {
-    if (id) {
+    if (id && user) {
       fetchProperty();
     }
-  }, [id]);
+  }, [id, user]);
 
   const fetchProperty = async () => {
+    if (!user) return;
+    
     try {
       const { data, error } = await supabase
         .from('properties')
         .select('*')
         .eq('id', id)
+        .eq('user_id', user.id)
         .single();
 
       if (error) throw error;
