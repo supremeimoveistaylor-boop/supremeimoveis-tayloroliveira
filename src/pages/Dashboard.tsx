@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -27,6 +27,7 @@ interface Property {
 
 const Dashboard = () => {
   const { user, signOut, loading } = useAuth();
+  const navigate = useNavigate();
   const [properties, setProperties] = useState<Property[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -104,7 +105,7 @@ const Dashboard = () => {
               <p className="text-muted-foreground">Gerencie seus imóveis</p>
             </div>
             <div className="flex items-center gap-4">
-              <Button onClick={() => window.location.href = '/add-property'}>
+              <Button onClick={() => navigate('/add-property')}>
                 <Plus className="mr-2 h-4 w-4" />
                 Adicionar Imóvel
               </Button>
@@ -179,7 +180,7 @@ const Dashboard = () => {
                 <p className="text-muted-foreground mb-4">
                   Comece adicionando seu primeiro imóvel
                 </p>
-                <Button onClick={() => window.location.href = '/add-property'}>
+                <Button onClick={() => navigate('/add-property')}>
                   <Plus className="mr-2 h-4 w-4" />
                   Adicionar Imóvel
                 </Button>
@@ -241,7 +242,7 @@ const Dashboard = () => {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => window.location.href = `/edit-property/${property.id}`}
+                        onClick={() => navigate(`/edit-property/${property.id}`)}
                       >
                         <Edit className="h-4 w-4" />
                       </Button>

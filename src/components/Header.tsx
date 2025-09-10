@@ -1,10 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Phone, MapPin, User } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 const supremeLogo = "/lovable-uploads/48d0f209-18da-491c-a526-dc841441b972.png";
 
 export const Header = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <header className="bg-primary text-primary-foreground shadow-lg sticky top-0 z-50">
@@ -69,7 +71,7 @@ export const Header = () => {
             <Button 
               variant="outline" 
               className="border-accent text-accent hover:bg-accent hover:text-accent-foreground"
-              onClick={() => window.location.href = '/dashboard'}
+              onClick={() => navigate('/dashboard')}
             >
               <User className="mr-2 h-4 w-4" />
               Painel
