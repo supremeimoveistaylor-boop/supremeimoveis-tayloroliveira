@@ -115,6 +115,7 @@ const AddProperty = () => {
           area: parseFloat(formData.get('area')?.toString().replace(/,/g, '.') || '0') || null,
           amenities,
           images: [], // Will be updated after image upload
+          whatsapp_link: formData.get('whatsapp_link') as string || null,
         })
         .select()
         .single();
@@ -232,6 +233,19 @@ const AddProperty = () => {
                     placeholder="Ex: Centro, Patos de Minas - MG"
                     required
                   />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="whatsapp_link">Link do WhatsApp</Label>
+                <Input
+                  id="whatsapp_link"
+                  name="whatsapp_link"
+                  type="url"
+                  placeholder="Ex: https://wa.me/5534999887766"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Cole o link do seu WhatsApp para facilitar o contato dos clientes
+                </p>
               </div>
 
               {/* Property Type and Purpose */}
