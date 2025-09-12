@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Phone, MapPin, User } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-const supremeLogo = "/lovable-uploads/48d0f209-18da-491c-a526-dc841441b972.png";
+import taylorLogo from "@/assets/taylor-logo.png";
 
 export const Header = () => {
   const { user } = useAuth();
@@ -37,8 +37,8 @@ export const Header = () => {
           {/* Logo */}
           <div className="flex items-center">
             <img 
-              src={supremeLogo} 
-              alt="Supreme Empreendimentos Imobiliários" 
+              src={taylorLogo} 
+              alt="Taylor Oliveira - Consultor Imobiliário" 
               className="h-auto w-auto max-h-32 md:max-h-40 lg:max-h-48"
             />
           </div>
