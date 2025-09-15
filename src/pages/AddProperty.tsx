@@ -97,13 +97,24 @@ const AddProperty = () => {
     setIsLoading(true);
 
     try {
+      // Ensure user is authenticated
+      if (!user?.id) {
+        toast({
+          title: "Erro de autenticação",
+          description: "Você precisa estar logado para cadastrar um imóvel.",
+          variant: "destructive",
+        });
+        navigate('/auth');
+        return;
+      }
+
       const formData = new FormData(e.currentTarget);
       
       // First, create the property
       const { data: property, error: propertyError } = await supabase
         .from('properties')
         .insert({
-          user_id: user?.id || '00000000-0000-0000-0000-000000000000',
+          user_id: user.id,
           title: formData.get('title') as string,
           description: formData.get('description') as string,
           price: parseFloat(formData.get('price')?.toString().replace(/[^\d,]/g, '').replace(/,/g, '.') || '0'),
