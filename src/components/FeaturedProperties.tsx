@@ -6,6 +6,7 @@ import { Bed, Bath, Car, MapPin, Heart, Edit, MessageCircle, Play, Camera } from
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
+import { useRateLimit } from "@/hooks/useRateLimit";
 import { ImageModal } from "@/components/ImageModal";
 
 interface Property {
@@ -35,6 +36,13 @@ export const FeaturedProperties = () => {
   const [selectedPropertyTitle, setSelectedPropertyTitle] = useState<string>("");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Rate limiting for property queries to prevent scraping
+  const { checkRateLimit } = useRateLimit('property_fetch', {
+    maxAttempts: 10,
+    windowMs: 60000, // 1 minute
+    blockDurationMs: 300000, // 5 minutes
+  });
+
   const openImageModal = (images: string[], title: string) => {
     setSelectedImages(images);
     setSelectedPropertyTitle(title);
@@ -42,22 +50,29 @@ export const FeaturedProperties = () => {
   };
 
   useEffect(() => {
+    // Apply rate limiting only for anonymous users
+    if (!user && !checkRateLimit()) {
+      setIsLoading(false);
+      return;
+    }
     fetchProperties();
-  }, []);
+  }, [user, checkRateLimit]);
 
   const fetchProperties = async () => {
     try {
       const { data, error } = await supabase
         .from('properties_public')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(50); // Security: Limit results to prevent large data dumps
 
       if (error) throw error;
       setProperties(data || []);
     } catch (error: any) {
+      console.error('Property fetch error:', error);
       toast({
         title: "Erro ao carregar imóveis",
-        description: error.message,
+        description: "Não foi possível carregar os imóveis. Tente novamente.",
         variant: "destructive",
       });
     } finally {

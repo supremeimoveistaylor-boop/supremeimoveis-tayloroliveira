@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
+import { sanitizeInput } from '@/lib/security';
 
 const Auth = () => {
   const { user, signIn, signUp, resetPassword, loading } = useAuth();
@@ -22,8 +23,19 @@ const Auth = () => {
     setIsLoading(true);
     
     const formData = new FormData(e.currentTarget);
-    const email = formData.get('email') as string;
+    const email = sanitizeInput(formData.get('email') as string).toLowerCase();
     const password = formData.get('password') as string;
+    
+    // Basic validation
+    if (!email || !password) {
+      setIsLoading(false);
+      return;
+    }
+    
+    if (!email.includes('@') || email.length < 5) {
+      setIsLoading(false);
+      return;
+    }
     
     await signIn(email, password);
     setIsLoading(false);
@@ -34,9 +46,30 @@ const Auth = () => {
     setIsLoading(true);
     
     const formData = new FormData(e.currentTarget);
-    const email = formData.get('email') as string;
+    const email = sanitizeInput(formData.get('email') as string).toLowerCase();
     const password = formData.get('password') as string;
-    const fullName = formData.get('fullName') as string;
+    const fullName = sanitizeInput(formData.get('fullName') as string);
+    
+    // Basic validation
+    if (!email || !password || !fullName) {
+      setIsLoading(false);
+      return;
+    }
+    
+    if (!email.includes('@') || email.length < 5) {
+      setIsLoading(false);
+      return;
+    }
+    
+    if (password.length < 6) {
+      setIsLoading(false);
+      return;
+    }
+    
+    if (fullName.length < 2) {
+      setIsLoading(false);
+      return;
+    }
     
     const { error } = await signUp(email, password, fullName);
     
@@ -52,7 +85,13 @@ const Auth = () => {
     setIsLoading(true);
     
     const formData = new FormData(e.currentTarget);
-    const email = formData.get('email') as string;
+    const email = sanitizeInput(formData.get('email') as string).toLowerCase();
+    
+    // Basic validation
+    if (!email || !email.includes('@') || email.length < 5) {
+      setIsLoading(false);
+      return;
+    }
     
     await resetPassword(email);
     setIsLoading(false);

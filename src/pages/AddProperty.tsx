@@ -11,6 +11,17 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { Upload, X, ArrowLeft } from 'lucide-react';
+import { 
+  sanitizeInput, 
+  sanitizeUrl, 
+  validatePrice, 
+  validateArea, 
+  validateRoomCount, 
+  sanitizeImageArray, 
+  sanitizeAmenitiesArray,
+  sanitizeErrorMessage,
+  validateImageFile
+} from '@/lib/security';
 
 const AddProperty = () => {
   const { user, loading } = useAuth();
@@ -41,7 +52,21 @@ const AddProperty = () => {
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    if (selectedImages.length + files.length > 20) {
+    
+    // Security: Validate file types and sizes
+    const validFiles = files.filter(file => {
+      if (!validateImageFile(file)) {
+        toast({
+          title: "Arquivo inválido",
+          description: `${file.name} não é um tipo de imagem válido ou é muito grande (máximo 5MB)`,
+          variant: "destructive",
+        });
+        return false;
+      }
+      return true;
+    });
+    
+    if (selectedImages.length + validFiles.length > 20) {
       toast({
         title: "Limite excedido",
         description: "Máximo de 20 imagens por imóvel",
@@ -49,7 +74,7 @@ const AddProperty = () => {
       });
       return;
     }
-    setSelectedImages(prev => [...prev, ...files]);
+    setSelectedImages(prev => [...prev, ...validFiles]);
   };
 
   const removeImage = (index: number) => {
@@ -110,25 +135,74 @@ const AddProperty = () => {
 
       const formData = new FormData(e.currentTarget);
       
+      // Security: Sanitize and validate all inputs
+      const title = sanitizeInput(formData.get('title') as string);
+      const description = sanitizeInput(formData.get('description') as string);
+      const location = sanitizeInput(formData.get('location') as string);
+      const priceValue = parseFloat(formData.get('price')?.toString().replace(/[^\d,]/g, '').replace(/,/g, '.') || '0');
+      const areaValue = parseFloat(formData.get('area')?.toString().replace(/,/g, '.') || '0') || null;
+      const bedroomsValue = parseInt(formData.get('bedrooms') as string) || null;
+      const bathroomsValue = parseInt(formData.get('bathrooms') as string) || null;
+      const parkingValue = parseInt(formData.get('parking_spaces') as string) || null;
+      const whatsappLink = sanitizeUrl(formData.get('whatsapp_link') as string);
+      const youtubeLink = sanitizeUrl(formData.get('youtube_link') as string);
+
+      // Validate inputs
+      if (!title || title.length < 5 || title.length > 200) {
+        toast({
+          title: "Título inválido",
+          description: "O título deve ter entre 5 e 200 caracteres.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!validatePrice(priceValue)) {
+        toast({
+          title: "Preço inválido",
+          description: "O preço deve ser um valor positivo válido.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!validateArea(areaValue)) {
+        toast({
+          title: "Área inválida",
+          description: "A área deve ser um valor positivo válido.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!validateRoomCount(bedroomsValue) || !validateRoomCount(bathroomsValue) || !validateRoomCount(parkingValue)) {
+        toast({
+          title: "Dados inválidos",
+          description: "Verifique os valores de quartos, banheiros e vagas de garagem.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // First, create the property
       const { data: property, error: propertyError } = await supabase
         .from('properties')
         .insert({
           user_id: user.id,
-          title: formData.get('title') as string,
-          description: formData.get('description') as string,
-          price: parseFloat(formData.get('price')?.toString().replace(/[^\d,]/g, '').replace(/,/g, '.') || '0'),
-          location: formData.get('location') as string,
+          title,
+          description,
+          price: priceValue,
+          location,
           property_type: formData.get('property_type') as string,
           purpose: formData.get('purpose') as string,
-          bedrooms: parseInt(formData.get('bedrooms') as string) || null,
-          bathrooms: parseInt(formData.get('bathrooms') as string) || null,
-          parking_spaces: parseInt(formData.get('parking_spaces') as string) || null,
-          area: parseFloat(formData.get('area')?.toString().replace(/,/g, '.') || '0') || null,
-          amenities,
+          bedrooms: bedroomsValue,
+          bathrooms: bathroomsValue,
+          parking_spaces: parkingValue,
+          area: areaValue,
+          amenities: sanitizeAmenitiesArray(amenities),
           images: [], // Will be updated after image upload
-          whatsapp_link: formData.get('whatsapp_link') as string || null,
-          youtube_link: formData.get('youtube_link') as string || null,
+          whatsapp_link: whatsappLink,
+          youtube_link: youtubeLink,
         })
         .select()
         .single();
@@ -156,9 +230,10 @@ const AddProperty = () => {
 
       navigate('/dashboard');
     } catch (error: any) {
+      console.error('Property creation error:', error);
       toast({
         title: "Erro ao cadastrar imóvel",
-        description: error.message,
+        description: sanitizeErrorMessage(error),
         variant: "destructive",
       });
     } finally {
