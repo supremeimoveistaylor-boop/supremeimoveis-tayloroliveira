@@ -69,13 +69,29 @@ export const FeaturedProperties = () => {
 
   const fetchProperties = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('get_public_properties', {
-        body: { limit: 50 },
-      });
+      // Try edge function first, fallback to direct query if needed
+      try {
+        const { data, error } = await supabase.functions.invoke('get_public_properties', {
+          body: { limit: 50 },
+        });
 
-      if (error) throw error;
-      const items = (data as any)?.data || [];
-      setProperties(items);
+        if (error) throw error;
+        const items = (data as any)?.data || [];
+        setProperties(items);
+      } catch (edgeFunctionError) {
+        console.warn('Edge function failed, trying direct query:', edgeFunctionError);
+        
+        // Fallback to direct query
+        const { data, error } = await supabase
+          .from('properties')
+          .select('*')
+          .eq('status', 'active')
+          .order('created_at', { ascending: false })
+          .limit(50);
+
+        if (error) throw error;
+        setProperties(data || []);
+      }
     } catch (error: any) {
       console.error('Property fetch error:', error);
       toast({

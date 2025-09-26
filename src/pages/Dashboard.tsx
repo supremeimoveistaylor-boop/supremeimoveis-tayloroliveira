@@ -26,7 +26,7 @@ interface Property {
 }
 
 const Dashboard = () => {
-  const { user, signOut, loading } = useAuth();
+  const { user, signOut, loading, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [properties, setProperties] = useState<Property[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -107,6 +107,11 @@ const Dashboard = () => {
               <p className="text-muted-foreground">Gerencie seus imóveis</p>
             </div>
             <div className="flex items-center gap-4">
+              {isAdmin && (
+                <Button variant="secondary" onClick={() => navigate('/admin')}>
+                  Painel do Admin
+                </Button>
+              )}
               <Button onClick={() => navigate('/add-property')}>
                 <Plus className="mr-2 h-4 w-4" />
                 Adicionar Imóvel
