@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import { useRateLimit } from "@/hooks/useRateLimit";
 import { ImageModal } from "@/components/ImageModal";
+import { PropertyDetailsModal } from "@/components/PropertyDetailsModal";
 
 interface Property {
   id: string;
@@ -26,6 +27,7 @@ interface Property {
   user_id?: string;
   whatsapp_link: string;
   youtube_link: string;
+  amenities: string[];
 }
 
 export const FeaturedProperties = () => {
@@ -35,6 +37,8 @@ export const FeaturedProperties = () => {
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [selectedPropertyTitle, setSelectedPropertyTitle] = useState<string>("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
   // Rate limiting for property queries to prevent scraping
   const { checkRateLimit } = useRateLimit('property_fetch', {
@@ -47,6 +51,11 @@ export const FeaturedProperties = () => {
     setSelectedImages(images);
     setSelectedPropertyTitle(title);
     setIsModalOpen(true);
+  };
+
+  const openDetailsModal = (property: Property) => {
+    setSelectedProperty(property);
+    setIsDetailsModalOpen(true);
   };
 
   useEffect(() => {
@@ -257,7 +266,10 @@ export const FeaturedProperties = () => {
                     </div>
                   )}
 
-                  <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+                  <Button 
+                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                    onClick={() => openDetailsModal(property)}
+                  >
                     Ver Detalhes
                   </Button>
                 </CardContent>
@@ -285,6 +297,12 @@ export const FeaturedProperties = () => {
         onClose={() => setIsModalOpen(false)}
         images={selectedImages}
         propertyTitle={selectedPropertyTitle}
+      />
+
+      <PropertyDetailsModal
+        property={selectedProperty}
+        isOpen={isDetailsModalOpen}
+        onClose={() => setIsDetailsModalOpen(false)}
       />
     </section>
   );

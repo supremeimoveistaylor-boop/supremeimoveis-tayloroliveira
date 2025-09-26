@@ -53,9 +53,10 @@ serve(async (req) => {
     const { data, error } = await query;
 
     if (error) {
-      console.error("Edge fn get_public_properties error:", error);
+    console.error("Edge fn get_public_properties error:", error);
+      console.error("Error details:", JSON.stringify(error, null, 2));
       return new Response(
-        JSON.stringify({ error: "Falha ao carregar imóveis" }),
+        JSON.stringify({ error: "Falha ao carregar imóveis", details: error.message }),
         { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders(origin) } }
       );
     }
