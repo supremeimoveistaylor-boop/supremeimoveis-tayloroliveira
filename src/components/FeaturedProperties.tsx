@@ -6,7 +6,7 @@ import { Bed, Bath, Car, MapPin, Heart, Edit, MessageCircle, Play, Camera } from
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
-import { useRateLimit } from "@/hooks/useRateLimit";
+
 import { ImageModal } from "@/components/ImageModal";
 import { PropertyDetailsModal } from "@/components/PropertyDetailsModal";
 
@@ -41,11 +41,6 @@ export const FeaturedProperties = () => {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
   // Rate limiting for property queries to prevent scraping
-  const { checkRateLimit } = useRateLimit('property_fetch', {
-    maxAttempts: 10,
-    windowMs: 60000, // 1 minute
-    blockDurationMs: 300000, // 5 minutes
-  });
 
   const openImageModal = (images: string[], title: string) => {
     setSelectedImages(images);
@@ -59,13 +54,8 @@ export const FeaturedProperties = () => {
   };
 
   useEffect(() => {
-    // Apply rate limiting only for anonymous users
-    if (!user && !checkRateLimit()) {
-      setIsLoading(false);
-      return;
-    }
     fetchProperties();
-  }, [user, checkRateLimit]);
+  }, [user]);
 
   const fetchProperties = async () => {
     try {
@@ -77,7 +67,18 @@ export const FeaturedProperties = () => {
 
         if (error) throw error;
         const items = (data as any)?.data || [];
-        setProperties(items);
+        if (items.length === 0) {
+          const { data: directData, error: directError } = await supabase
+            .from('properties')
+            .select('*')
+            .eq('status', 'active')
+            .order('created_at', { ascending: false })
+            .limit(50);
+          if (directError) throw directError;
+          setProperties(directData || []);
+        } else {
+          setProperties(items);
+        }
       } catch (edgeFunctionError) {
         console.warn('Edge function failed, trying direct query:', edgeFunctionError);
         
