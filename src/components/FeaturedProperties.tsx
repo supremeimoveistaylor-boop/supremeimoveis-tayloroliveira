@@ -6,7 +6,7 @@ import { Bed, Bath, Car, MapPin, Heart, Edit, MessageCircle, Play, Camera } from
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
-import { useRateLimit } from "@/hooks/useRateLimit";
+
 import { ImageModal } from "@/components/ImageModal";
 import { PropertyDetailsModal } from "@/components/PropertyDetailsModal";
 
@@ -40,13 +40,6 @@ export const FeaturedProperties = () => {
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
-  // Rate limiting for property queries to prevent scraping
-  const { checkRateLimit } = useRateLimit('property_fetch', {
-    maxAttempts: 10,
-    windowMs: 60000, // 1 minute
-    blockDurationMs: 300000, // 5 minutes
-  });
-
   const openImageModal = (images: string[], title: string) => {
     setSelectedImages(images);
     setSelectedPropertyTitle(title);
@@ -59,13 +52,8 @@ export const FeaturedProperties = () => {
   };
 
   useEffect(() => {
-    // Apply rate limiting only for anonymous users
-    if (!user && !checkRateLimit()) {
-      setIsLoading(false);
-      return;
-    }
     fetchProperties();
-  }, [user, checkRateLimit]);
+  }, [user]);
 
   const fetchProperties = async () => {
     try {
