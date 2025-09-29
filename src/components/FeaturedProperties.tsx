@@ -67,18 +67,7 @@ export const FeaturedProperties = () => {
 
         if (error) throw error;
         const items = (data as any)?.data || [];
-        if (items.length === 0) {
-          const { data: directData, error: directError } = await supabase
-            .from('properties')
-            .select('*')
-            .eq('status', 'active')
-            .order('created_at', { ascending: false })
-            .limit(50);
-          if (directError) throw directError;
-          setProperties(directData || []);
-        } else {
-          setProperties(items);
-        }
+        setProperties(items);
       } catch (edgeFunctionError) {
         console.warn('Edge function failed, trying direct query:', edgeFunctionError);
         

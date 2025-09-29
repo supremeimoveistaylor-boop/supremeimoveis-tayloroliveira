@@ -41,8 +41,9 @@ serve(async (req) => {
     const safeLimit = Math.max(1, Math.min(100, Number(limit) || 50));
 
     let query = supabase
-      .from("properties_public")
+      .from("properties")
       .select("*")
+      .eq("status", "active")
       .order("created_at", { ascending: false })
       .limit(safeLimit);
 
