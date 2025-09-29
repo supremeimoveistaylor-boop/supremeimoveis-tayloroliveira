@@ -19,21 +19,19 @@ const supabase = createClient(SUPABASE_URL!, SERVICE_ROLE_KEY!, {
   },
 });
 
-function corsHeaders(origin?: string) {
-  return {
-    "Access-Control-Allow-Origin": origin || "*",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  } as Record<string, string>;
-}
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders(req.headers.get("origin") || undefined) });
+    return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    const origin = req.headers.get("origin") || undefined;
+    console.log("Edge function called:", req.method);
 
     const { limit = 50, featured }: { limit?: number; featured?: boolean } =
       req.method === "POST" ? await req.json().catch(() => ({})) : {};
@@ -51,26 +49,27 @@ serve(async (req) => {
       query = query.eq("featured", featured);
     }
 
+    console.log("Executing query for properties...");
     const { data, error } = await query;
 
     if (error) {
-    console.error("Edge fn get_public_properties error:", error);
-      console.error("Error details:", JSON.stringify(error, null, 2));
+      console.error("Database error:", error);
       return new Response(
         JSON.stringify({ error: "Falha ao carregar imóveis", details: error.message }),
-        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders(origin) } }
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
+    console.log(`Found ${data?.length || 0} properties`);
     return new Response(JSON.stringify({ data }), {
       status: 200,
-      headers: { "Content-Type": "application/json", ...corsHeaders(origin) },
+      headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   } catch (e) {
-    console.error("Edge fn get_public_properties exception:", e);
+    console.error("Exception in edge function:", e);
     return new Response(JSON.stringify({ error: "Erro interno" }), {
       status: 500,
-      headers: { "Content-Type": "application/json", ...corsHeaders() },
+      headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   }
 });
