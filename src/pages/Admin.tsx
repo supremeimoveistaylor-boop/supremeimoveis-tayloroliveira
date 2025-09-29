@@ -59,10 +59,10 @@ const Admin = () => {
   }
 
   useEffect(() => {
-    if (isAdmin) {
-      fetchAllProperties();
-      fetchAllProfiles();
-    }
+    if (!isAdmin) return;
+    setIsLoading(true);
+    Promise.all([fetchAllProperties(), fetchAllProfiles()])
+      .finally(() => setIsLoading(false));
   }, [isAdmin]);
 
   const fetchAllProperties = async () => {
@@ -71,17 +71,14 @@ const Admin = () => {
         .from('properties')
         .select('*')
         .order('created_at', { ascending: false });
-
       if (error) throw error;
       setProperties(data || []);
     } catch (error: any) {
       toast({
-        title: "Erro ao carregar imóveis",
-        description: error.message,
-        variant: "destructive",
+        title: 'Erro ao carregar imóveis',
+        description: error?.message || 'Falha ao buscar imóveis',
+        variant: 'destructive',
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 

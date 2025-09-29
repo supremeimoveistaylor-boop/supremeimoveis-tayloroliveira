@@ -35,6 +35,8 @@ const AddProperty = () => {
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [amenities, setAmenities] = useState<string[]>([]);
   const [newAmenity, setNewAmenity] = useState('');
+  const [propertyType, setPropertyType] = useState<string>('');
+  const [purpose, setPurpose] = useState<string>('');
 
   const predefinedAmenities = [
     'Piscina', 'Academia', 'Churrasqueira', 'Playground', 'Salão de Festas',
@@ -175,6 +177,19 @@ const AddProperty = () => {
         return;
       }
 
+      if (!propertyType || !purpose) {
+        toast({
+          title: "Selecione tipo e finalidade",
+          description: "Escolha o tipo de imóvel e a finalidade.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (title && location) {
+        // noop just to satisfy type narrowing
+      }
+
       if (!validateRoomCount(bedroomsValue) || !validateRoomCount(bathroomsValue) || !validateRoomCount(parkingValue)) {
         toast({
           title: "Dados inválidos",
@@ -193,8 +208,8 @@ const AddProperty = () => {
           description,
           price: priceValue,
           location,
-          property_type: formData.get('property_type') as string,
-          purpose: formData.get('purpose') as string,
+          property_type: propertyType,
+          purpose: purpose,
           bedrooms: bedroomsValue,
           bathrooms: bathroomsValue,
           parking_spaces: parkingValue,
@@ -353,7 +368,7 @@ const AddProperty = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Tipo de Imóvel *</Label>
-                  <Select name="property_type" required>
+                  <Select value={propertyType} onValueChange={setPropertyType}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o tipo" />
                     </SelectTrigger>
@@ -367,7 +382,7 @@ const AddProperty = () => {
                 </div>
                 <div className="space-y-2">
                   <Label>Finalidade *</Label>
-                  <Select name="purpose" required>
+                  <Select value={purpose} onValueChange={setPurpose}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione a finalidade" />
                     </SelectTrigger>
