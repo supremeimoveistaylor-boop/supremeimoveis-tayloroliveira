@@ -41,8 +41,14 @@ const Dashboard = () => {
   }, [user, loading]);
 
   const fetchProperties = async () => {
-    if (!user) return;
-    
+    // Avoid infinite spinner when not authenticated
+    if (loading) return;
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
     try {
       const { data, error } = await supabase
         .from('properties')
