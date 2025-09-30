@@ -38,7 +38,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchProperties();
-  }, [user]);
+  }, [user, loading]);
 
   const fetchProperties = async () => {
     if (!user) return;

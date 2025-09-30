@@ -30,16 +30,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        
-        // Fetch user role when user changes
-        if (session?.user) {
-          await fetchUserRole(session.user.id);
-        } else {
-          setUserRole(null);
-          setIsAdmin(false);
+        try {
+          // Fetch user role when user changes
+          if (session?.user) {
+            await fetchUserRole(session.user.id);
+          } else {
+            setUserRole(null);
+            setIsAdmin(false);
+          }
+        } finally {
+          setLoading(false);
         }
-        
-        setLoading(false);
       }
     );
 
@@ -47,12 +48,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        await fetchUserRole(session.user.id);
+      try {
+        if (session?.user) {
+          await fetchUserRole(session.user.id);
+        }
+      } finally {
+        setLoading(false);
       }
-      
-      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
@@ -64,14 +66,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .from('profiles')
         .select('role')
         .eq('user_id', userId)
-        .single();
-      
-      if (data && !error) {
-        setUserRole(data.role);
-        setIsAdmin(data.role === 'admin');
+        .maybeSingle();
+
+      if (error) {
+        console.warn('Error fetching user role:', error.message);
       }
+
+      let role = data?.role as string | null;
+
+      // Create default profile if missing
+      if (!role) {
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert({ user_id: userId, role: 'user' });
+        if (insertError) {
+          console.warn('Could not create default profile:', insertError.message);
+        } else {
+          role = 'user';
+        }
+      }
+
+      setUserRole(role || 'user');
+      setIsAdmin(role === 'admin');
     } catch (error) {
-      console.error('Error fetching user role:', error);
+      console.error('Error fetching/creating user role:', error);
       setUserRole('user');
       setIsAdmin(false);
     }
