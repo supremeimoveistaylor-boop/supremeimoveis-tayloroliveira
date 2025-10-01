@@ -49,7 +49,25 @@ const PropertyDetails = () => {
   const fetchProperty = async (propertyId: string) => {
     try {
       console.log('Fetching property with ID:', propertyId);
-      
+
+      // First try the public tables that don't require authentication
+      try {
+        const { data: publicData, error: publicError } = await supabase
+          .from('public_properties')
+          .select('*')
+          .eq('id', propertyId)
+          .eq('status', 'active')
+          .maybeSingle();
+
+        if (publicData) {
+          setProperty(publicData);
+          return;
+        }
+      } catch (e) {
+        console.warn('Public properties table query failed:', e);
+      }
+
+      // Then try the regular properties table
       const { data, error } = await supabase
         .from('properties')
         .select('*')
@@ -57,25 +75,27 @@ const PropertyDetails = () => {
         .eq('status', 'active')
         .maybeSingle();
 
-      console.log('Property fetch result:', { data, error });
-
       if (error) {
-        console.error('Supabase error:', error);
+        console.error('Properties table error:', error);
         throw error;
       }
       
-      if (!data) {
+      if (data) {
+        setProperty(data);
+      } else {
         console.log('No property found with this ID');
         setProperty(null);
-      } else {
-        setProperty(data);
+        toast({
+          title: 'Imóvel não encontrado',
+          description: 'Verifique se o link está correto ou se o imóvel está ativo.',
+        });
       }
     } catch (error: any) {
       console.error('Error fetching property:', error);
       toast({
-        title: "Erro ao carregar imóvel",
-        description: "Não foi possível carregar os detalhes do imóvel.",
-        variant: "destructive",
+        title: 'Erro ao carregar imóvel',
+        description: 'Não foi possível carregar os detalhes do imóvel.',
+        variant: 'destructive',
       });
       setProperty(null);
     } finally {
