@@ -48,15 +48,28 @@ const PropertyDetails = () => {
 
   const fetchProperty = async (propertyId: string) => {
     try {
+      console.log('Fetching property with ID:', propertyId);
+      
       const { data, error } = await supabase
         .from('properties')
         .select('*')
         .eq('id', propertyId)
         .eq('status', 'active')
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
-      setProperty(data);
+      console.log('Property fetch result:', { data, error });
+
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+      
+      if (!data) {
+        console.log('No property found with this ID');
+        setProperty(null);
+      } else {
+        setProperty(data);
+      }
     } catch (error: any) {
       console.error('Error fetching property:', error);
       toast({
@@ -64,6 +77,7 @@ const PropertyDetails = () => {
         description: "Não foi possível carregar os detalhes do imóvel.",
         variant: "destructive",
       });
+      setProperty(null);
     } finally {
       setIsLoading(false);
     }
