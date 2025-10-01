@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Bed, Bath, Car, MapPin, Heart, Edit, MessageCircle, Play, Camera } from "lucide-react";
+import { Bed, Bath, Car, MapPin, Heart, Edit, MessageCircle, Play, Camera, Share2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
@@ -119,6 +119,27 @@ export const FeaturedProperties = () => {
     return purpose === 'sale' ? 'Venda' : 'Aluguel';
   };
 
+  const handleShare = async (propertyId: string, propertyTitle: string) => {
+    const url = `${window.location.origin}/property/${propertyId}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: propertyTitle,
+          text: `Confira este imóvel: ${propertyTitle}`,
+          url: url,
+        });
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast({
+          title: "Link copiado!",
+          description: "O link do imóvel foi copiado para a área de transferência.",
+        });
+      }
+    } catch (error) {
+      console.error('Error sharing:', error);
+    }
+  };
+
   if (isLoading) {
     return (
       <section className="py-16 bg-white-soft">
@@ -211,6 +232,14 @@ export const FeaturedProperties = () => {
                           <Play className="h-4 w-4" />
                         </Button>
                       )}
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="rounded-full p-2 bg-blue-500 hover:bg-blue-600 text-white border-none"
+                        onClick={() => handleShare(property.id, property.title)}
+                      >
+                        <Share2 className="h-4 w-4" />
+                      </Button>
                       {user && user.id === property.user_id && (
                         <Button 
                           size="sm" 
@@ -221,9 +250,6 @@ export const FeaturedProperties = () => {
                           <Edit className="h-4 w-4" />
                         </Button>
                       )}
-                      <Button size="sm" variant="outline" className="rounded-full p-2 bg-white/90 border-none">
-                        <Heart className="h-4 w-4" />
-                      </Button>
                     </div>
                     <div className="absolute bottom-3 left-3">
                       <Badge variant="outline" className="bg-white/90 text-primary border-none">

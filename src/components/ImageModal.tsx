@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
@@ -19,6 +19,12 @@ export const ImageModal = ({
   initialIndex = 0 
 }: ImageModalProps) => {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
+
+  useEffect(() => {
+    if (isOpen) {
+      setCurrentIndex(initialIndex);
+    }
+  }, [isOpen, initialIndex]);
 
   const nextImage = () => {
     setCurrentIndex((prev) => (prev + 1) % images.length);
