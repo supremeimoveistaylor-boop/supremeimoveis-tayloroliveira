@@ -109,7 +109,8 @@ const PropertyDetails = () => {
   };
 
   const handleShare = async () => {
-    const url = window.location.href;
+    if (!property?.id) return;
+    const url = `${window.location.origin}/?property=${property.id}`;
     try {
       if (navigator.share) {
         await navigator.share({
