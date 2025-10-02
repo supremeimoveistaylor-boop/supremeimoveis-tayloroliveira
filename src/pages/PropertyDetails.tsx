@@ -58,7 +58,8 @@ const PropertyDetails = () => {
         if (edgeError) throw edgeError;
         const items = (edgeResp as any)?.data || [];
         if (items.length > 0) {
-          setProperty(items[0]);
+          const p = items[0] as any;
+          setProperty({ ...p, images: Array.isArray(p.images) ? p.images : [] });
           return;
         }
       } catch (e) {
@@ -75,7 +76,8 @@ const PropertyDetails = () => {
           .maybeSingle();
 
         if (publicData) {
-          setProperty(publicData);
+          const p = publicData as any;
+          setProperty({ ...p, images: Array.isArray(p.images) ? p.images : [] });
           return;
         }
       } catch (e) {
@@ -96,7 +98,8 @@ const PropertyDetails = () => {
       }
       
       if (data) {
-        setProperty(data);
+        const p = data as any;
+        setProperty({ ...p, images: Array.isArray(p.images) ? p.images : [] });
       } else {
         console.log('No property found with this ID');
         setProperty(null);

@@ -14,6 +14,7 @@ import EditProperty from "./pages/EditProperty";
 import Admin from "./pages/Admin";
 import PropertyDetails from "./pages/PropertyDetails";
 import NotFound from "./pages/NotFound";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +24,8 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        {/* Error boundary to avoid blank screens */}
+        {/* ... keep existing code (router and routes) */}
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
