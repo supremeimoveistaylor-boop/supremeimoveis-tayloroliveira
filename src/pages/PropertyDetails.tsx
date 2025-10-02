@@ -50,6 +50,21 @@ const PropertyDetails = () => {
     try {
       console.log('Fetching property with ID:', propertyId);
 
+      // First try edge function that bypasses RLS safely
+      try {
+        const { data: edgeResp, error: edgeError } = await supabase.functions.invoke('get_public_properties', {
+          body: { id: propertyId },
+        });
+        if (edgeError) throw edgeError;
+        const items = (edgeResp as any)?.data || [];
+        if (items.length > 0) {
+          setProperty(items[0]);
+          return;
+        }
+      } catch (e) {
+        console.warn('Edge function single property fetch failed:', e);
+      }
+
       // First try the public tables that don't require authentication
       try {
         const { data: publicData, error: publicError } = await supabase

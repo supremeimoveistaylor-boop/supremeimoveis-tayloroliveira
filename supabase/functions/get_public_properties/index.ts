@@ -33,10 +33,33 @@ serve(async (req) => {
   try {
     console.log("Edge function called:", req.method);
 
-    const { limit = 50, featured }: { limit?: number; featured?: boolean } =
+    const { limit = 50, featured, id }: { limit?: number; featured?: boolean; id?: string } =
       req.method === "POST" ? await req.json().catch(() => ({})) : {};
 
     const safeLimit = Math.max(1, Math.min(100, Number(limit) || 50));
+
+    if (id) {
+      console.log("Fetching single property by id:", id);
+      const { data, error } = await supabase
+        .from("properties")
+        .select("*")
+        .eq("status", "active")
+        .eq("id", id)
+        .limit(1);
+
+      if (error) {
+        console.error("Database error:", error);
+        return new Response(
+          JSON.stringify({ error: "Falha ao carregar imóvel", details: error.message }),
+          { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      return new Response(JSON.stringify({ data: data || [] }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
 
     let query = supabase
       .from("properties")
