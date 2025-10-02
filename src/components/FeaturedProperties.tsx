@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,7 +9,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 
 import { ImageModal } from "@/components/ImageModal";
-import { PropertyDetailsModal } from "@/components/PropertyDetailsModal";
 
 interface Property {
   id: string;
@@ -32,13 +32,12 @@ interface Property {
 
 export const FeaturedProperties = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [properties, setProperties] = useState<Property[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [selectedPropertyTitle, setSelectedPropertyTitle] = useState<string>("");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
-  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
   // Rate limiting for property queries to prevent scraping
 
@@ -46,11 +45,6 @@ export const FeaturedProperties = () => {
     setSelectedImages(images);
     setSelectedPropertyTitle(title);
     setIsModalOpen(true);
-  };
-
-  const openDetailsModal = (property: Property) => {
-    setSelectedProperty(property);
-    setIsDetailsModalOpen(true);
   };
 
   useEffect(() => {
@@ -300,7 +294,7 @@ export const FeaturedProperties = () => {
 
                   <Button 
                     className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-                    onClick={() => openDetailsModal(property)}
+                    onClick={() => navigate(`/property/${property.id}`)}
                   >
                     Ver Detalhes
                   </Button>
@@ -329,12 +323,6 @@ export const FeaturedProperties = () => {
         onClose={() => setIsModalOpen(false)}
         images={selectedImages}
         propertyTitle={selectedPropertyTitle}
-      />
-
-      <PropertyDetailsModal
-        property={selectedProperty}
-        isOpen={isDetailsModalOpen}
-        onClose={() => setIsDetailsModalOpen(false)}
       />
     </section>
   );

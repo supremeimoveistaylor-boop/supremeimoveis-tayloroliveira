@@ -201,46 +201,77 @@ const PropertyDetails = () => {
           {/* Images Gallery */}
           <div className="mb-8">
             {property.images && property.images.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div 
-                  className="cursor-pointer relative group"
-                  onClick={() => {
-                    setSelectedImageIndex(0);
-                    setIsImageModalOpen(true);
-                  }}
-                >
-                  <img
-                    src={property.images[0]}
-                    alt={property.title}
-                    className="w-full h-[400px] object-cover rounded-lg shadow-lg group-hover:scale-105 transition-transform duration-300"
-                  />
+              <>
+                {/* Desktop Gallery - Grid with main image */}
+                <div className="hidden md:grid md:grid-cols-2 gap-4">
+                  <div 
+                    className="cursor-pointer relative group"
+                    onClick={() => {
+                      setSelectedImageIndex(0);
+                      setIsImageModalOpen(true);
+                    }}
+                  >
+                    <img
+                      src={property.images[0]}
+                      alt={property.title}
+                      className="w-full h-[400px] object-cover rounded-lg shadow-lg group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    {property.images.slice(1, 5).map((image, index) => (
+                      <div 
+                        key={index}
+                        className="cursor-pointer relative group"
+                        onClick={() => {
+                          setSelectedImageIndex(index + 1);
+                          setIsImageModalOpen(true);
+                        }}
+                      >
+                        <img
+                          src={image}
+                          alt={`${property.title} - ${index + 2}`}
+                          className="w-full h-[192px] object-cover rounded-lg shadow-md group-hover:scale-105 transition-transform duration-300"
+                        />
+                        {index === 3 && property.images.length > 5 && (
+                          <div className="absolute inset-0 bg-black/60 rounded-lg flex items-center justify-center">
+                            <span className="text-white text-xl font-bold">
+                              +{property.images.length - 5} fotos
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  {property.images.slice(1, 5).map((image, index) => (
-                    <div 
-                      key={index}
-                      className="cursor-pointer relative group"
-                      onClick={() => {
-                        setSelectedImageIndex(index + 1);
-                        setIsImageModalOpen(true);
-                      }}
-                    >
-                      <img
-                        src={image}
-                        alt={`${property.title} - ${index + 2}`}
-                        className="w-full h-[192px] object-cover rounded-lg shadow-md group-hover:scale-105 transition-transform duration-300"
-                      />
-                      {index === 3 && property.images.length > 5 && (
-                        <div className="absolute inset-0 bg-black/60 rounded-lg flex items-center justify-center">
-                          <span className="text-white text-xl font-bold">
-                            +{property.images.length - 5} fotos
-                          </span>
+
+                {/* Mobile Gallery - Scrollable horizontal list */}
+                <div className="md:hidden">
+                  <div className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide">
+                    {property.images.map((image, index) => (
+                      <div 
+                        key={index}
+                        className="flex-shrink-0 w-[85vw] cursor-pointer relative group snap-center"
+                        onClick={() => {
+                          setSelectedImageIndex(index);
+                          setIsImageModalOpen(true);
+                        }}
+                      >
+                        <img
+                          src={image}
+                          alt={`${property.title} - ${index + 1}`}
+                          className="w-full h-[250px] object-cover rounded-lg shadow-lg"
+                        />
+                        <div className="absolute bottom-2 right-2 bg-black/70 text-white text-sm px-3 py-1 rounded-full">
+                          {index + 1} / {property.images.length}
                         </div>
-                      )}
-                    </div>
-                  ))}
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-center text-sm text-muted-foreground mt-2">
+                    Deslize para ver mais fotos ou toque para ampliar
+                  </p>
                 </div>
-              </div>
+              </>
             ) : (
               <div className="w-full h-[400px] bg-muted rounded-lg flex items-center justify-center">
                 <span className="text-muted-foreground">Sem imagens</span>
