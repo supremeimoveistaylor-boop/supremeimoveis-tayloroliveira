@@ -156,7 +156,7 @@ export const FeaturedProperties = () => {
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             {properties.length > 0 
-              ? `${properties.length} imóveis disponíveis em Patos de Minas e região`
+              ? `${properties.length} imóveis disponíveis em Goiânia - Goiás`
               : "Nenhum imóvel cadastrado no momento"
             }
           </p>
