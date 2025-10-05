@@ -179,13 +179,13 @@ export const FeaturedProperties = () => {
                   <div className="relative overflow-hidden rounded-t-lg">
                     {property.images && property.images.length > 0 ? (
                       <div 
-                        className="relative cursor-pointer group"
+                        className="relative cursor-pointer group aspect-[4/3]"
                         onClick={() => openImageModal(property.images, property.title)}
                       >
                         <img
                           src={property.images[0]}
                           alt={property.title}
-                          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                         {property.images.length > 1 && (
                           <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
@@ -195,7 +195,7 @@ export const FeaturedProperties = () => {
                         )}
                       </div>
                     ) : (
-                      <div className="w-full h-48 bg-muted flex items-center justify-center">
+                      <div className="w-full aspect-[4/3] bg-muted flex items-center justify-center">
                         <span className="text-muted-foreground">Sem imagem</span>
                       </div>
                     )}
