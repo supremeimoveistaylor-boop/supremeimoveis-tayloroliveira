@@ -10,7 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { Upload, X, ArrowLeft } from 'lucide-react';
+import { X, ArrowLeft } from 'lucide-react';
+import { DraggableImageGallery } from '@/components/DraggableImageGallery';
 import { 
   sanitizeInput, 
   sanitizeUrl, 
@@ -52,9 +53,7 @@ const AddProperty = () => {
     );
   }
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    
+  const handleImageUpload = (files: File[]) => {
     // Security: Validate file types and sizes
     const validFiles = files.filter(file => {
       if (!validateImageFile(file)) {
@@ -77,10 +76,6 @@ const AddProperty = () => {
       return;
     }
     setSelectedImages(prev => [...prev, ...validFiles]);
-  };
-
-  const removeImage = (index: number) => {
-    setSelectedImages(prev => prev.filter((_, i) => i !== index));
   };
 
   const addAmenity = (amenity: string) => {
@@ -515,52 +510,15 @@ const AddProperty = () => {
                 )}
               </div>
 
-              {/* Image Upload */}
-              <div className="space-y-4">
-                <Label>Fotos do Imóvel</Label>
-                <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6">
-                  <div className="text-center">
-                    <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                    <div className="text-sm text-muted-foreground mb-4">
-                      Clique para selecionar ou arraste as imagens aqui (máximo 20 fotos)
-                    </div>
-                    <input
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                      id="image-upload"
-                    />
-                    <label htmlFor="image-upload">
-                      <Button type="button" variant="outline" asChild>
-                        <span>Selecionar Imagens</span>
-                      </Button>
-                    </label>
-                  </div>
-                </div>
-
-                {selectedImages.length > 0 && (
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {selectedImages.map((file, index) => (
-                      <div key={index} className="relative">
-                        <img
-                          src={URL.createObjectURL(file)}
-                          alt={`Preview ${index + 1}`}
-                          className="w-full h-24 object-cover rounded-md"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeImage(index)}
-                          className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/80"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              {/* Image Upload with Drag and Drop */}
+              <DraggableImageGallery
+                images={selectedImages as Array<File | string>}
+                onImagesChange={(images) => setSelectedImages(images.filter(img => img instanceof File) as File[])}
+                onImageUpload={handleImageUpload}
+                maxImages={20}
+                existingLabel="Fotos do Imóvel"
+                newLabel="Selecionar Imagens"
+              />
 
               <div className="flex gap-4">
                 <Button

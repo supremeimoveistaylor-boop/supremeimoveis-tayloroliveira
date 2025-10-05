@@ -10,7 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { Upload, X, ArrowLeft } from 'lucide-react';
+import { X, ArrowLeft } from 'lucide-react';
+import { DraggableImageGallery } from '@/components/DraggableImageGallery';
 
 interface Property {
   id: string;
@@ -35,8 +36,7 @@ const EditProperty = () => {
   const { id } = useParams();
   const [isLoading, setIsLoading] = useState(false);
   const [property, setProperty] = useState<Property | null>(null);
-  const [selectedImages, setSelectedImages] = useState<File[]>([]);
-  const [existingImages, setExistingImages] = useState<string[]>([]);
+  const [allImages, setAllImages] = useState<Array<File | string>>([]);
   const [amenities, setAmenities] = useState<string[]>([]);
   const [newAmenity, setNewAmenity] = useState('');
 
@@ -72,7 +72,7 @@ const EditProperty = () => {
       if (!data) throw new Error('Imóvel não encontrado');
 
       setProperty(data);
-      setExistingImages(data.images || []);
+      setAllImages(data.images || []);
       setAmenities(data.amenities || []);
     } catch (error: any) {
       toast({
@@ -105,9 +105,8 @@ const EditProperty = () => {
     );
   }
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    const totalImages = existingImages.length + selectedImages.length + files.length;
+  const handleImageUpload = (files: File[]) => {
+    const totalImages = allImages.length + files.length;
     if (totalImages > 20) {
       toast({
         title: "Limite excedido",
@@ -116,15 +115,7 @@ const EditProperty = () => {
       });
       return;
     }
-    setSelectedImages(prev => [...prev, ...files]);
-  };
-
-  const removeNewImage = (index: number) => {
-    setSelectedImages(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const removeExistingImage = (imageUrl: string) => {
-    setExistingImages(prev => prev.filter(url => url !== imageUrl));
+    setAllImages(prev => [...prev, ...files]);
   };
 
   const addAmenity = (amenity: string) => {
@@ -137,11 +128,11 @@ const EditProperty = () => {
     setAmenities(prev => prev.filter(a => a !== amenity));
   };
 
-  const uploadImages = async (propertyId: string): Promise<string[]> => {
+  const uploadImages = async (propertyId: string, newFiles: File[]): Promise<string[]> => {
     const uploadedUrls: string[] = [];
 
-    for (let i = 0; i < selectedImages.length; i++) {
-      const file = selectedImages[i];
+    for (let i = 0; i < newFiles.length; i++) {
+      const file = newFiles[i];
       const fileExt = file.name.split('.').pop();
       const fileName = `${propertyId}/${Date.now()}-${i}.${fileExt}`;
 
@@ -170,14 +161,25 @@ const EditProperty = () => {
     try {
       const formData = new FormData(e.currentTarget);
       
+      // Separate existing URLs from new files
+      const existingUrls = allImages.filter(img => typeof img === 'string') as string[];
+      const newFiles = allImages.filter(img => img instanceof File) as File[];
+      
       // Upload new images if any
       let newImageUrls: string[] = [];
-      if (selectedImages.length > 0) {
-        newImageUrls = await uploadImages(property.id);
+      if (newFiles.length > 0) {
+        newImageUrls = await uploadImages(property.id, newFiles);
       }
 
-      // Combine existing and new images
-      const allImages = [...existingImages, ...newImageUrls];
+      // Combine existing and new images in the correct order
+      const finalImages = allImages.map(img => {
+        if (typeof img === 'string') {
+          return img;
+        } else {
+          // Get the uploaded URL for this file
+          return newImageUrls.shift() || '';
+        }
+      }).filter(url => url !== '');
 
       // Update the property
       const { error } = await supabase
@@ -194,7 +196,7 @@ const EditProperty = () => {
           parking_spaces: parseInt(formData.get('parking_spaces') as string) || null,
           area: parseFloat(formData.get('area')?.toString().replace(/,/g, '.') || '0') || null,
           amenities,
-          images: allImages,
+          images: finalImages,
           status: formData.get('status') as string,
           whatsapp_link: formData.get('whatsapp_link') as string || null,
           youtube_link: formData.get('youtube_link') as string || null,
@@ -500,82 +502,15 @@ const EditProperty = () => {
                 )}
               </div>
 
-              {/* Image Management */}
-              <div className="space-y-4">
-                <Label>Fotos do Imóvel</Label>
-                
-                {/* Existing Images */}
-                {existingImages.length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-medium mb-2">Imagens Atuais</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                      {existingImages.map((imageUrl, index) => (
-                        <div key={index} className="relative">
-                          <img
-                            src={imageUrl}
-                            alt={`Imagem ${index + 1}`}
-                            className="w-full h-24 object-cover rounded-md"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => removeExistingImage(imageUrl)}
-                            className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/80"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* New Images */}
-                <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6">
-                  <div className="text-center">
-                    <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                    <div className="text-sm text-muted-foreground mb-4">
-                      Adicionar novas imagens (máximo 20 fotos total)
-                    </div>
-                    <input
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                      id="image-upload"
-                    />
-                    <label htmlFor="image-upload">
-                      <Button type="button" variant="outline" asChild>
-                        <span>Selecionar Imagens</span>
-                      </Button>
-                    </label>
-                  </div>
-                </div>
-
-                {selectedImages.length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-medium mb-2">Novas Imagens</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {selectedImages.map((file, index) => (
-                        <div key={index} className="relative">
-                          <img
-                            src={URL.createObjectURL(file)}
-                            alt={`Nova imagem ${index + 1}`}
-                            className="w-full h-24 object-cover rounded-md"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => removeNewImage(index)}
-                            className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/80"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
+              {/* Image Management with Drag and Drop */}
+              <DraggableImageGallery
+                images={allImages}
+                onImagesChange={setAllImages}
+                onImageUpload={handleImageUpload}
+                maxImages={20}
+                existingLabel="Fotos do Imóvel"
+                newLabel="Adicionar Imagens"
+              />
 
               <div className="flex gap-4">
                 <Button
