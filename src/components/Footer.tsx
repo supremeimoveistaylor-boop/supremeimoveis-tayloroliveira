@@ -93,7 +93,7 @@ export const Footer = () => {
                 Termos de Uso
               </a>
               <a href="#" className="text-gray-300 hover:text-accent transition-colors">
-                CRECI: 12345-J
+                Creci 20.316
               </a>
             </div>
           </div>
