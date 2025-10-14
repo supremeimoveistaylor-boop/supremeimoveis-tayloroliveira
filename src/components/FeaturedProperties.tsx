@@ -53,6 +53,8 @@ export const FeaturedProperties = () => {
 
   const fetchProperties = async () => {
     try {
+      console.log('🔄 Buscando imóveis...');
+      
       // Try edge function first, fallback to direct query if needed
       try {
         const { data, error } = await supabase.functions.invoke('get_public_properties', {
@@ -61,6 +63,18 @@ export const FeaturedProperties = () => {
 
         if (error) throw error;
         const items = (data as any)?.data || [];
+        console.log(`📊 Edge function retornou ${items.length} imóveis`);
+        
+        // Log properties with images for debugging
+        items.forEach((prop: any, index: number) => {
+          if (prop.images && prop.images.length > 0) {
+            console.log(`🏠 Imóvel ${index + 1} (${prop.title}): ${prop.images.length} imagem(ns)`);
+            console.log(`📷 Primeira imagem: ${prop.images[0]}`);
+          } else {
+            console.log(`🏠 Imóvel ${index + 1} (${prop.title}): SEM IMAGENS`);
+          }
+        });
+        
         setProperties(items);
       } catch (edgeFunctionError) {
         console.warn('Edge function failed, trying direct query:', edgeFunctionError);
@@ -186,6 +200,11 @@ export const FeaturedProperties = () => {
                           src={property.images[0]}
                           alt={property.title}
                           className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          onLoad={() => console.log('✅ Imagem carregada:', property.images[0])}
+                          onError={(e) => {
+                            console.error('❌ Erro ao carregar imagem:', property.images[0]);
+                            console.error('Erro completo:', e);
+                          }}
                         />
                         {property.images.length > 1 && (
                           <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">

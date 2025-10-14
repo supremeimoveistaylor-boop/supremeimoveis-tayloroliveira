@@ -133,6 +133,9 @@ const EditProperty = () => {
 
   const uploadImages = async (propertyId: string, newFiles: File[]): Promise<string[]> => {
     const uploadedUrls: string[] = [];
+    const failedUploads: string[] = [];
+
+    console.log(`🚀 Iniciando upload de ${newFiles.length} novas imagens para o imóvel ${propertyId}`);
 
     for (let i = 0; i < newFiles.length; i++) {
       const file = newFiles[i];
@@ -142,34 +145,55 @@ const EditProperty = () => {
         : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
       const fileName = `${propertyId}/${uniqueId}.${fileExt}`;
 
-      console.log(`Uploading image ${i + 1}/${newFiles.length}:`, fileName);
+      console.log(`📷 Fazendo upload da imagem ${i + 1}/${newFiles.length}: ${file.name} -> ${fileName}`);
+      console.log(`📊 Tamanho do arquivo: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
 
-      const { error: uploadError, data: uploadData } = await supabase.storage
-        .from('property-images')
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
+      try {
+        const { error: uploadError, data: uploadData } = await supabase.storage
+          .from('property-images')
+          .upload(fileName, file, {
+            cacheControl: '3600',
+            upsert: false
+          });
 
-      if (uploadError) {
-        console.error('Upload error:', uploadError);
-        toast({
-          title: "Erro no upload",
-          description: `Falha ao enviar a imagem ${i + 1}: ${uploadError.message}`,
-          variant: "destructive",
-        });
-        throw uploadError;
+        if (uploadError) {
+          console.error(`❌ Erro no upload da imagem ${i + 1}:`, uploadError);
+          failedUploads.push(file.name);
+          continue; // Continue with next image instead of throwing
+        }
+
+        console.log(`✅ Upload bem-sucedido da imagem ${i + 1}:`, uploadData);
+
+        const { data } = supabase.storage
+          .from('property-images')
+          .getPublicUrl(fileName);
+
+        console.log(`🔗 URL pública gerada para imagem ${i + 1}:`, data.publicUrl);
+        uploadedUrls.push(data.publicUrl);
+
+        // Small delay to prevent overwhelming storage service
+        if (i < newFiles.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
+      } catch (error) {
+        console.error(`💥 Exceção durante upload da imagem ${i + 1}:`, error);
+        failedUploads.push(file.name);
       }
-
-      const { data } = supabase.storage
-        .from('property-images')
-        .getPublicUrl(fileName);
-
-      console.log('Generated public URL:', data.publicUrl);
-      uploadedUrls.push(data.publicUrl);
     }
 
-    console.log('All images uploaded. Total URLs:', uploadedUrls.length);
+    console.log(`📋 Resultado do upload:`);
+    console.log(`✅ Imagens enviadas com sucesso: ${uploadedUrls.length}`);
+    console.log(`❌ Imagens que falharam: ${failedUploads.length}`);
+    
+    if (failedUploads.length > 0) {
+      console.warn(`⚠️ Imagens que falharam:`, failedUploads);
+      toast({
+        title: "Upload parcial",
+        description: `${uploadedUrls.length} de ${newFiles.length} novas imagens foram enviadas.`,
+        variant: "destructive",
+      });
+    }
+
     return uploadedUrls;
   };
 
@@ -249,7 +273,10 @@ const EditProperty = () => {
         description: `As alterações foram salvas com sucesso${finalImages.length > 0 ? ` com ${finalImages.length} foto(s)` : ''}.`,
       });
 
-      navigate('/dashboard');
+      // Force a page refresh to ensure updated images appear immediately
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 1000);
     } catch (error: any) {
       console.error('Erro ao atualizar imóvel:', error);
       toast({
