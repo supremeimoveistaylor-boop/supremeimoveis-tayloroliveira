@@ -31,6 +31,7 @@ interface Property {
 }
 
 const EditProperty = () => {
+  // All hooks must be called before any conditional returns
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const { id } = useParams();
@@ -39,11 +40,6 @@ const EditProperty = () => {
   const [allImages, setAllImages] = useState<Array<File | string>>([]);
   const [amenities, setAmenities] = useState<string[]>([]);
   const [newAmenity, setNewAmenity] = useState('');
-
-  // Redirect if not authenticated
-  if (!user && !loading) {
-    return <Navigate to="/auth" replace />;
-  }
 
   const predefinedAmenities = [
     'Piscina', 'Academia', 'Churrasqueira', 'Playground', 'Salão de Festas',
@@ -56,6 +52,20 @@ const EditProperty = () => {
       fetchProperty();
     }
   }, [id, user]);
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // Redirect if not authenticated
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
 
   const fetchProperty = async () => {
     if (!user) return;
@@ -83,19 +93,6 @@ const EditProperty = () => {
       navigate('/dashboard');
     }
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  // Temporarily removed authentication check
-  // if (!user) {
-  //   return <Navigate to="/auth" replace />;
-  // }
 
   if (!property) {
     return (

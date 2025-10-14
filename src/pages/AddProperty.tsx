@@ -25,14 +25,10 @@ import {
 } from '@/lib/security';
 
 const AddProperty = () => {
+  // All hooks must be called before any conditional returns
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-
-  // Redirect if not authenticated
-  if (!user && !loading) {
-    return <Navigate to="/auth" replace />;
-  }
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [amenities, setAmenities] = useState<string[]>([]);
   const [newAmenity, setNewAmenity] = useState('');
@@ -45,12 +41,18 @@ const AddProperty = () => {
     'Ar Condicionado', 'Armários', 'Cozinha Planejada'
   ];
 
+  // Show loading state
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
+  }
+
+  // Redirect if not authenticated
+  if (!user) {
+    return <Navigate to="/auth" replace />;
   }
 
   const handleImageUpload = (files: File[]) => {
