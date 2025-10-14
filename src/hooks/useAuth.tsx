@@ -60,8 +60,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserRole = async (userId: string) => {
     try {
+      // Query the new user_roles table instead of profiles
       const { data, error } = await supabase
-        .from('profiles')
+        .from('user_roles')
         .select('role')
         .eq('user_id', userId)
         .maybeSingle();
@@ -70,24 +71,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.warn('Error fetching user role:', error.message);
       }
 
-      let role = data?.role as string | null;
+      const role = data?.role as string | null;
 
-      // Create default profile if missing
-      if (!role) {
-        const { error: insertError } = await supabase
-          .from('profiles')
-          .insert({ user_id: userId, role: 'user' });
-        if (insertError) {
-          console.warn('Could not create default profile:', insertError.message);
-        } else {
-          role = 'user';
-        }
-      }
-
+      // Default role is 'user' if not found (trigger should create it automatically)
       setUserRole(role || 'user');
       setIsAdmin(role === 'admin');
     } catch (error) {
-      console.error('Error fetching/creating user role:', error);
+      console.error('Error fetching user role:', error);
       setUserRole('user');
       setIsAdmin(false);
     }

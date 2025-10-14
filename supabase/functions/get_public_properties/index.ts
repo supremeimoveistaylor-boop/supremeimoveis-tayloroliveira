@@ -48,9 +48,9 @@ serve(async (req) => {
         .limit(1);
 
       if (error) {
-        console.error("Database error:", error);
+        console.error("Database error fetching single property:", error);
         return new Response(
-          JSON.stringify({ error: "Falha ao carregar imóvel", details: error.message }),
+          JSON.stringify({ error: "Falha ao carregar imóvel", code: "PROPERTY_FETCH_ERROR" }),
           { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
         );
       }
@@ -76,9 +76,9 @@ serve(async (req) => {
     const { data, error } = await query;
 
     if (error) {
-      console.error("Database error:", error);
+      console.error("Database error fetching properties:", error);
       return new Response(
-        JSON.stringify({ error: "Falha ao carregar imóveis", details: error.message }),
+        JSON.stringify({ error: "Falha ao carregar imóveis", code: "PROPERTIES_FETCH_ERROR" }),
         { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
@@ -89,10 +89,13 @@ serve(async (req) => {
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   } catch (e) {
-    console.error("Exception in edge function:", e);
-    return new Response(JSON.stringify({ error: "Erro interno" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json", ...corsHeaders },
-    });
+    console.error("Unexpected error in edge function:", e);
+    return new Response(
+      JSON.stringify({ error: "Erro interno do servidor", code: "INTERNAL_SERVER_ERROR" }), 
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      }
+    );
   }
 });

@@ -84,13 +84,29 @@ const Admin = () => {
 
   const fetchAllProfiles = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch profiles and join with user_roles to get role information
+      const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setProfiles(data || []);
+      if (profilesError) throw profilesError;
+
+      // Fetch roles separately
+      const { data: rolesData, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id, role');
+
+      if (rolesError) throw rolesError;
+
+      // Map roles to profiles
+      const rolesMap = new Map(rolesData?.map(r => [r.user_id, r.role]) || []);
+      const profilesWithRoles = (profilesData || []).map(profile => ({
+        ...profile,
+        role: rolesMap.get(profile.user_id) || 'user' as 'admin' | 'user'
+      }));
+
+      setProfiles(profilesWithRoles);
     } catch (error: any) {
       toast({
         title: "Erro ao carregar usuários",
@@ -125,12 +141,29 @@ const Admin = () => {
 
   const updateUserRole = async (userId: string, role: 'admin' | 'user') => {
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ role })
-        .eq('user_id', userId);
+      // First, check if role exists for this user
+      const { data: existingRole } = await supabase
+        .from('user_roles')
+        .select('id, role')
+        .eq('user_id', userId)
+        .maybeSingle();
 
-      if (error) throw error;
+      if (existingRole) {
+        // Update existing role
+        const { error } = await supabase
+          .from('user_roles')
+          .update({ role })
+          .eq('user_id', userId);
+
+        if (error) throw error;
+      } else {
+        // Insert new role
+        const { error } = await supabase
+          .from('user_roles')
+          .insert({ user_id: userId, role });
+
+        if (error) throw error;
+      }
 
       setProfiles(profiles.map(p => p.user_id === userId ? { ...p, role } : p));
       toast({
