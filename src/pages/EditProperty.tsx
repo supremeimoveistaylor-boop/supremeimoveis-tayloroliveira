@@ -139,11 +139,17 @@ const EditProperty = () => {
       const fileExt = file.name.split('.').pop();
       const fileName = `${propertyId}/${Date.now()}-${i}.${fileExt}`;
 
-      const { error: uploadError } = await supabase.storage
+      console.log(`Uploading image ${i + 1}/${newFiles.length}:`, fileName);
+
+      const { error: uploadError, data: uploadData } = await supabase.storage
         .from('property-images')
-        .upload(fileName, file);
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
       if (uploadError) {
+        console.error('Upload error:', uploadError);
         throw uploadError;
       }
 
@@ -151,9 +157,11 @@ const EditProperty = () => {
         .from('property-images')
         .getPublicUrl(fileName);
 
+      console.log('Generated public URL:', data.publicUrl);
       uploadedUrls.push(data.publicUrl);
     }
 
+    console.log('All images uploaded. Total URLs:', uploadedUrls.length);
     return uploadedUrls;
   };
 
@@ -178,8 +186,13 @@ const EditProperty = () => {
       let newImageUrls: string[] = [];
       if (newFiles.length > 0) {
         console.log('Iniciando upload de novas imagens...');
-        newImageUrls = await uploadImages(property.id, newFiles);
-        console.log('Upload concluído:', newImageUrls.length, 'URLs');
+        try {
+          newImageUrls = await uploadImages(property.id, newFiles);
+          console.log('Upload concluído:', newImageUrls.length, 'URLs');
+        } catch (uploadError) {
+          console.error('Erro durante o upload:', uploadError);
+          throw new Error('Erro ao fazer upload das imagens. Tente novamente.');
+        }
       }
 
       // Combine existing and new images in the correct order

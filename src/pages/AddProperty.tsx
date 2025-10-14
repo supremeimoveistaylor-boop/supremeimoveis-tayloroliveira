@@ -98,11 +98,17 @@ const AddProperty = () => {
       const fileExt = file.name.split('.').pop();
       const fileName = `${propertyId}/${Date.now()}-${i}.${fileExt}`;
 
-      const { error: uploadError } = await supabase.storage
+      console.log(`Uploading image ${i + 1}/${selectedImages.length}:`, fileName);
+
+      const { error: uploadError, data: uploadData } = await supabase.storage
         .from('property-images')
-        .upload(fileName, file);
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
       if (uploadError) {
+        console.error('Upload error:', uploadError);
         throw uploadError;
       }
 
@@ -110,9 +116,11 @@ const AddProperty = () => {
         .from('property-images')
         .getPublicUrl(fileName);
 
+      console.log('Generated public URL:', data.publicUrl);
       uploadedUrls.push(data.publicUrl);
     }
 
+    console.log('All images uploaded. Total URLs:', uploadedUrls.length);
     return uploadedUrls;
   };
 
@@ -240,18 +248,29 @@ const AddProperty = () => {
       let imageUrls: string[] = [];
       if (selectedImages.length > 0) {
         console.log('Iniciando upload de', selectedImages.length, 'imagens');
-        imageUrls = await uploadImages(property.id);
-        console.log('Upload concluído:', imageUrls.length, 'URLs');
-        
-        // Update property with image URLs
-        const { error: updateError } = await supabase
-          .from('properties')
-          .update({ images: imageUrls })
-          .eq('id', property.id);
+        try {
+          imageUrls = await uploadImages(property.id);
+          console.log('Upload concluído:', imageUrls.length, 'URLs');
+          
+          // Update property with image URLs
+          const { error: updateError } = await supabase
+            .from('properties')
+            .update({ images: imageUrls })
+            .eq('id', property.id);
 
-        if (updateError) {
-          console.error('Erro ao atualizar imagens:', updateError);
-          throw updateError;
+          if (updateError) {
+            console.error('Erro ao atualizar imagens:', updateError);
+            throw updateError;
+          }
+          console.log('Imagens atualizadas no banco de dados com sucesso');
+        } catch (uploadError) {
+          console.error('Erro durante o upload:', uploadError);
+          // Ainda salvar a propriedade mesmo que as imagens falhem
+          toast({
+            title: "Aviso",
+            description: "Imóvel cadastrado, mas houve um erro ao fazer upload de algumas imagens.",
+            variant: "destructive",
+          });
         }
       }
 

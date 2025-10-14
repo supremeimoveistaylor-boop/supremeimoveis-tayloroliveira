@@ -57,7 +57,12 @@ export const DraggableImageGallery = ({
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    onImageUpload(files);
+    console.log('Files selected in gallery:', files.length);
+    if (files.length > 0) {
+      onImageUpload(files);
+    }
+    // Reset input to allow selecting the same files again
+    e.target.value = '';
   };
 
   const removeImage = (index: number) => {
