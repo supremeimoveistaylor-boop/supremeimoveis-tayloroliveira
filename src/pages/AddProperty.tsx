@@ -168,18 +168,20 @@ const AddProperty = () => {
       if (!validateArea(areaValue)) {
         toast({
           title: "Área inválida",
-          description: "A área deve ser um valor positivo válido.",
+          description: "A área deve ser um valor positivo válido (máximo 100.000 m²).",
           variant: "destructive",
         });
+        setIsLoading(false);
         return;
       }
 
       if (!propertyType || !purpose) {
         toast({
-          title: "Selecione tipo e finalidade",
-          description: "Escolha o tipo de imóvel e a finalidade.",
+          title: "Campos obrigatórios",
+          description: "Por favor, selecione o tipo de imóvel e a finalidade.",
           variant: "destructive",
         });
+        setIsLoading(false);
         return;
       }
 
@@ -190,11 +192,19 @@ const AddProperty = () => {
       if (!validateRoomCount(bedroomsValue) || !validateRoomCount(bathroomsValue) || !validateRoomCount(parkingValue)) {
         toast({
           title: "Dados inválidos",
-          description: "Verifique os valores de quartos, banheiros e vagas de garagem.",
+          description: "Verifique os valores de quartos, banheiros e vagas (devem ser entre 0 e 50).",
           variant: "destructive",
         });
+        setIsLoading(false);
         return;
       }
+
+      console.log('Criando imóvel:', {
+        propertyType,
+        purpose,
+        title,
+        imagesCount: selectedImages.length
+      });
 
       // First, create the property
       const { data: property, error: propertyError } = await supabase
@@ -219,12 +229,19 @@ const AddProperty = () => {
         .select()
         .single();
 
-      if (propertyError) throw propertyError;
+      if (propertyError) {
+        console.error('Erro ao criar propriedade:', propertyError);
+        throw propertyError;
+      }
+
+      console.log('Imóvel criado com sucesso:', property.id);
 
       // Upload images if any
       let imageUrls: string[] = [];
       if (selectedImages.length > 0) {
+        console.log('Iniciando upload de', selectedImages.length, 'imagens');
         imageUrls = await uploadImages(property.id);
+        console.log('Upload concluído:', imageUrls.length, 'URLs');
         
         // Update property with image URLs
         const { error: updateError } = await supabase
@@ -232,20 +249,23 @@ const AddProperty = () => {
           .update({ images: imageUrls })
           .eq('id', property.id);
 
-        if (updateError) throw updateError;
+        if (updateError) {
+          console.error('Erro ao atualizar imagens:', updateError);
+          throw updateError;
+        }
       }
 
       toast({
         title: "Imóvel cadastrado!",
-        description: "Seu imóvel foi cadastrado com sucesso.",
+        description: `Seu imóvel foi cadastrado com sucesso${selectedImages.length > 0 ? ` com ${selectedImages.length} foto(s)` : ''}.`,
       });
 
       navigate('/dashboard');
     } catch (error: any) {
-      console.error('Property creation error:', error);
+      console.error('Erro ao cadastrar imóvel:', error);
       toast({
         title: "Erro ao cadastrar imóvel",
-        description: sanitizeErrorMessage(error),
+        description: error?.message || sanitizeErrorMessage(error),
         variant: "destructive",
       });
     } finally {
@@ -514,8 +534,8 @@ const AddProperty = () => {
 
               {/* Image Upload with Drag and Drop */}
               <DraggableImageGallery
-                images={selectedImages as Array<File | string>}
-                onImagesChange={(images) => setSelectedImages(images.filter(img => img instanceof File) as File[])}
+                images={selectedImages}
+                onImagesChange={(images) => setSelectedImages(images as File[])}
                 onImageUpload={handleImageUpload}
                 maxImages={20}
                 existingLabel="Fotos do Imóvel"

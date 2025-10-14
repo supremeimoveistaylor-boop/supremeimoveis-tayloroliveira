@@ -158,14 +158,22 @@ const EditProperty = () => {
     try {
       const formData = new FormData(e.currentTarget);
       
+      console.log('Atualizando imóvel:', property.id);
+      console.log('Total de imagens:', allImages.length);
+      
       // Separate existing URLs from new files
       const existingUrls = allImages.filter(img => typeof img === 'string') as string[];
       const newFiles = allImages.filter(img => img instanceof File) as File[];
       
+      console.log('Imagens existentes:', existingUrls.length);
+      console.log('Novos arquivos:', newFiles.length);
+      
       // Upload new images if any
       let newImageUrls: string[] = [];
       if (newFiles.length > 0) {
+        console.log('Iniciando upload de novas imagens...');
         newImageUrls = await uploadImages(property.id, newFiles);
+        console.log('Upload concluído:', newImageUrls.length, 'URLs');
       }
 
       // Combine existing and new images in the correct order
@@ -177,6 +185,8 @@ const EditProperty = () => {
           return newImageUrls.shift() || '';
         }
       }).filter(url => url !== '');
+      
+      console.log('Imagens finais:', finalImages.length);
 
       // Update the property
       const { error } = await supabase
@@ -200,18 +210,24 @@ const EditProperty = () => {
         })
         .eq('id', property.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao atualizar:', error);
+        throw error;
+      }
+
+      console.log('Imóvel atualizado com sucesso');
 
       toast({
         title: "Imóvel atualizado!",
-        description: "As alterações foram salvas com sucesso.",
+        description: `As alterações foram salvas com sucesso${finalImages.length > 0 ? ` com ${finalImages.length} foto(s)` : ''}.`,
       });
 
       navigate('/dashboard');
     } catch (error: any) {
+      console.error('Erro ao atualizar imóvel:', error);
       toast({
         title: "Erro ao atualizar imóvel",
-        description: error.message,
+        description: error?.message || "Ocorreu um erro ao salvar as alterações.",
         variant: "destructive",
       });
     } finally {
