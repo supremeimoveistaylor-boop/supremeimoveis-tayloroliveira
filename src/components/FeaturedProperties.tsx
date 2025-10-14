@@ -114,7 +114,7 @@ export const FeaturedProperties = () => {
   };
 
   const handleShare = async (propertyId: string, propertyTitle: string) => {
-    const url = `${window.location.origin}/?property=${propertyId}`;
+    const url = `${window.location.origin}/property/${propertyId}`;
     try {
       if (navigator.share) {
         await navigator.share({

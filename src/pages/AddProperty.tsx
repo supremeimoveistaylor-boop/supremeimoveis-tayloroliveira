@@ -96,7 +96,10 @@ const AddProperty = () => {
     for (let i = 0; i < selectedImages.length; i++) {
       const file = selectedImages[i];
       const fileExt = file.name.split('.').pop();
-      const fileName = `${propertyId}/${Date.now()}-${i}.${fileExt}`;
+      const uniqueId = (typeof crypto !== 'undefined' && 'randomUUID' in crypto) 
+        ? (crypto as any).randomUUID() 
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const fileName = `${propertyId}/${uniqueId}.${fileExt}`;
 
       console.log(`Uploading image ${i + 1}/${selectedImages.length}:`, fileName);
 
@@ -109,6 +112,11 @@ const AddProperty = () => {
 
       if (uploadError) {
         console.error('Upload error:', uploadError);
+        toast({
+          title: "Erro no upload",
+          description: `Falha ao enviar a imagem ${i + 1}: ${uploadError.message}`,
+          variant: "destructive",
+        });
         throw uploadError;
       }
 
@@ -260,15 +268,19 @@ const AddProperty = () => {
 
           if (updateError) {
             console.error('Erro ao atualizar imagens:', updateError);
-            throw updateError;
+            toast({
+              title: "Aviso",
+              description: "Imóvel salvo, mas erro ao atualizar imagens no banco.",
+              variant: "destructive",
+            });
+          } else {
+            console.log('Imagens atualizadas no banco de dados com sucesso');
           }
-          console.log('Imagens atualizadas no banco de dados com sucesso');
         } catch (uploadError) {
           console.error('Erro durante o upload:', uploadError);
-          // Ainda salvar a propriedade mesmo que as imagens falhem
           toast({
-            title: "Aviso",
-            description: "Imóvel cadastrado, mas houve um erro ao fazer upload de algumas imagens.",
+            title: "Erro no upload de imagens",
+            description: "Imóvel salvo, mas falha no upload das fotos.",
             variant: "destructive",
           });
         }
@@ -277,7 +289,7 @@ const AddProperty = () => {
       if (selectedImages.length > 0 && imageUrls.length === 0) {
         toast({
           title: "Erro no upload",
-          description: "Nenhuma imagem foi salva. Tente novamente.",
+          description: "Falha no upload das imagens. Tente novamente.",
           variant: "destructive",
         });
         setIsLoading(false);
@@ -286,7 +298,7 @@ const AddProperty = () => {
 
       toast({
         title: "Imóvel cadastrado!",
-        description: `Seu imóvel foi cadastrado com sucesso${selectedImages.length > 0 ? ` com ${selectedImages.length} foto(s)` : ''}.`,
+        description: `Imóvel salvo com sucesso${imageUrls.length > 0 ? ` com ${imageUrls.length} foto(s)` : ''}.`,
       });
 
       navigate('/dashboard');

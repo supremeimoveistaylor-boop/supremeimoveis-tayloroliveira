@@ -148,7 +148,7 @@ const PropertyDetails = () => {
 
   const handleShare = async () => {
     if (!property?.id) return;
-    const url = `${window.location.origin}/?property=${property.id}`;
+    const url = `${window.location.origin}/property/${property.id}`;
     try {
       if (navigator.share) {
         await navigator.share({

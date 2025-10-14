@@ -137,7 +137,10 @@ const EditProperty = () => {
     for (let i = 0; i < newFiles.length; i++) {
       const file = newFiles[i];
       const fileExt = file.name.split('.').pop();
-      const fileName = `${propertyId}/${Date.now()}-${i}.${fileExt}`;
+      const uniqueId = (typeof crypto !== 'undefined' && 'randomUUID' in crypto) 
+        ? (crypto as any).randomUUID() 
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const fileName = `${propertyId}/${uniqueId}.${fileExt}`;
 
       console.log(`Uploading image ${i + 1}/${newFiles.length}:`, fileName);
 
@@ -150,6 +153,11 @@ const EditProperty = () => {
 
       if (uploadError) {
         console.error('Upload error:', uploadError);
+        toast({
+          title: "Erro no upload",
+          description: `Falha ao enviar a imagem ${i + 1}: ${uploadError.message}`,
+          variant: "destructive",
+        });
         throw uploadError;
       }
 
