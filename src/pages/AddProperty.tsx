@@ -274,6 +274,16 @@ const AddProperty = () => {
         }
       }
 
+      if (selectedImages.length > 0 && imageUrls.length === 0) {
+        toast({
+          title: "Erro no upload",
+          description: "Nenhuma imagem foi salva. Tente novamente.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
       toast({
         title: "Imóvel cadastrado!",
         description: `Seu imóvel foi cadastrado com sucesso${selectedImages.length > 0 ? ` com ${selectedImages.length} foto(s)` : ''}.`,
