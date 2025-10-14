@@ -40,6 +40,9 @@ const EditProperty = () => {
   const [allImages, setAllImages] = useState<Array<File | string>>([]);
   const [amenities, setAmenities] = useState<string[]>([]);
   const [newAmenity, setNewAmenity] = useState('');
+  const [propertyType, setPropertyType] = useState<string>('');
+  const [purpose, setPurpose] = useState<string>('');
+  const [status, setStatus] = useState<string>('active');
 
   const predefinedAmenities = [
     'Piscina', 'Academia', 'Churrasqueira', 'Playground', 'Salão de Festas',
@@ -84,6 +87,9 @@ const EditProperty = () => {
       setProperty(data);
       setAllImages(data.images || []);
       setAmenities(data.amenities || []);
+      setPropertyType(data.property_type);
+      setPurpose(data.purpose);
+      setStatus(data.status || 'active');
     } catch (error: any) {
       toast({
         title: "Erro ao carregar imóvel",
@@ -196,15 +202,15 @@ const EditProperty = () => {
           description: formData.get('description') as string,
           price: parseFloat(formData.get('price')?.toString().replace(/[^\d,]/g, '').replace(/,/g, '.') || '0'),
           location: formData.get('location') as string,
-          property_type: formData.get('property_type') as string,
-          purpose: formData.get('purpose') as string,
+          property_type: propertyType,
+          purpose: purpose,
           bedrooms: parseInt(formData.get('bedrooms') as string) || null,
           bathrooms: parseInt(formData.get('bathrooms') as string) || null,
           parking_spaces: parseInt(formData.get('parking_spaces') as string) || null,
           area: parseFloat(formData.get('area')?.toString().replace(/,/g, '.') || '0') || null,
           amenities,
           images: finalImages,
-          status: formData.get('status') as string,
+          status: status,
           whatsapp_link: formData.get('whatsapp_link') as string || null,
           youtube_link: formData.get('youtube_link') as string || null,
         })
@@ -354,9 +360,9 @@ const EditProperty = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label>Tipo de Imóvel *</Label>
-                  <Select name="property_type" defaultValue={property.property_type} required>
+                  <Select value={propertyType} onValueChange={setPropertyType}>
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Selecione o tipo" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="house">Casa</SelectItem>
@@ -368,9 +374,9 @@ const EditProperty = () => {
                 </div>
                 <div className="space-y-2">
                   <Label>Finalidade *</Label>
-                  <Select name="purpose" defaultValue={property.purpose} required>
+                  <Select value={purpose} onValueChange={setPurpose}>
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Selecione a finalidade" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="sale">Venda</SelectItem>
@@ -380,9 +386,9 @@ const EditProperty = () => {
                 </div>
                 <div className="space-y-2">
                   <Label>Status *</Label>
-                  <Select name="status" defaultValue={property.status} required>
+                  <Select value={status} onValueChange={setStatus}>
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Selecione o status" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="active">Ativo</SelectItem>
