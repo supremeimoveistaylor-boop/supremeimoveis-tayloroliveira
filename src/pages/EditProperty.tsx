@@ -132,57 +132,72 @@ const EditProperty = () => {
   };
 
   const uploadImages = async (propertyId: string, newFiles: File[]): Promise<string[]> => {
+    console.log(`🚀 UPLOAD: Iniciando envio de ${newFiles.length} novas imagens`);
+    
+    // Upload in parallel batches of 5 for better performance
+    const BATCH_SIZE = 5;
     const uploadedUrls: string[] = [];
+    
+    for (let batchStart = 0; batchStart < newFiles.length; batchStart += BATCH_SIZE) {
+      const batch = newFiles.slice(batchStart, batchStart + BATCH_SIZE);
+      const batchNum = Math.floor(batchStart / BATCH_SIZE) + 1;
+      const totalBatches = Math.ceil(newFiles.length / BATCH_SIZE);
+      
+      console.log(`\n📦 Lote ${batchNum}/${totalBatches} (${batch.length} imagens)`);
+      
+      const batchPromises = batch.map(async (file, batchIndex) => {
+        const globalIndex = batchStart + batchIndex;
+        const fileExt = file.name.split('.').pop();
+        const timestamp = Date.now();
+        const random = Math.random().toString(36).substring(2);
+        const fileName = `${propertyId}/${timestamp}_${random}_${globalIndex}.${fileExt}`;
 
-    console.log(`🚀 INICIANDO UPLOAD de ${newFiles.length} novas imagens`);
+        try {
+          console.log(`📷 [${globalIndex + 1}/${newFiles.length}] ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+          
+          const { error: uploadError } = await supabase.storage
+            .from('property-images')
+            .upload(fileName, file, {
+              cacheControl: '3600',
+              upsert: false
+            });
 
-    for (let i = 0; i < newFiles.length; i++) {
-      const file = newFiles[i];
-      const fileExt = file.name.split('.').pop();
-      const timestamp = Date.now();
-      const random = Math.random().toString(36).substring(2);
-      const fileName = `${propertyId}/${timestamp}_${random}.${fileExt}`;
+          if (uploadError) {
+            console.error(`❌ [${globalIndex + 1}] Erro:`, uploadError.message);
+            return null;
+          }
 
-      console.log(`📷 Upload ${i + 1}/${newFiles.length}: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+          const { data: urlData } = supabase.storage
+            .from('property-images')
+            .getPublicUrl(fileName);
 
-      try {
-        // Upload file to storage
-        const { error: uploadError, data: uploadData } = await supabase.storage
-          .from('property-images')
-          .upload(fileName, file);
-
-        if (uploadError) {
-          console.error(`❌ Erro upload ${i + 1}:`, uploadError.message);
-          continue; // Skip this image but continue with others
+          console.log(`✅ [${globalIndex + 1}] OK`);
+          return urlData.publicUrl;
+        } catch (error: any) {
+          console.error(`💥 [${globalIndex + 1}] Exceção:`, error);
+          return null;
         }
+      });
 
-        // Get public URL
-        const { data: urlData } = supabase.storage
-          .from('property-images')
-          .getPublicUrl(fileName);
-
-        const publicUrl = urlData.publicUrl;
-        uploadedUrls.push(publicUrl);
-        
-        console.log(`✅ Sucesso ${i + 1}: ${publicUrl}`);
-
-        // Small delay to prevent rate limiting
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-      } catch (error) {
-        console.error(`💥 Exceção upload ${i + 1}:`, error);
-        continue; // Skip this image but continue
-      }
+      const batchResults = await Promise.all(batchPromises);
+      const successfulUrls = batchResults.filter((url): url is string => url !== null);
+      uploadedUrls.push(...successfulUrls);
+      
+      console.log(`✅ Lote ${batchNum}: ${successfulUrls.length}/${batch.length} OK`);
     }
 
-    console.log(`📊 RESULTADO: ${uploadedUrls.length}/${newFiles.length} imagens enviadas`);
+    console.log(`\n📊 RESULTADO FINAL: ${uploadedUrls.length}/${newFiles.length} imagens enviadas`);
     
-    if (uploadedUrls.length < newFiles.length) {
-      const failed = newFiles.length - uploadedUrls.length;
+    if (uploadedUrls.length === 0 && newFiles.length > 0) {
+      toast({
+        title: "Erro completo",
+        description: "Nenhuma imagem foi enviada. Verifique sua conexão.",
+        variant: "destructive",
+      });
+    } else if (uploadedUrls.length < newFiles.length) {
       toast({
         title: "Upload parcial",
-        description: `${uploadedUrls.length} de ${newFiles.length} novas imagens enviadas. ${failed} falharam.`,
-        variant: "destructive",
+        description: `${uploadedUrls.length} de ${newFiles.length} imagens enviadas.`,
       });
     }
 
