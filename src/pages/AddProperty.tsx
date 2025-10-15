@@ -92,63 +92,55 @@ const AddProperty = () => {
 
   const uploadImages = async (propertyId: string): Promise<string[]> => {
     const uploadedUrls: string[] = [];
-    const failedUploads: string[] = [];
 
-    console.log(`🚀 Iniciando upload de ${selectedImages.length} imagens para o imóvel ${propertyId}`);
+    console.log(`🚀 INICIANDO UPLOAD de ${selectedImages.length} imagens`);
 
     for (let i = 0; i < selectedImages.length; i++) {
       const file = selectedImages[i];
       const fileExt = file.name.split('.').pop();
-      const uniqueId = (typeof crypto !== 'undefined' && 'randomUUID' in crypto) 
-        ? (crypto as any).randomUUID() 
-        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-      const fileName = `${propertyId}/${uniqueId}.${fileExt}`;
+      const timestamp = Date.now();
+      const random = Math.random().toString(36).substring(2);
+      const fileName = `${propertyId}/${timestamp}_${random}.${fileExt}`;
 
-      console.log(`📷 Fazendo upload da imagem ${i + 1}/${selectedImages.length}: ${file.name} -> ${fileName}`);
-      console.log(`📊 Tamanho do arquivo: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+      console.log(`📷 Upload ${i + 1}/${selectedImages.length}: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
 
       try {
+        // Upload file to storage
         const { error: uploadError, data: uploadData } = await supabase.storage
           .from('property-images')
-          .upload(fileName, file, {
-            cacheControl: '3600',
-            upsert: false
-          });
+          .upload(fileName, file);
 
         if (uploadError) {
-          console.error(`❌ Erro no upload da imagem ${i + 1}:`, uploadError);
-          failedUploads.push(file.name);
-          continue; // Continue with next image instead of throwing
+          console.error(`❌ Erro upload ${i + 1}:`, uploadError.message);
+          continue; // Skip this image but continue with others
         }
 
-        console.log(`✅ Upload bem-sucedido da imagem ${i + 1}:`, uploadData);
-
-        const { data } = supabase.storage
+        // Get public URL
+        const { data: urlData } = supabase.storage
           .from('property-images')
           .getPublicUrl(fileName);
 
-        console.log(`🔗 URL pública gerada para imagem ${i + 1}:`, data.publicUrl);
-        uploadedUrls.push(data.publicUrl);
+        const publicUrl = urlData.publicUrl;
+        uploadedUrls.push(publicUrl);
+        
+        console.log(`✅ Sucesso ${i + 1}: ${publicUrl}`);
 
-        // Small delay to prevent overwhelming storage service
-        if (i < selectedImages.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 200));
-        }
+        // Small delay to prevent rate limiting
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
       } catch (error) {
-        console.error(`💥 Exceção durante upload da imagem ${i + 1}:`, error);
-        failedUploads.push(file.name);
+        console.error(`💥 Exceção upload ${i + 1}:`, error);
+        continue; // Skip this image but continue
       }
     }
 
-    console.log(`📋 Resultado do upload:`);
-    console.log(`✅ Imagens enviadas com sucesso: ${uploadedUrls.length}`);
-    console.log(`❌ Imagens que falharam: ${failedUploads.length}`);
+    console.log(`📊 RESULTADO: ${uploadedUrls.length}/${selectedImages.length} imagens enviadas`);
     
-    if (failedUploads.length > 0) {
-      console.warn(`⚠️ Imagens que falharam:`, failedUploads);
+    if (uploadedUrls.length < selectedImages.length) {
+      const failed = selectedImages.length - uploadedUrls.length;
       toast({
         title: "Upload parcial",
-        description: `${uploadedUrls.length} de ${selectedImages.length} imagens foram enviadas com sucesso.`,
+        description: `${uploadedUrls.length} de ${selectedImages.length} imagens enviadas. ${failed} falharam.`,
         variant: "destructive",
       });
     }
@@ -282,61 +274,59 @@ const AddProperty = () => {
         console.log('Iniciando upload de', selectedImages.length, 'imagens');
         try {
           imageUrls = await uploadImages(property.id);
-          console.log('Upload concluído:', imageUrls.length, 'URLs');
+          console.log(`✅ Upload finalizado: ${imageUrls.length} URLs obtidas`);
           
-          // Update property with image URLs
+          // Always update property with whatever images we got
           const { error: updateError } = await supabase
             .from('properties')
             .update({ images: imageUrls })
             .eq('id', property.id);
 
           if (updateError) {
-            console.error('Erro ao atualizar imagens:', updateError);
+            console.error('❌ Erro ao atualizar imagens no banco:', updateError);
             toast({
               title: "Aviso",
-              description: "Imóvel salvo, mas erro ao atualizar imagens no banco.",
+              description: "Imóvel salvo, mas erro ao vincular imagens.",
               variant: "destructive",
             });
           } else {
-            console.log('Imagens atualizadas no banco de dados com sucesso');
+            console.log('✅ Imagens vinculadas ao imóvel no banco');
           }
         } catch (uploadError) {
-          console.error('Erro durante o upload:', uploadError);
+          console.error('💥 Erro crítico no upload:', uploadError);
           toast({
-            title: "Erro no upload de imagens",
-            description: "Imóvel salvo, mas falha no upload das fotos.",
+            title: "Erro no upload",
+            description: "Falha completa no upload das imagens.",
             variant: "destructive",
           });
         }
       }
 
-      // Validate image upload results
+      // Show success message based on results
       if (selectedImages.length > 0) {
         if (imageUrls.length === 0) {
           toast({
-            title: "Erro no upload",
-            description: "Nenhuma imagem foi salva. Verifique sua conexão e tente novamente.",
+            title: "Erro completo",
+            description: "Imóvel salvo, mas nenhuma imagem foi enviada. Tente editar e adicionar as fotos novamente.",
             variant: "destructive",
           });
-          setIsLoading(false);
-          return;
-        } else if (imageUrls.length < selectedImages.length) {
-          // Some images failed but we still have some successful uploads
-          console.warn(`⚠️ Upload parcial: ${imageUrls.length} de ${selectedImages.length} imagens foram salvas`);
+        } else {
+          toast({
+            title: "Imóvel cadastrado!",
+            description: `Sucesso! Imóvel salvo com ${imageUrls.length} foto(s).`,
+          });
         }
+      } else {
+        toast({
+          title: "Imóvel cadastrado!",
+          description: "Imóvel salvo sem fotos.",
+        });
       }
 
-      console.log(`✅ Imóvel cadastrado com sucesso! Total de imagens salvas: ${imageUrls.length}`);
-
-      toast({
-        title: "Imóvel cadastrado!",
-        description: `Imóvel salvo com sucesso${imageUrls.length > 0 ? ` com ${imageUrls.length} foto(s)` : ''}.`,
-      });
-
-      // Force a page refresh to ensure new images appear immediately
+      // Navigate after a brief delay to ensure everything is saved
       setTimeout(() => {
         navigate('/dashboard');
-      }, 1000);
+      }, 1500);
     } catch (error: any) {
       console.error('Erro ao cadastrar imóvel:', error);
       toast({

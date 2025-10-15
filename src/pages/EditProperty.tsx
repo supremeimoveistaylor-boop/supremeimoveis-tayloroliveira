@@ -133,63 +133,55 @@ const EditProperty = () => {
 
   const uploadImages = async (propertyId: string, newFiles: File[]): Promise<string[]> => {
     const uploadedUrls: string[] = [];
-    const failedUploads: string[] = [];
 
-    console.log(`🚀 Iniciando upload de ${newFiles.length} novas imagens para o imóvel ${propertyId}`);
+    console.log(`🚀 INICIANDO UPLOAD de ${newFiles.length} novas imagens`);
 
     for (let i = 0; i < newFiles.length; i++) {
       const file = newFiles[i];
       const fileExt = file.name.split('.').pop();
-      const uniqueId = (typeof crypto !== 'undefined' && 'randomUUID' in crypto) 
-        ? (crypto as any).randomUUID() 
-        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-      const fileName = `${propertyId}/${uniqueId}.${fileExt}`;
+      const timestamp = Date.now();
+      const random = Math.random().toString(36).substring(2);
+      const fileName = `${propertyId}/${timestamp}_${random}.${fileExt}`;
 
-      console.log(`📷 Fazendo upload da imagem ${i + 1}/${newFiles.length}: ${file.name} -> ${fileName}`);
-      console.log(`📊 Tamanho do arquivo: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+      console.log(`📷 Upload ${i + 1}/${newFiles.length}: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
 
       try {
+        // Upload file to storage
         const { error: uploadError, data: uploadData } = await supabase.storage
           .from('property-images')
-          .upload(fileName, file, {
-            cacheControl: '3600',
-            upsert: false
-          });
+          .upload(fileName, file);
 
         if (uploadError) {
-          console.error(`❌ Erro no upload da imagem ${i + 1}:`, uploadError);
-          failedUploads.push(file.name);
-          continue; // Continue with next image instead of throwing
+          console.error(`❌ Erro upload ${i + 1}:`, uploadError.message);
+          continue; // Skip this image but continue with others
         }
 
-        console.log(`✅ Upload bem-sucedido da imagem ${i + 1}:`, uploadData);
-
-        const { data } = supabase.storage
+        // Get public URL
+        const { data: urlData } = supabase.storage
           .from('property-images')
           .getPublicUrl(fileName);
 
-        console.log(`🔗 URL pública gerada para imagem ${i + 1}:`, data.publicUrl);
-        uploadedUrls.push(data.publicUrl);
+        const publicUrl = urlData.publicUrl;
+        uploadedUrls.push(publicUrl);
+        
+        console.log(`✅ Sucesso ${i + 1}: ${publicUrl}`);
 
-        // Small delay to prevent overwhelming storage service
-        if (i < newFiles.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 200));
-        }
+        // Small delay to prevent rate limiting
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
       } catch (error) {
-        console.error(`💥 Exceção durante upload da imagem ${i + 1}:`, error);
-        failedUploads.push(file.name);
+        console.error(`💥 Exceção upload ${i + 1}:`, error);
+        continue; // Skip this image but continue
       }
     }
 
-    console.log(`📋 Resultado do upload:`);
-    console.log(`✅ Imagens enviadas com sucesso: ${uploadedUrls.length}`);
-    console.log(`❌ Imagens que falharam: ${failedUploads.length}`);
+    console.log(`📊 RESULTADO: ${uploadedUrls.length}/${newFiles.length} imagens enviadas`);
     
-    if (failedUploads.length > 0) {
-      console.warn(`⚠️ Imagens que falharam:`, failedUploads);
+    if (uploadedUrls.length < newFiles.length) {
+      const failed = newFiles.length - uploadedUrls.length;
       toast({
         title: "Upload parcial",
-        description: `${uploadedUrls.length} de ${newFiles.length} novas imagens foram enviadas.`,
+        description: `${uploadedUrls.length} de ${newFiles.length} novas imagens enviadas. ${failed} falharam.`,
         variant: "destructive",
       });
     }
