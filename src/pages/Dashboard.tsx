@@ -5,8 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, Home, Edit, Trash2, Eye } from 'lucide-react';
+import { Plus, Home, Edit, Trash2, Eye, TestTube } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { ImageDebugger } from '@/components/ImageDebugger';
 
 interface Property {
   id: string;
@@ -183,6 +184,27 @@ const Dashboard = () => {
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">Meus Imóveis</h2>
           </div>
+
+          {/* Image Debug Section - Temporary */}
+          {properties.length > 0 && (
+            <div className="mb-6">
+              <details className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                <summary className="cursor-pointer font-medium text-blue-900 dark:text-blue-100 flex items-center gap-2">
+                  <TestTube className="h-4 w-4" />
+                  🔍 Testar Carregamento de Imagens
+                </summary>
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {properties.map((property) => (
+                    <ImageDebugger
+                      key={property.id}
+                      images={property.images || []}
+                      propertyTitle={property.title}
+                    />
+                  ))}
+                </div>
+              </details>
+            </div>
+          )}
 
           {properties.length === 0 ? (
             <Card>

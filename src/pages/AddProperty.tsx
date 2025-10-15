@@ -93,7 +93,8 @@ const AddProperty = () => {
   const uploadImages = async (propertyId: string): Promise<string[]> => {
     const uploadedUrls: string[] = [];
 
-    console.log(`🚀 INICIANDO UPLOAD de ${selectedImages.length} imagens`);
+    console.log(`🚀 UPLOAD: Enviando ${selectedImages.length} imagens para ${propertyId}`);
+    console.log(`👤 User ID: ${user?.id}`);
 
     for (let i = 0; i < selectedImages.length; i++) {
       const file = selectedImages[i];
@@ -102,7 +103,9 @@ const AddProperty = () => {
       const random = Math.random().toString(36).substring(2);
       const fileName = `${propertyId}/${timestamp}_${random}.${fileExt}`;
 
-      console.log(`📷 Upload ${i + 1}/${selectedImages.length}: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+      console.log(`\n📷 [${i + 1}/${selectedImages.length}] ${file.name}`);
+      console.log(`   Tamanho: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+      console.log(`   Caminho: ${fileName}`);
 
       try {
         // Upload file to storage
@@ -111,36 +114,44 @@ const AddProperty = () => {
           .upload(fileName, file);
 
         if (uploadError) {
-          console.error(`❌ Erro upload ${i + 1}:`, uploadError.message);
-          continue; // Skip this image but continue with others
+          console.error(`   ❌ ERRO:`, uploadError);
+          toast({
+            title: `Erro na imagem ${i + 1}`,
+            description: uploadError.message,
+            variant: "destructive",
+          });
+          continue;
         }
+
+        console.log(`   ✅ Upload OK:`, uploadData);
 
         // Get public URL
         const { data: urlData } = supabase.storage
           .from('property-images')
           .getPublicUrl(fileName);
 
-        const publicUrl = urlData.publicUrl;
-        uploadedUrls.push(publicUrl);
-        
-        console.log(`✅ Sucesso ${i + 1}: ${publicUrl}`);
+        uploadedUrls.push(urlData.publicUrl);
+        console.log(`   🔗 URL: ${urlData.publicUrl}`);
 
-        // Small delay to prevent rate limiting
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Small delay
+        await new Promise(resolve => setTimeout(resolve, 150));
         
-      } catch (error) {
-        console.error(`💥 Exceção upload ${i + 1}:`, error);
-        continue; // Skip this image but continue
+      } catch (error: any) {
+        console.error(`   💥 EXCEÇÃO:`, error);
+        toast({
+          title: `Falha na imagem ${i + 1}`,
+          description: error?.message || 'Erro desconhecido',
+          variant: "destructive",
+        });
       }
     }
 
-    console.log(`📊 RESULTADO: ${uploadedUrls.length}/${selectedImages.length} imagens enviadas`);
+    console.log(`\n📊 FINAL: ${uploadedUrls.length}/${selectedImages.length} imagens OK`);
     
-    if (uploadedUrls.length < selectedImages.length) {
-      const failed = selectedImages.length - uploadedUrls.length;
+    if (uploadedUrls.length < selectedImages.length && uploadedUrls.length > 0) {
       toast({
         title: "Upload parcial",
-        description: `${uploadedUrls.length} de ${selectedImages.length} imagens enviadas. ${failed} falharam.`,
+        description: `${uploadedUrls.length} de ${selectedImages.length} imagens enviadas.`,
         variant: "destructive",
       });
     }
