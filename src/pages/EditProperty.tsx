@@ -280,10 +280,8 @@ const EditProperty = () => {
         description: `As alterações foram salvas com sucesso${finalImages.length > 0 ? ` com ${finalImages.length} foto(s)` : ''}.`,
       });
 
-      // Force a page refresh to ensure updated images appear immediately
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 1000);
+      // Navigate immediately after save
+      navigate('/dashboard');
     } catch (error: any) {
       console.error('Erro ao atualizar imóvel:', error);
       toast({

@@ -58,7 +58,7 @@ export const FeaturedProperties = () => {
       // Try edge function first, fallback to direct query if needed
       try {
         const { data, error } = await supabase.functions.invoke('get_public_properties', {
-          body: { limit: 50 },
+          body: { limit: 16 },
         });
 
         if (error) throw error;
@@ -85,7 +85,7 @@ export const FeaturedProperties = () => {
           .select('*')
           .eq('status', 'active')
           .order('created_at', { ascending: false })
-          .limit(50);
+          .limit(16);
 
         if (error) throw error;
         setProperties(data || []);
@@ -199,11 +199,12 @@ export const FeaturedProperties = () => {
                         <img
                           src={property.images[0]}
                           alt={property.title}
+                          loading="lazy"
                           className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          onLoad={() => console.log('✅ Imagem carregada:', property.images[0])}
                           onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = '/placeholder.svg';
                             console.error('❌ Erro ao carregar imagem:', property.images[0]);
-                            console.error('Erro completo:', e);
                           }}
                         />
                         {property.images.length > 1 && (

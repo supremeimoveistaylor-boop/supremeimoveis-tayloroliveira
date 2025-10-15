@@ -338,10 +338,8 @@ const AddProperty = () => {
         });
       }
 
-      // Navigate after a brief delay to ensure everything is saved
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 1500);
+      // Navigate immediately after save
+      navigate('/dashboard');
     } catch (error: any) {
       console.error('Erro ao cadastrar imóvel:', error);
       toast({
