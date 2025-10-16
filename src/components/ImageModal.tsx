@@ -38,24 +38,24 @@ export const ImageModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl w-full p-0 bg-black/95 border-none">
-        <div className="relative">
+      <DialogContent className="max-w-[95vw] md:max-w-4xl w-full p-0 bg-black/95 border-none h-[90vh] md:h-auto">
+        <div className="relative h-full flex flex-col">
           {/* Close button */}
           <Button
             size="sm"
             variant="ghost"
-            className="absolute top-4 right-4 z-10 bg-white/10 hover:bg-white/20 text-white rounded-full p-2"
+            className="absolute top-2 right-2 md:top-4 md:right-4 z-10 bg-white/10 hover:bg-white/20 text-white rounded-full p-2"
             onClick={onClose}
           >
             <X className="h-4 w-4" />
           </Button>
 
           {/* Image container */}
-          <div className="relative">
+          <div className="relative flex-1 flex items-center justify-center min-h-0">
             <img
               src={images[currentIndex]}
               alt={`${propertyTitle} - Foto ${currentIndex + 1}`}
-              className="w-full h-[70vh] object-contain"
+              className="w-full h-full max-h-[70vh] md:max-h-[75vh] object-contain"
             />
             
             {/* Navigation arrows */}
@@ -84,20 +84,20 @@ export const ImageModal = ({
 
           {/* Image counter and thumbnails */}
           {images.length > 1 && (
-            <div className="p-4">
+            <div className="p-2 md:p-4 flex-shrink-0">
               {/* Counter */}
-              <div className="text-center text-white/80 mb-4">
+              <div className="text-center text-white/80 mb-2 md:mb-4 text-sm md:text-base">
                 {currentIndex + 1} de {images.length} fotos
               </div>
               
               {/* Thumbnails */}
-              <div className="flex justify-center gap-2 overflow-x-auto max-w-full">
+              <div className="flex justify-center gap-1 md:gap-2 overflow-x-auto max-w-full pb-2 scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent">
                 {images.map((image, index) => (
                   <button
                     key={index}
                     onClick={() => setCurrentIndex(index)}
-                    className={`flex-shrink-0 w-16 h-12 rounded border-2 overflow-hidden ${
-                      index === currentIndex ? 'border-white' : 'border-white/30'
+                    className={`flex-shrink-0 w-12 h-9 md:w-16 md:h-12 rounded border-2 overflow-hidden transition-all ${
+                      index === currentIndex ? 'border-white scale-105' : 'border-white/30'
                     }`}
                   >
                     <img
