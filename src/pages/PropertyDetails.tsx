@@ -149,22 +149,23 @@ const PropertyDetails = () => {
   const handleShare = async () => {
     if (!property?.id) return;
     const url = `${window.location.origin}/property/${property.id}`;
+    
+    // Abrir em nova aba
+    window.open(url, '_blank', 'noopener,noreferrer');
+    
     try {
-      if (navigator.share) {
-        await navigator.share({
-          title: property?.title,
-          text: `Confira este imóvel: ${property?.title}`,
-          url: url,
-        });
-      } else {
-        await navigator.clipboard.writeText(url);
-        toast({
-          title: "Link copiado!",
-          description: "O link foi copiado para a área de transferência.",
-        });
-      }
+      // Também copiar para área de transferência
+      await navigator.clipboard.writeText(url);
+      toast({
+        title: "Link aberto e copiado!",
+        description: "O imóvel foi aberto em nova aba e o link copiado.",
+      });
     } catch (error) {
-      console.error('Error sharing:', error);
+      console.error('Error copying link:', error);
+      toast({
+        title: "Link aberto!",
+        description: "O imóvel foi aberto em nova aba.",
+      });
     }
   };
 
