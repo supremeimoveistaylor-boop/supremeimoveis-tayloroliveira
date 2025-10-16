@@ -420,34 +420,26 @@ const PropertyDetails = () => {
                     )}
 
                     <Button 
-                      asChild
                       variant="outline"
                       className="w-full"
+                      onClick={() => {
+                        const url = `${window.location.origin}/property/${property.id}`;
+                        window.open(url, '_blank', 'noopener,noreferrer');
+                        navigator.clipboard.writeText(url).then(() => {
+                          toast({
+                            title: "Link copiado!",
+                            description: "O link foi aberto em nova aba e copiado.",
+                          });
+                        }).catch(() => {
+                          toast({
+                            title: "Link aberto!",
+                            description: "O link foi aberto em nova aba.",
+                          });
+                        });
+                      }}
                     >
-                      <a
-                        href={`${window.location.origin}/property/${property.id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={async () => {
-                          try {
-                            const url = `${window.location.origin}/property/${property.id}`;
-                            await navigator.clipboard.writeText(url);
-                            toast({
-                              title: "Link aberto e copiado!",
-                              description: "O imóvel foi aberto em nova aba e o link copiado.",
-                            });
-                          } catch {
-                            toast({
-                              title: "Link aberto!",
-                              description: "O imóvel foi aberto em nova aba.",
-                            });
-                          }
-                        }}
-                        aria-label={`Compartilhar ${property.title}`}
-                      >
-                        <Share2 className="mr-2 h-4 w-4" />
-                        Compartilhar
-                      </a>
+                      <Share2 className="mr-2 h-4 w-4" />
+                      Compartilhar
                     </Button>
                   </div>
 

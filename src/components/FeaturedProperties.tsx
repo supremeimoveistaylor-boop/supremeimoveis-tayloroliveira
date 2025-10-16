@@ -248,34 +248,27 @@ export const FeaturedProperties = () => {
                         </Button>
                       )}
                       <Button 
-                        asChild
                         size="sm" 
                         variant="outline" 
                         className="rounded-full p-2 bg-blue-500 hover:bg-blue-600 text-white border-none"
+                        onClick={() => {
+                          const url = `${window.location.origin}/property/${property.id}`;
+                          window.open(url, '_blank', 'noopener,noreferrer');
+                          navigator.clipboard.writeText(url).then(() => {
+                            toast({
+                              title: "Link copiado!",
+                              description: "O link foi aberto em nova aba e copiado.",
+                            });
+                          }).catch(() => {
+                            toast({
+                              title: "Link aberto!",
+                              description: "O link foi aberto em nova aba.",
+                            });
+                          });
+                        }}
+                        aria-label={`Compartilhar ${property.title}`}
                       >
-                        <a
-                          href={`${window.location.origin}/property/${property.id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={async () => {
-                            try {
-                              const url = `${window.location.origin}/property/${property.id}`;
-                              await navigator.clipboard.writeText(url);
-                              toast({
-                                title: "Link aberto e copiado!",
-                                description: "O imóvel foi aberto em nova aba e o link copiado.",
-                              });
-                            } catch {
-                              toast({
-                                title: "Link aberto!",
-                                description: "O imóvel foi aberto em nova aba.",
-                              });
-                            }
-                          }}
-                          aria-label={`Compartilhar ${property.title}`}
-                        >
-                          <Share2 className="h-4 w-4" />
-                        </a>
+                        <Share2 className="h-4 w-4" />
                       </Button>
                       {user && user.id === property.user_id && (
                         <Button 
