@@ -148,7 +148,7 @@ const PropertyDetails = () => {
 
   const handleShare = async () => {
     if (!property?.id) return;
-    const url = `${window.location.origin}/property/${property.id}`;
+    const url = `${window.location.origin}/#/property/${property.id}`;
     
     // Abrir em nova aba
     window.open(url, '_blank', 'noopener,noreferrer');
@@ -423,7 +423,7 @@ const PropertyDetails = () => {
                       variant="outline"
                       className="w-full"
                       onClick={() => {
-                        const url = `${window.location.origin}/property/${property.id}`;
+                        const url = `${window.location.origin}/#/property/${property.id}`;
                         window.open(url, '_blank', 'noopener,noreferrer');
                         navigator.clipboard.writeText(url).then(() => {
                           toast({

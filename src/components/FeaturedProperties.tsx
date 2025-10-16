@@ -128,7 +128,7 @@ export const FeaturedProperties = () => {
   };
 
   const handleShare = async (propertyId: string, propertyTitle: string) => {
-    const url = `${window.location.origin}/property/${propertyId}`;
+    const url = `${window.location.origin}/#/property/${propertyId}`;
     
     // Abrir em nova aba
     window.open(url, '_blank', 'noopener,noreferrer');
@@ -181,7 +181,7 @@ export const FeaturedProperties = () => {
           <div className="text-center py-12">
             <p className="text-lg text-muted-foreground mb-4">Nenhum imóvel cadastrado ainda.</p>
             {user && (
-              <Button onClick={() => window.location.href = '/add-property'}>
+              <Button onClick={() => navigate('/add-property')}>
                 Cadastrar Primeiro Imóvel
               </Button>
             )}
@@ -252,7 +252,7 @@ export const FeaturedProperties = () => {
                         variant="outline" 
                         className="rounded-full p-2 bg-blue-500 hover:bg-blue-600 text-white border-none"
                         onClick={() => {
-                          const url = `${window.location.origin}/property/${property.id}`;
+                          const url = `${window.location.origin}/#/property/${property.id}`;
                           window.open(url, '_blank', 'noopener,noreferrer');
                           navigator.clipboard.writeText(url).then(() => {
                             toast({
@@ -275,8 +275,8 @@ export const FeaturedProperties = () => {
                           size="sm" 
                           variant="outline" 
                           className="rounded-full p-2 bg-white/90 border-none"
-                          onClick={() => window.location.href = `/edit-property/${property.id}`}
-                        >
+                           onClick={() => navigate(`/edit-property/${property.id}`)}
+                         >
                           <Edit className="h-4 w-4" />
                         </Button>
                       )}
@@ -346,7 +346,7 @@ export const FeaturedProperties = () => {
               size="lg" 
               variant="outline" 
               className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-              onClick={() => window.location.href = '/dashboard'}
+              onClick={() => navigate('/dashboard')}
             >
               Gerenciar Meus Imóveis
             </Button>
