@@ -196,6 +196,7 @@ const AddProperty = () => {
           description: "Você precisa estar logado para cadastrar um imóvel.",
           variant: "destructive",
         });
+        setIsLoading(false);
         navigate('/auth');
         return;
       }
@@ -221,6 +222,7 @@ const AddProperty = () => {
           description: "O título deve ter entre 5 e 200 caracteres.",
           variant: "destructive",
         });
+        setIsLoading(false);
         return;
       }
 
@@ -230,6 +232,7 @@ const AddProperty = () => {
           description: "O preço deve ser um valor positivo válido.",
           variant: "destructive",
         });
+        setIsLoading(false);
         return;
       }
 
