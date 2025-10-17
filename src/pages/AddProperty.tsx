@@ -56,28 +56,49 @@ const AddProperty = () => {
   }
 
   const handleImageUpload = (files: File[]) => {
-    // Security: Validate file types and sizes
-    const validFiles = files.filter(file => {
-      if (!validateImageFile(file)) {
-        toast({
-          title: "Arquivo inválido",
-          description: `${file.name} não é um tipo de imagem válido ou é muito grande (máximo 5MB)`,
-          variant: "destructive",
-        });
-        return false;
-      }
-      return true;
-    });
+    console.log(`Processing ${files.length} files for upload`);
     
-    if (selectedImages.length + validFiles.length > 20) {
+    // Security: Validate file types and sizes
+    const validFiles: File[] = [];
+    let hasInvalidFiles = false;
+    
+    for (const file of files) {
+      if (!validateImageFile(file)) {
+        hasInvalidFiles = true;
+        console.warn(`Invalid file: ${file.name}`);
+      } else {
+        validFiles.push(file);
+      }
+    }
+    
+    if (hasInvalidFiles) {
       toast({
-        title: "Limite excedido",
-        description: "Máximo de 20 imagens por imóvel",
+        title: "Alguns arquivos foram ignorados",
+        description: "Apenas imagens JPG, PNG e WEBP com até 5MB são aceitas",
         variant: "destructive",
       });
-      return;
     }
-    setSelectedImages(prev => [...prev, ...validFiles]);
+    
+    const remainingSlots = 20 - selectedImages.length;
+    
+    if (validFiles.length > remainingSlots) {
+      toast({
+        title: "Limite excedido",
+        description: `Máximo de 20 imagens. Adicionando apenas ${remainingSlots} foto(s).`,
+        variant: "destructive",
+      });
+    }
+    
+    const filesToAdd = validFiles.slice(0, remainingSlots);
+    
+    if (filesToAdd.length > 0) {
+      console.log(`Adding ${filesToAdd.length} valid files`);
+      setSelectedImages(prev => [...prev, ...filesToAdd]);
+      toast({
+        title: "Fotos adicionadas",
+        description: `${filesToAdd.length} foto(s) adicionada(s) com sucesso`,
+      });
+    }
   };
 
   const addAmenity = (amenity: string) => {

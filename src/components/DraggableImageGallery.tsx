@@ -58,8 +58,17 @@ export const DraggableImageGallery = ({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     console.log('Files selected in gallery:', files.length);
-    if (files.length > 0) {
-      onImageUpload(files);
+    
+    // Limit selection to prevent overwhelming the browser
+    const remainingSlots = maxImages - images.length;
+    if (files.length > remainingSlots) {
+      console.warn(`Limiting selection to ${remainingSlots} files`);
+    }
+    
+    const filesToUpload = files.slice(0, remainingSlots);
+    
+    if (filesToUpload.length > 0) {
+      onImageUpload(filesToUpload);
     }
     // Reset input to allow selecting the same files again
     e.target.value = '';
@@ -74,7 +83,12 @@ export const DraggableImageGallery = ({
     if (typeof image === 'string') {
       return image;
     }
-    return URL.createObjectURL(image);
+    try {
+      return URL.createObjectURL(image);
+    } catch (error) {
+      console.error('Error creating object URL:', error);
+      return '';
+    }
   };
 
   return (

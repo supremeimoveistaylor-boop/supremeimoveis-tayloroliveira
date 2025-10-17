@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { X, ArrowLeft } from 'lucide-react';
 import { DraggableImageGallery } from '@/components/DraggableImageGallery';
+import { validateImageFile } from '@/lib/security';
 
 interface Property {
   id: string;
@@ -109,16 +110,49 @@ const EditProperty = () => {
   }
 
   const handleImageUpload = (files: File[]) => {
-    const totalImages = allImages.length + files.length;
-    if (totalImages > 20) {
+    console.log(`Processing ${files.length} files for upload`);
+    
+    // Security: Validate file types and sizes
+    const validFiles: File[] = [];
+    let hasInvalidFiles = false;
+    
+    for (const file of files) {
+      if (!validateImageFile(file)) {
+        hasInvalidFiles = true;
+        console.warn(`Invalid file: ${file.name}`);
+      } else {
+        validFiles.push(file);
+      }
+    }
+    
+    if (hasInvalidFiles) {
       toast({
-        title: "Limite excedido",
-        description: "Máximo de 20 imagens por imóvel",
+        title: "Alguns arquivos foram ignorados",
+        description: "Apenas imagens JPG, PNG e WEBP com até 5MB são aceitas",
         variant: "destructive",
       });
-      return;
     }
-    setAllImages(prev => [...prev, ...files]);
+    
+    const remainingSlots = 20 - allImages.length;
+    
+    if (validFiles.length > remainingSlots) {
+      toast({
+        title: "Limite excedido",
+        description: `Máximo de 20 imagens. Adicionando apenas ${remainingSlots} foto(s).`,
+        variant: "destructive",
+      });
+    }
+    
+    const filesToAdd = validFiles.slice(0, remainingSlots);
+    
+    if (filesToAdd.length > 0) {
+      console.log(`Adding ${filesToAdd.length} valid files`);
+      setAllImages(prev => [...prev, ...filesToAdd]);
+      toast({
+        title: "Fotos adicionadas",
+        description: `${filesToAdd.length} foto(s) adicionada(s) com sucesso`,
+      });
+    }
   };
 
   const addAmenity = (amenity: string) => {
