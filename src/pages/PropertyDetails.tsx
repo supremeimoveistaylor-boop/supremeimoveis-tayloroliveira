@@ -233,6 +233,7 @@ const PropertyDetails = () => {
                     <img
                       src={property.images[0]}
                       alt={property.title}
+                      loading="lazy"
                       className="w-full h-[400px] object-cover rounded-lg shadow-lg group-hover:scale-105 transition-transform duration-300"
                     />
                   </div>
@@ -249,6 +250,7 @@ const PropertyDetails = () => {
                         <img
                           src={image}
                           alt={`${property.title} - ${index + 2}`}
+                          loading="lazy"
                           className="w-full h-[192px] object-cover rounded-lg shadow-md group-hover:scale-105 transition-transform duration-300"
                         />
                         {index === 3 && property.images.length > 5 && (
@@ -263,9 +265,35 @@ const PropertyDetails = () => {
                   </div>
                 </div>
 
+                {/* Desktop Thumbnails - show ALL images */}
+                {property.images.length > 1 && (
+                  <div className="hidden md:block mt-4">
+                    <div className="flex gap-2 overflow-x-auto pb-2 max-w-full">
+                      {property.images.map((img, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => {
+                            setSelectedImageIndex(idx);
+                            setIsImageModalOpen(true);
+                          }}
+                          className="flex-shrink-0 w-24 h-20 rounded-md overflow-hidden border border-border hover:border-primary transition-colors"
+                          aria-label={`Abrir foto ${idx + 1}`}
+                        >
+                          <img
+                            src={img}
+                            alt={`${property.title} - miniatura ${idx + 1}`}
+                            loading="lazy"
+                            className="w-full h-full object-cover"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Mobile Gallery - Scrollable horizontal list */}
                 <div className="md:hidden">
-                  <div className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide">
+                  <div className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory">
                     {property.images.map((image, index) => (
                       <div 
                         key={index}
@@ -278,6 +306,7 @@ const PropertyDetails = () => {
                         <img
                           src={image}
                           alt={`${property.title} - ${index + 1}`}
+                          loading="lazy"
                           className="w-full h-[250px] object-cover rounded-lg shadow-lg"
                         />
                         <div className="absolute bottom-2 right-2 bg-black/70 text-white text-sm px-3 py-1 rounded-full">
@@ -290,6 +319,15 @@ const PropertyDetails = () => {
                     Deslize para ver mais fotos ou toque para ampliar
                   </p>
                 </div>
+
+                {/* Ver todas as fotos */}
+                {property.images.length > 1 && (
+                  <div className="mt-4">
+                    <Button variant="outline" onClick={() => setIsImageModalOpen(true)}>
+                      Ver todas as {property.images.length} fotos
+                    </Button>
+                  </div>
+                )}
               </>
             ) : (
               <div className="w-full h-[400px] bg-muted rounded-lg flex items-center justify-center">
