@@ -113,6 +113,21 @@ const AddProperty = () => {
 
   const uploadImages = async (propertyId: string): Promise<string[]> => {
     console.log(`🚀 UPLOAD: Iniciando envio de ${selectedImages.length} imagens`);
+    console.log(`🔑 Auth user:`, user?.id);
+    
+    // Check authentication
+    const { data: { session } } = await supabase.auth.getSession();
+    console.log(`🔐 Session exists:`, !!session);
+    
+    if (!session) {
+      console.error('❌ Usuário não autenticado!');
+      toast({
+        title: "Erro de autenticação",
+        description: "Você precisa estar logado para fazer upload de imagens.",
+        variant: "destructive",
+      });
+      return [];
+    }
     
     // Upload in parallel batches of 5 for better performance
     const BATCH_SIZE = 5;
@@ -133,9 +148,10 @@ const AddProperty = () => {
         const fileName = `${propertyId}/${timestamp}_${random}_${globalIndex}.${fileExt}`;
 
         try {
-          console.log(`📷 [${globalIndex + 1}/${selectedImages.length}] ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+          console.log(`📷 [${globalIndex + 1}/${selectedImages.length}] Iniciando: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+          console.log(`📂 Nome do arquivo: ${fileName}`);
           
-          const { error: uploadError } = await supabase.storage
+          const { data: uploadData, error: uploadError } = await supabase.storage
             .from('property-images')
             .upload(fileName, file, {
               cacheControl: '3600',
@@ -143,18 +159,27 @@ const AddProperty = () => {
             });
 
           if (uploadError) {
-            console.error(`❌ [${globalIndex + 1}] Erro:`, uploadError.message);
+            console.error(`❌ [${globalIndex + 1}] Erro no upload:`, {
+              message: uploadError.message,
+              error: uploadError,
+            });
             return null;
           }
 
+          console.log(`✅ [${globalIndex + 1}] Upload OK, gerando URL pública`);
+          
           const { data: urlData } = supabase.storage
             .from('property-images')
             .getPublicUrl(fileName);
 
-          console.log(`✅ [${globalIndex + 1}] OK`);
+          console.log(`🌐 [${globalIndex + 1}] URL gerada: ${urlData.publicUrl}`);
           return urlData.publicUrl;
         } catch (error: any) {
-          console.error(`💥 [${globalIndex + 1}] Exceção:`, error);
+          console.error(`💥 [${globalIndex + 1}] Exceção capturada:`, {
+            name: error?.name,
+            message: error?.message,
+            stack: error?.stack,
+          });
           return null;
         }
       });
@@ -167,11 +192,12 @@ const AddProperty = () => {
     }
 
     console.log(`\n📊 RESULTADO FINAL: ${uploadedUrls.length}/${selectedImages.length} imagens enviadas com sucesso`);
+    console.log(`📋 URLs geradas:`, uploadedUrls);
     
     if (uploadedUrls.length === 0 && selectedImages.length > 0) {
       toast({
         title: "Erro completo",
-        description: "Nenhuma imagem foi enviada. Verifique sua conexão.",
+        description: "Nenhuma imagem foi enviada. Verifique os logs do console para mais detalhes.",
         variant: "destructive",
       });
     } else if (uploadedUrls.length < selectedImages.length) {
