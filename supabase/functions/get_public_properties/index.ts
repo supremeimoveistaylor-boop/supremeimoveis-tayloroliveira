@@ -33,10 +33,10 @@ serve(async (req) => {
   try {
     console.log("Edge function called:", req.method);
 
-    const { limit = 50, featured, id }: { limit?: number; featured?: boolean; id?: string } =
+    const { limit = 100, featured, id }: { limit?: number; featured?: boolean; id?: string } =
       req.method === "POST" ? await req.json().catch(() => ({})) : {};
 
-    const safeLimit = Math.max(1, Math.min(100, Number(limit) || 50));
+    const safeLimit = Math.max(1, Math.min(200, Number(limit) || 100));
 
     if (id) {
       console.log("Fetching single property by id:", id);

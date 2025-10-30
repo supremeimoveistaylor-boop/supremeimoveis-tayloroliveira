@@ -58,7 +58,7 @@ export const FeaturedProperties = () => {
       // Try edge function first, fallback to direct query if needed
       try {
         const { data, error } = await supabase.functions.invoke('get_public_properties', {
-          body: { limit: 50 },
+          body: { limit: 100 },
         });
 
         if (error) throw error;
@@ -85,7 +85,7 @@ export const FeaturedProperties = () => {
           .select('*')
           .eq('status', 'active')
           .order('created_at', { ascending: false })
-          .limit(50);
+          .limit(100);
 
         if (error) throw error;
         setProperties(data || []);
