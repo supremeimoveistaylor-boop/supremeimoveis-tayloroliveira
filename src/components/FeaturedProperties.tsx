@@ -291,7 +291,7 @@ export const FeaturedProperties = () => {
                 
                 <CardContent className="p-4">
                   <div className="mb-3">
-                    <h3 className="font-bold text-lg text-primary mb-1 line-clamp-1">
+                    <h3 className="font-bold text-lg text-primary mb-1 line-clamp-2">
                       {property.title}
                     </h3>
                     <div className="flex items-center text-muted-foreground text-sm mb-2">
