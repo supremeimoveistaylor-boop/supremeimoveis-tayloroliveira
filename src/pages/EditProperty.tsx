@@ -95,15 +95,20 @@ const EditProperty = () => {
       if (error) throw error;
       if (!data) throw new Error('Imóvel não encontrado');
 
-      setProperty(data);
-      setAllImages(data.images || []);
-      setAmenities(data.amenities || []);
-      setPropertyType(data.property_type);
-      setPurpose(data.purpose);
-      setStatus(data.status || 'active');
-      setListingStatus((data.listing_status as 'available' | 'sold' | 'rented') || 'available');
-      setLatitude(data.latitude);
-      setLongitude(data.longitude);
+      const propertyData = {
+        ...data,
+        listing_status: (data.listing_status as 'available' | 'sold' | 'rented') || 'available'
+      } as Property;
+      
+      setProperty(propertyData);
+      setAllImages(propertyData.images || []);
+      setAmenities(propertyData.amenities || []);
+      setPropertyType(propertyData.property_type);
+      setPurpose(propertyData.purpose);
+      setStatus(propertyData.status || 'active');
+      setListingStatus(propertyData.listing_status || 'available');
+      setLatitude(propertyData.latitude);
+      setLongitude(propertyData.longitude);
     } catch (error: any) {
       toast({
         title: "Erro ao carregar imóvel",
