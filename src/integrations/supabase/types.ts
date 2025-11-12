@@ -58,6 +58,7 @@ export type Database = {
           location: string
           parking_spaces: number | null
           price: number
+          property_code: string
           property_type: string
           purpose: string
           status: string
@@ -80,6 +81,7 @@ export type Database = {
           location: string
           parking_spaces?: number | null
           price: number
+          property_code: string
           property_type: string
           purpose: string
           status?: string
@@ -102,6 +104,7 @@ export type Database = {
           location?: string
           parking_spaces?: number | null
           price?: number
+          property_code?: string
           property_type?: string
           purpose?: string
           status?: string
@@ -240,6 +243,7 @@ export type Database = {
       }
     }
     Functions: {
+      generate_property_code: { Args: never; Returns: string }
       get_user_role: {
         Args: { user_id_param: string }
         Returns: Database["public"]["Enums"]["user_role"]
@@ -255,10 +259,7 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_admin: {
-        Args: { _user_id: string }
-        Returns: boolean
-      }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
       log_security_event: {
         Args: { event_details?: Json; event_type: string }
         Returns: undefined

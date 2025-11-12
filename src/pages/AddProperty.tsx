@@ -322,7 +322,7 @@ const AddProperty = () => {
           images: [], // Will be updated after image upload
           whatsapp_link: whatsappLink,
           youtube_link: youtubeLink,
-        })
+        } as any)
         .select()
         .single();
 

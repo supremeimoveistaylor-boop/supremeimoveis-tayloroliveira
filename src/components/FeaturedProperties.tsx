@@ -28,6 +28,7 @@ interface Property {
   whatsapp_link: string;
   youtube_link: string;
   amenities: string[];
+  property_code?: string;
 }
 
 export const FeaturedProperties = () => {
@@ -291,6 +292,11 @@ export const FeaturedProperties = () => {
                 
                 <CardContent className="p-4">
                   <div className="mb-3">
+                    {property.property_code && (
+                      <div className="text-xs font-mono text-muted-foreground mb-1.5 bg-muted/50 px-2 py-1 rounded inline-block">
+                        {property.property_code}
+                      </div>
+                    )}
                     <h3 className="font-bold text-lg text-primary mb-1 line-clamp-2">
                       {property.title}
                     </h3>

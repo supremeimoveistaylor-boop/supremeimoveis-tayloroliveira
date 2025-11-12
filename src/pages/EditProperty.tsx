@@ -325,7 +325,7 @@ const EditProperty = () => {
           status: status,
           whatsapp_link: formData.get('whatsapp_link') as string || null,
           youtube_link: formData.get('youtube_link') as string || null,
-        })
+        } as any)
         .eq('id', property.id);
 
       if (error) {
