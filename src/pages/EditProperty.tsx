@@ -40,7 +40,7 @@ interface Property {
 
 const EditProperty = () => {
   // All hooks must be called before any conditional returns
-  const { user, loading } = useAuth();
+  const { user, loading, isAdmin } = useAuth();
   const navigate = useNavigate();
   const { id } = useParams();
   const [isLoading, setIsLoading] = useState(false);
@@ -85,12 +85,17 @@ const EditProperty = () => {
     if (!user) return;
     
     try {
-      const { data, error } = await supabase
+      // Build query allowing admins to edit any property
+      let query: any = supabase
         .from('properties')
         .select('*')
-        .eq('id', id)
-        .eq('user_id', user.id)
-        .single();
+        .eq('id', id);
+
+      if (!isAdmin) {
+        query = query.eq('user_id', user.id);
+      }
+
+      const { data, error } = await query.single();
 
       if (error) throw error;
       if (!data) throw new Error('Imóvel não encontrado');
