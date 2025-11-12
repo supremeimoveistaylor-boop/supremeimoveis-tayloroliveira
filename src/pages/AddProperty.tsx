@@ -35,6 +35,7 @@ const AddProperty = () => {
   const [newAmenity, setNewAmenity] = useState('');
   const [propertyType, setPropertyType] = useState<string>('');
   const [purpose, setPurpose] = useState<string>('');
+  const [status, setStatus] = useState<string>('active');
   const [latitude, setLatitude] = useState<number | undefined>();
   const [longitude, setLongitude] = useState<number | undefined>();
 
@@ -323,6 +324,7 @@ const AddProperty = () => {
           area: areaValue,
           amenities: sanitizeAmenitiesArray(amenities),
           images: [], // Will be updated after image upload
+          status: status,
           whatsapp_link: whatsappLink,
           youtube_link: youtubeLink,
           latitude,
@@ -515,8 +517,8 @@ const AddProperty = () => {
                 </p>
               </div>
 
-              {/* Property Type and Purpose */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Property Type, Purpose and Status */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label>Tipo de Imóvel *</Label>
                   <Select value={propertyType} onValueChange={setPropertyType}>
@@ -540,6 +542,20 @@ const AddProperty = () => {
                     <SelectContent>
                       <SelectItem value="sale">Venda</SelectItem>
                       <SelectItem value="rent">Aluguel</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Status *</Label>
+                  <Select value={status} onValueChange={setStatus}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Ativo</SelectItem>
+                      <SelectItem value="inactive">Inativo</SelectItem>
+                      <SelectItem value="sold">Vendido</SelectItem>
+                      <SelectItem value="rented">Alugado</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
