@@ -101,7 +101,7 @@ const EditProperty = () => {
       setPropertyType(data.property_type);
       setPurpose(data.purpose);
       setStatus(data.status || 'active');
-      setListingStatus(data.listing_status || 'available');
+      setListingStatus((data.listing_status as 'available' | 'sold' | 'rented') || 'available');
       setLatitude(data.latitude);
       setLongitude(data.longitude);
     } catch (error: any) {
