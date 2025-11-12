@@ -30,6 +30,12 @@ interface Property {
   images: string[];
   amenities: string[];
   status: string;
+  listing_status?: 'available' | 'sold' | 'rented';
+  whatsapp_link?: string;
+  youtube_link?: string;
+  property_code?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 const EditProperty = () => {
@@ -45,6 +51,7 @@ const EditProperty = () => {
   const [propertyType, setPropertyType] = useState<string>('');
   const [purpose, setPurpose] = useState<string>('');
   const [status, setStatus] = useState<string>('active');
+  const [listingStatus, setListingStatus] = useState<'available' | 'sold' | 'rented'>('available');
   const [latitude, setLatitude] = useState<number | undefined>();
   const [longitude, setLongitude] = useState<number | undefined>();
 
@@ -88,14 +95,20 @@ const EditProperty = () => {
       if (error) throw error;
       if (!data) throw new Error('Imóvel não encontrado');
 
-      setProperty(data);
-      setAllImages(data.images || []);
-      setAmenities(data.amenities || []);
-      setPropertyType(data.property_type);
-      setPurpose(data.purpose);
-      setStatus(data.status || 'active');
-      setLatitude(data.latitude);
-      setLongitude(data.longitude);
+      const propertyData = {
+        ...data,
+        listing_status: (data.listing_status as 'available' | 'sold' | 'rented') || 'available'
+      } as Property;
+      
+      setProperty(propertyData);
+      setAllImages(propertyData.images || []);
+      setAmenities(propertyData.amenities || []);
+      setPropertyType(propertyData.property_type);
+      setPurpose(propertyData.purpose);
+      setStatus(propertyData.status || 'active');
+      setListingStatus(propertyData.listing_status || 'available');
+      setLatitude(propertyData.latitude);
+      setLongitude(propertyData.longitude);
     } catch (error: any) {
       toast({
         title: "Erro ao carregar imóvel",
@@ -328,6 +341,7 @@ const EditProperty = () => {
           amenities,
           images: finalImages,
           status: status,
+          listing_status: listingStatus,
           whatsapp_link: formData.get('whatsapp_link') as string || null,
           youtube_link: formData.get('youtube_link') as string || null,
           latitude,
@@ -513,6 +527,19 @@ const EditProperty = () => {
                     <SelectContent>
                       <SelectItem value="active">Ativo</SelectItem>
                       <SelectItem value="inactive">Inativo</SelectItem>
+                      <SelectItem value="sold">Vendido</SelectItem>
+                      <SelectItem value="rented">Alugado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Status de Listagem *</Label>
+                  <Select value={listingStatus} onValueChange={(value: 'available' | 'sold' | 'rented') => setListingStatus(value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o status de listagem" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="available">Disponível</SelectItem>
                       <SelectItem value="sold">Vendido</SelectItem>
                       <SelectItem value="rented">Alugado</SelectItem>
                     </SelectContent>
