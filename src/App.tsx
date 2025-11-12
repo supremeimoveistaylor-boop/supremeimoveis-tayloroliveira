@@ -25,22 +25,23 @@ const App = () => (
         <Toaster />
         <Sonner />
         {/* Error boundary to avoid blank screens */}
-        {/* ... keep existing code (router and routes) */}
-        <HashRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/chat" element={<Chat />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/add-property" element={<AddProperty />} />
-            <Route path="/edit-property/:id" element={<EditProperty />} />
-            <Route path="/admin" element={<Admin />} />
-            <Route path="/property/:id" element={<PropertyDetails />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </HashRouter>
+        <ErrorBoundary>
+          <HashRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/chat" element={<Chat />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/add-property" element={<AddProperty />} />
+              <Route path="/edit-property/:id" element={<EditProperty />} />
+              <Route path="/admin" element={<Admin />} />
+              <Route path="/property/:id" element={<PropertyDetails />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </HashRouter>
+        </ErrorBoundary>
       </TooltipProvider>
     </AuthProvider>
   </QueryClientProvider>
