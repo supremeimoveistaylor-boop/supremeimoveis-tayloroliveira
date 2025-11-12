@@ -30,6 +30,7 @@ interface Property {
   whatsapp_link: string;
   youtube_link: string;
   amenities: string[];
+  property_code?: string;
 }
 
 const PropertyDetails = () => {
@@ -348,6 +349,11 @@ const PropertyDetails = () => {
                     <Badge variant="outline">
                       {translatePropertyType(property.property_type)}
                     </Badge>
+                    {property.property_code && (
+                      <Badge variant="outline" className="font-mono bg-muted">
+                        {property.property_code}
+                      </Badge>
+                    )}
                   </div>
 
                   <h1 className="text-3xl font-bold text-primary mb-2">
