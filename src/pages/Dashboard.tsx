@@ -24,6 +24,7 @@ interface Property {
   images: string[];
   status: string;
   created_at: string;
+  property_code?: string;
 }
 
 const Dashboard = () => {
@@ -227,6 +228,11 @@ const Dashboard = () => {
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div>
+                        {property.property_code && (
+                          <div className="text-xs font-mono text-muted-foreground mb-1.5">
+                            {property.property_code}
+                          </div>
+                        )}
                         <CardTitle className="text-lg">{property.title}</CardTitle>
                         <CardDescription className="flex items-center gap-2 mt-1">
                           <Badge variant={property.purpose === 'sale' ? 'default' : 'secondary'}>
