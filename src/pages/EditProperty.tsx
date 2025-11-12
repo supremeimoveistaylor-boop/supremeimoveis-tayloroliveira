@@ -532,6 +532,19 @@ const EditProperty = () => {
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="space-y-2">
+                  <Label>Status de Listagem *</Label>
+                  <Select value={listingStatus} onValueChange={(value: 'available' | 'sold' | 'rented') => setListingStatus(value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o status de listagem" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="available">Disponível</SelectItem>
+                      <SelectItem value="sold">Vendido</SelectItem>
+                      <SelectItem value="rented">Alugado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               {/* Property Details */}
