@@ -324,6 +324,7 @@ const AddProperty = () => {
           area: areaValue,
           amenities: sanitizeAmenitiesArray(amenities),
           images: [], // Will be updated after image upload
+          status: status,
           whatsapp_link: whatsappLink,
           youtube_link: youtubeLink,
           latitude,
