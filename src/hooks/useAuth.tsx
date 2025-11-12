@@ -108,6 +108,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signUp = async (email: string, password: string, fullName: string) => {
     const redirectUrl = `${window.location.origin}/`;
     
+    // Whitelist validation - only these emails can sign up
+    const whitelistedEmails = ['crv.taylor@gmail.com', 'supremeimoveis.taylor@gmail.com'];
+    if (!whitelistedEmails.includes(email.toLowerCase())) {
+      toast({
+        title: "Acesso negado",
+        description: "Este email não está autorizado. Apenas emails aprovados podem acessar a plataforma.",
+        variant: "destructive",
+      });
+      return { error: { message: 'Email não autorizado' } };
+    }
+    
     const { error } = await supabase.auth.signUp({
       email,
       password,

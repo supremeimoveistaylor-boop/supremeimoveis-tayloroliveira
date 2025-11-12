@@ -113,6 +113,11 @@ const Auth = () => {
           <CardDescription className="text-center">
             Sistema de gestão de imóveis
           </CardDescription>
+          <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mt-3">
+            <p className="text-xs text-amber-800 text-center">
+              ⚠️ Acesso restrito: Apenas emails autorizados podem usar esta plataforma
+            </p>
+          </div>
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
