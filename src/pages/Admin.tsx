@@ -23,6 +23,7 @@ interface Property {
   area: number;
   images: string[];
   status: string;
+  listing_status?: 'available' | 'sold' | 'rented';
   created_at: string;
   user_id: string;
   property_code?: string;

@@ -27,10 +27,13 @@ interface Property {
   area: number;
   images: string[];
   status: string;
+  listing_status?: 'available' | 'sold' | 'rented';
   whatsapp_link: string;
   youtube_link: string;
   amenities: string[];
   property_code?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 const PropertyDetails = () => {
@@ -349,6 +352,24 @@ const PropertyDetails = () => {
                     <Badge variant="outline">
                       {translatePropertyType(property.property_type)}
                     </Badge>
+                    {property.listing_status && (
+                      <Badge 
+                        variant="outline"
+                        className={
+                          property.listing_status === 'available' 
+                            ? "bg-green-500 text-white border-green-500" 
+                            : property.listing_status === 'sold'
+                            ? "bg-red-500 text-white border-red-500"
+                            : "bg-blue-500 text-white border-blue-500"
+                        }
+                      >
+                        {property.listing_status === 'available' 
+                          ? 'Disponível' 
+                          : property.listing_status === 'sold' 
+                          ? 'Vendido' 
+                          : 'Alugado'}
+                      </Badge>
+                    )}
                     {property.property_code && (
                       <Badge variant="outline" className="font-mono bg-muted">
                         {property.property_code}

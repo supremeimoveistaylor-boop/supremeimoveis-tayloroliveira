@@ -24,11 +24,14 @@ interface Property {
   area: number;
   images: string[];
   status: string;
+  listing_status?: 'available' | 'sold' | 'rented';
   user_id?: string;
   whatsapp_link: string;
   youtube_link: string;
   amenities: string[];
   property_code?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export const FeaturedProperties = () => {
@@ -221,13 +224,31 @@ export const FeaturedProperties = () => {
                         <span className="text-muted-foreground">Sem imagem</span>
                       </div>
                     )}
-                    <div className="absolute top-3 left-3">
+                    <div className="absolute top-3 left-3 flex gap-2">
                       <Badge 
                         variant={property.purpose === "sale" ? "default" : "secondary"}
                         className={property.purpose === "sale" ? "bg-accent text-accent-foreground" : "bg-primary text-primary-foreground"}
                       >
                         {translatePurpose(property.purpose)}
                       </Badge>
+                      {property.listing_status && (
+                        <Badge 
+                          variant="outline"
+                          className={
+                            property.listing_status === 'available' 
+                              ? "bg-green-500/90 text-white border-green-500" 
+                              : property.listing_status === 'sold'
+                              ? "bg-red-500/90 text-white border-red-500"
+                              : "bg-blue-500/90 text-white border-blue-500"
+                          }
+                        >
+                          {property.listing_status === 'available' 
+                            ? 'Disponível' 
+                            : property.listing_status === 'sold' 
+                            ? 'Vendido' 
+                            : 'Alugado'}
+                        </Badge>
+                      )}
                     </div>
                     <div className="absolute top-3 right-3 flex gap-2">
                       {property.whatsapp_link && (
