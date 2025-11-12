@@ -35,6 +35,7 @@ const AddProperty = () => {
   const [newAmenity, setNewAmenity] = useState('');
   const [propertyType, setPropertyType] = useState<string>('');
   const [purpose, setPurpose] = useState<string>('');
+  const [status, setStatus] = useState<string>('active');
   const [latitude, setLatitude] = useState<number | undefined>();
   const [longitude, setLongitude] = useState<number | undefined>();
 
