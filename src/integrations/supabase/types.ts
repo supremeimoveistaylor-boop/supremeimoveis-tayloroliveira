@@ -55,7 +55,10 @@ export type Database = {
           featured: boolean | null
           id: string
           images: string[] | null
+          latitude: number | null
+          listing_status: string | null
           location: string
+          longitude: number | null
           parking_spaces: number | null
           price: number
           property_code: string
@@ -78,7 +81,10 @@ export type Database = {
           featured?: boolean | null
           id?: string
           images?: string[] | null
+          latitude?: number | null
+          listing_status?: string | null
           location: string
+          longitude?: number | null
           parking_spaces?: number | null
           price: number
           property_code: string
@@ -101,7 +107,10 @@ export type Database = {
           featured?: boolean | null
           id?: string
           images?: string[] | null
+          latitude?: number | null
+          listing_status?: string | null
           location?: string
+          longitude?: number | null
           parking_spaces?: number | null
           price?: number
           property_code?: string
