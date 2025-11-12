@@ -30,6 +30,12 @@ interface Property {
   images: string[];
   amenities: string[];
   status: string;
+  listing_status?: 'available' | 'sold' | 'rented';
+  whatsapp_link?: string;
+  youtube_link?: string;
+  property_code?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 const EditProperty = () => {
@@ -45,6 +51,7 @@ const EditProperty = () => {
   const [propertyType, setPropertyType] = useState<string>('');
   const [purpose, setPurpose] = useState<string>('');
   const [status, setStatus] = useState<string>('active');
+  const [listingStatus, setListingStatus] = useState<'available' | 'sold' | 'rented'>('available');
   const [latitude, setLatitude] = useState<number | undefined>();
   const [longitude, setLongitude] = useState<number | undefined>();
 
@@ -94,6 +101,7 @@ const EditProperty = () => {
       setPropertyType(data.property_type);
       setPurpose(data.purpose);
       setStatus(data.status || 'active');
+      setListingStatus(data.listing_status || 'available');
       setLatitude(data.latitude);
       setLongitude(data.longitude);
     } catch (error: any) {
@@ -328,6 +336,7 @@ const EditProperty = () => {
           amenities,
           images: finalImages,
           status: status,
+          listing_status: listingStatus,
           whatsapp_link: formData.get('whatsapp_link') as string || null,
           youtube_link: formData.get('youtube_link') as string || null,
           latitude,
