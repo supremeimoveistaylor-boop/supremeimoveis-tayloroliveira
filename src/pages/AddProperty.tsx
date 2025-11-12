@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { X, ArrowLeft } from 'lucide-react';
 import { DraggableImageGallery } from '@/components/DraggableImageGallery';
+import { MapSelector } from '@/components/MapSelector';
 import { 
   sanitizeInput, 
   sanitizeUrl, 
@@ -34,6 +35,8 @@ const AddProperty = () => {
   const [newAmenity, setNewAmenity] = useState('');
   const [propertyType, setPropertyType] = useState<string>('');
   const [purpose, setPurpose] = useState<string>('');
+  const [latitude, setLatitude] = useState<number | undefined>();
+  const [longitude, setLongitude] = useState<number | undefined>();
 
   const predefinedAmenities = [
     'Piscina', 'Academia', 'Churrasqueira', 'Playground', 'Salão de Festas',
@@ -322,6 +325,8 @@ const AddProperty = () => {
           images: [], // Will be updated after image upload
           whatsapp_link: whatsappLink,
           youtube_link: youtubeLink,
+          latitude,
+          longitude,
         } as any)
         .select()
         .single();
@@ -659,6 +664,19 @@ const AddProperty = () => {
                     ))}
                   </div>
                 )}
+              </div>
+
+              {/* Map Selector */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Localização no Mapa</h3>
+                <MapSelector
+                  latitude={latitude}
+                  longitude={longitude}
+                  onLocationSelect={(lat, lng) => {
+                    setLatitude(lat);
+                    setLongitude(lng);
+                  }}
+                />
               </div>
 
               {/* Image Upload with Drag and Drop */}

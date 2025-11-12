@@ -92,7 +92,7 @@ export const FeaturedProperties = () => {
           .limit(100);
 
         if (error) throw error;
-        setProperties(data || []);
+        setProperties((data || []) as Property[]);
       }
     } catch (error: any) {
       console.error('Property fetch error:', error);

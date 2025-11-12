@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { X, ArrowLeft } from 'lucide-react';
 import { DraggableImageGallery } from '@/components/DraggableImageGallery';
+import { MapSelector } from '@/components/MapSelector';
 import { validateImageFile } from '@/lib/security';
 
 interface Property {
@@ -44,6 +45,8 @@ const EditProperty = () => {
   const [propertyType, setPropertyType] = useState<string>('');
   const [purpose, setPurpose] = useState<string>('');
   const [status, setStatus] = useState<string>('active');
+  const [latitude, setLatitude] = useState<number | undefined>();
+  const [longitude, setLongitude] = useState<number | undefined>();
 
   const predefinedAmenities = [
     'Piscina', 'Academia', 'Churrasqueira', 'Playground', 'Salão de Festas',
@@ -91,6 +94,8 @@ const EditProperty = () => {
       setPropertyType(data.property_type);
       setPurpose(data.purpose);
       setStatus(data.status || 'active');
+      setLatitude(data.latitude);
+      setLongitude(data.longitude);
     } catch (error: any) {
       toast({
         title: "Erro ao carregar imóvel",
@@ -325,6 +330,8 @@ const EditProperty = () => {
           status: status,
           whatsapp_link: formData.get('whatsapp_link') as string || null,
           youtube_link: formData.get('youtube_link') as string || null,
+          latitude,
+          longitude,
         } as any)
         .eq('id', property.id);
 
@@ -632,6 +639,19 @@ const EditProperty = () => {
                     ))}
                   </div>
                 )}
+              </div>
+
+              {/* Map Selector */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Localização no Mapa</h3>
+                <MapSelector
+                  latitude={latitude}
+                  longitude={longitude}
+                  onLocationSelect={(lat, lng) => {
+                    setLatitude(lat);
+                    setLongitude(lng);
+                  }}
+                />
               </div>
 
               {/* Image Management with Drag and Drop */}
