@@ -34,15 +34,7 @@ const Dashboard = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    fetchProperties();
-  }, [user, loading, isAdmin]);
-
-  // Redirect if not authenticated - AFTER all hooks
-  if (!user && !loading) {
-    return <Navigate to="/auth" replace />;
-  }
-
+  // Define function before using it in effects to avoid TDZ runtime errors
   const fetchProperties = async () => {
     // Avoid infinite spinner when not authenticated
     if (loading) return;
@@ -80,6 +72,14 @@ const Dashboard = () => {
     }
   };
 
+  useEffect(() => {
+    fetchProperties();
+  }, [user, loading, isAdmin]);
+
+  // Redirect if not authenticated - AFTER all hooks
+  if (!user && !loading) {
+    return <Navigate to="/auth" replace />;
+  }
   const deleteProperty = async (id: string) => {
     if (!confirm('Tem certeza que deseja excluir este imóvel?')) return;
 
