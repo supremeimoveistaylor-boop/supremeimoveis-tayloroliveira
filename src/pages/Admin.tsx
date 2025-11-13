@@ -69,12 +69,11 @@ const Admin = () => {
 
   const fetchAllProperties = async () => {
     try {
-      const { data, error } = await supabase
-        .from('properties')
-        .select('*')
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      setProperties((data || []) as Property[]);
+      const { data: resp, error } = await supabase.functions.invoke('get_public_properties', {
+        body: { limit: 1000 }
+      });
+      if (error) throw error as any;
+      setProperties(((resp as any)?.data || []) as Property[]);
     } catch (error: any) {
       toast({
         title: 'Erro ao carregar imóveis',

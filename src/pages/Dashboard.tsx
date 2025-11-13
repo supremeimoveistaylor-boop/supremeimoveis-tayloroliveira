@@ -53,23 +53,26 @@ const Dashboard = () => {
 
     setIsLoading(true);
     try {
-      // Admins can see all properties, regular users see only their own
-      let query = supabase
-        .from('properties')
-        .select('*');
-      
-      if (!isAdmin) {
-        query = query.eq('user_id', user.id);
+      if (isAdmin) {
+        const { data: resp, error } = await supabase.functions.invoke('get_public_properties', {
+          body: { limit: 1000 }
+        });
+        if (error) throw error as any;
+        setProperties(((resp as any)?.data || []) as Property[]);
+      } else {
+        // Regular users: only their own items (RLS enforces this too)
+        const { data, error } = await supabase
+          .from('properties')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        setProperties((data || []) as Property[]);
       }
-      
-      const { data, error } = await query.order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setProperties((data || []) as Property[]);
     } catch (error: any) {
       toast({
         title: "Erro ao carregar imóveis",
-        description: error.message,
+        description: error.message || 'Falha ao buscar imóveis',
         variant: "destructive",
       });
     } finally {
