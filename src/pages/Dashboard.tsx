@@ -34,14 +34,14 @@ const Dashboard = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Redirect if not authenticated
-  if (!user && !loading) {
-    return <Navigate to="/auth" replace />;
-  }
-
   useEffect(() => {
     fetchProperties();
   }, [user, loading, isAdmin]);
+
+  // Redirect if not authenticated - AFTER all hooks
+  if (!user && !loading) {
+    return <Navigate to="/auth" replace />;
+  }
 
   const fetchProperties = async () => {
     // Avoid infinite spinner when not authenticated
