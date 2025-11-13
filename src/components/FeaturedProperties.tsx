@@ -231,24 +231,22 @@ export const FeaturedProperties = () => {
                       >
                         {translatePurpose(property.purpose)}
                       </Badge>
-                      {property.listing_status && (
-                        <Badge 
-                          variant="outline"
-                          className={
-                            property.listing_status === 'available' 
-                              ? "bg-green-500/90 text-white border-green-500" 
-                              : property.listing_status === 'sold'
-                              ? "bg-red-500/90 text-white border-red-500"
-                              : "bg-blue-500/90 text-white border-blue-500"
-                          }
-                        >
-                          {property.listing_status === 'available' 
-                            ? 'Disponível' 
-                            : property.listing_status === 'sold' 
-                            ? 'Vendido' 
-                            : 'Alugado'}
-                        </Badge>
-                      )}
+                      <Badge 
+                        variant="outline"
+                        className={
+                          (property.listing_status === 'available' || !property.listing_status)
+                            ? "bg-success text-success-foreground border-success" 
+                            : property.listing_status === 'sold'
+                            ? "bg-destructive text-destructive-foreground border-destructive"
+                            : "bg-info text-info-foreground border-info"
+                        }
+                      >
+                        {(property.listing_status === 'available' || !property.listing_status)
+                          ? 'Disponível' 
+                          : property.listing_status === 'sold' 
+                          ? 'Vendido' 
+                          : 'Alugado'}
+                      </Badge>
                     </div>
                     <div className="absolute top-3 right-3 flex gap-2">
                       {property.whatsapp_link && (
