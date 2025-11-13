@@ -107,22 +107,22 @@ export const PropertyDetailsModal = ({ property, isOpen, onClose }: PropertyDeta
             {property.images && property.images.length > 0 && (
               <div className="space-y-3">
                 <h3 className="text-lg font-semibold">Fotos do Imóvel</h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-4">
                   {property.images.slice(0, 6).map((image, index) => (
                     <div 
                       key={index}
-                      className="relative cursor-pointer group rounded-lg overflow-hidden"
+                      className="relative cursor-pointer group rounded-lg overflow-hidden aspect-[4/3]"
                       onClick={() => openImageModal(property.images, property.title)}
                     >
                       <img
                         src={image}
                         alt={`${property.title} - Foto ${index + 1}`}
-                        className="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-300"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                       {index === 5 && property.images.length > 6 && (
                         <div className="absolute inset-0 bg-black/70 flex items-center justify-center text-white font-semibold">
                           <Camera className="h-6 w-6 mr-2" />
-                          +{property.images.length - 5} fotos
+                          +{property.images.length - 6} fotos
                         </div>
                       )}
                     </div>

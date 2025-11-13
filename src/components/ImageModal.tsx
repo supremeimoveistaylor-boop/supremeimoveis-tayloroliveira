@@ -51,11 +51,11 @@ export const ImageModal = ({
           </Button>
 
           {/* Image container */}
-          <div className="relative flex-1 flex items-center justify-center min-h-0">
+          <div className="relative flex-1 flex items-center justify-center min-h-0 px-2 md:px-0">
             <img
               src={images[currentIndex]}
               alt={`${propertyTitle} - Foto ${currentIndex + 1}`}
-              className="w-full h-full max-h-[70vh] md:max-h-[75vh] object-contain"
+              className="w-full h-auto max-h-[70vh] md:max-h-[75vh] object-contain"
             />
             
             {/* Navigation arrows */}
@@ -91,12 +91,12 @@ export const ImageModal = ({
               </div>
               
               {/* Thumbnails */}
-              <div className="flex justify-center gap-1 md:gap-2 overflow-x-auto max-w-full pb-2 scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent">
+              <div className="flex justify-start md:justify-center gap-2 overflow-x-auto max-w-full pb-2 px-2 scrollbar-hide">
                 {images.map((image, index) => (
                   <button
                     key={index}
                     onClick={() => setCurrentIndex(index)}
-                    className={`flex-shrink-0 w-12 h-9 md:w-16 md:h-12 rounded border-2 overflow-hidden transition-all ${
+                    className={`flex-shrink-0 w-16 h-12 md:w-20 md:h-14 rounded border-2 overflow-hidden transition-all ${
                       index === currentIndex ? 'border-white scale-105' : 'border-white/30'
                     }`}
                   >
