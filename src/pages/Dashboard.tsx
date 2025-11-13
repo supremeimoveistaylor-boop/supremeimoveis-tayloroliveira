@@ -41,7 +41,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchProperties();
-  }, [user, loading]);
+  }, [user, loading, isAdmin]);
 
   const fetchProperties = async () => {
     // Avoid infinite spinner when not authenticated
@@ -53,11 +53,16 @@ const Dashboard = () => {
 
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
+      // Admins can see all properties, regular users see only their own
+      let query = supabase
         .from('properties')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+        .select('*');
+      
+      if (!isAdmin) {
+        query = query.eq('user_id', user.id);
+      }
+      
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
       setProperties((data || []) as Property[]);
