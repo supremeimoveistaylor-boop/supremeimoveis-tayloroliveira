@@ -198,14 +198,14 @@ export const FeaturedProperties = () => {
                   <div className="relative overflow-hidden rounded-t-lg">
                     {property.images && property.images.length > 0 ? (
                       <div 
-                        className="relative cursor-pointer group aspect-[4/3]"
+                        className="relative cursor-pointer group w-full aspect-[4/3] overflow-hidden"
                         onClick={() => openImageModal(property.images, property.title)}
                       >
                         <img
                           src={property.images[0]}
                           alt={property.title}
                           loading="lazy"
-                          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
                             target.src = '/placeholder.svg';
@@ -213,7 +213,7 @@ export const FeaturedProperties = () => {
                           }}
                         />
                         {property.images.length > 1 && (
-                          <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                          <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1 z-10">
                             <Camera className="h-3 w-3" />
                             {property.images.length}
                           </div>

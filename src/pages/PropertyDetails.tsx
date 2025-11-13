@@ -297,11 +297,11 @@ const PropertyDetails = () => {
 
                 {/* Mobile Gallery - Scrollable horizontal list */}
                 <div className="md:hidden">
-                  <div className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory">
+                  <div className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide">
                     {property.images.map((image, index) => (
                       <div 
                         key={index}
-                        className="flex-shrink-0 w-[85vw] cursor-pointer relative group snap-center"
+                        className="flex-shrink-0 w-[90vw] cursor-pointer relative group snap-center"
                         onClick={() => {
                           setSelectedImageIndex(index);
                           setIsImageModalOpen(true);
@@ -311,9 +311,9 @@ const PropertyDetails = () => {
                           src={image}
                           alt={`${property.title} - ${index + 1}`}
                           loading="lazy"
-                          className="w-full h-[250px] object-cover rounded-lg shadow-lg"
+                          className="w-full h-[60vw] object-cover rounded-lg shadow-lg"
                         />
-                        <div className="absolute bottom-2 right-2 bg-black/70 text-white text-sm px-3 py-1 rounded-full">
+                        <div className="absolute bottom-3 right-3 bg-black/80 text-white text-sm px-3 py-1.5 rounded-full font-medium">
                           {index + 1} / {property.images.length}
                         </div>
                       </div>
