@@ -3,6 +3,9 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
+// Admin whitelist for immediate elevated access
+const ADMIN_WHITELIST = ['crv.taylor@gmail.com', 'supremeimoveis.taylor@gmail.com'];
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -30,11 +33,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(session);
       setUser(session?.user ?? null);
 
-      // Defer Supabase calls to avoid deadlocks
+      // Prefer whitelist to grant admin immediately
       if (session?.user) {
-        setTimeout(() => {
-          fetchUserRole(session.user!.id);
-        }, 0);
+        const email = session.user.email?.toLowerCase() || '';
+        if (ADMIN_WHITELIST.includes(email)) {
+          setUserRole('admin');
+          setIsAdmin(true);
+        } else {
+          // Defer Supabase calls to avoid deadlocks
+          setTimeout(() => {
+            fetchUserRole(session.user!.id);
+          }, 0);
+        }
       } else {
         setUserRole(null);
         setIsAdmin(false);
