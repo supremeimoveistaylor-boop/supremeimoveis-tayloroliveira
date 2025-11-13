@@ -33,7 +33,7 @@ serve(async (req) => {
   try {
     console.log("Edge function called:", req.method);
 
-    const { limit = 100, featured, id }: { limit?: number; featured?: boolean; id?: string } =
+    const { limit = 100, featured, id, include_all_statuses = false, status }: { limit?: number; featured?: boolean; id?: string; include_all_statuses?: boolean; status?: string } =
       req.method === "POST" ? await req.json().catch(() => ({})) : {};
 
     const safeLimit = Math.max(1, Math.min(200, Number(limit) || 100));
@@ -43,7 +43,6 @@ serve(async (req) => {
       const { data, error } = await supabase
         .from("properties")
         .select("*")
-        .eq("status", "active")
         .eq("id", id)
         .limit(1);
 
@@ -64,9 +63,20 @@ serve(async (req) => {
     let query = supabase
       .from("properties")
       .select("*")
-      .eq("status", "active")
       .order("created_at", { ascending: false })
       .limit(safeLimit);
+
+    // Status filtering logic
+    if (!include_all_statuses) {
+      if (status) {
+        query = query.eq("status", status);
+      } else {
+        query = query.eq("status", "active");
+      }
+    } else if (status) {
+      // If include_all_statuses=true but a specific status was requested, honor it
+      query = query.eq("status", status);
+    }
 
     if (typeof featured === "boolean") {
       query = query.eq("featured", featured);
