@@ -13,6 +13,7 @@ import { toast } from '@/hooks/use-toast';
 import { X, ArrowLeft } from 'lucide-react';
 import { DraggableImageGallery } from '@/components/DraggableImageGallery';
 import { MapSelector } from '@/components/MapSelector';
+import { z } from 'zod';
 import { 
   sanitizeInput, 
   sanitizeUrl, 
@@ -24,6 +25,25 @@ import {
   sanitizeErrorMessage,
   validateImageFile
 } from '@/lib/security';
+
+// Validation schema
+const propertyMetadataSchema = z.object({
+  property_type: z.string()
+    .trim()
+    .min(1, { message: "Tipo de imóvel é obrigatório" })
+    .max(50, { message: "Tipo de imóvel deve ter no máximo 50 caracteres" })
+    .transform(val => val.trim()),
+  purpose: z.string()
+    .trim()
+    .min(1, { message: "Finalidade é obrigatória" })
+    .max(30, { message: "Finalidade deve ter no máximo 30 caracteres" })
+    .transform(val => val.trim()),
+  status: z.string()
+    .trim()
+    .min(1, { message: "Status é obrigatório" })
+    .max(30, { message: "Status deve ter no máximo 30 caracteres" })
+    .transform(val => val.trim())
+});
 
 const AddProperty = () => {
   // All hooks must be called before any conditional returns
@@ -38,6 +58,13 @@ const AddProperty = () => {
   const [status, setStatus] = useState<string>('active');
   const [latitude, setLatitude] = useState<number | undefined>();
   const [longitude, setLongitude] = useState<number | undefined>();
+  
+  // Validation errors
+  const [errors, setErrors] = useState<{
+    property_type?: string;
+    purpose?: string;
+    status?: string;
+  }>({});
 
   const predefinedAmenities = [
     'Piscina', 'Academia', 'Churrasqueira', 'Playground', 'Salão de Festas',
@@ -276,15 +303,32 @@ const AddProperty = () => {
         return;
       }
 
-      if (!propertyType || !purpose) {
+      // Validate property type, purpose and status with Zod
+      const metadataValidation = propertyMetadataSchema.safeParse({
+        property_type: propertyType,
+        purpose: purpose,
+        status: status
+      });
+
+      if (!metadataValidation.success) {
+        const validationErrors = metadataValidation.error.flatten().fieldErrors;
+        setErrors({
+          property_type: validationErrors.property_type?.[0],
+          purpose: validationErrors.purpose?.[0],
+          status: validationErrors.status?.[0]
+        });
+        
         toast({
-          title: "Campos obrigatórios",
-          description: "Por favor, selecione o tipo de imóvel e a finalidade.",
+          title: "Campos inválidos",
+          description: "Por favor, corrija os erros nos campos destacados.",
           variant: "destructive",
         });
         setIsLoading(false);
         return;
       }
+
+      // Clear errors if validation passed
+      setErrors({});
 
       if (title && location) {
         // noop just to satisfy type narrowing
@@ -524,30 +568,57 @@ const AddProperty = () => {
                   <Input
                     id="property_type"
                     value={propertyType}
-                    onChange={(e) => setPropertyType(e.target.value)}
+                    onChange={(e) => {
+                      setPropertyType(e.target.value);
+                      if (errors.property_type) {
+                        setErrors(prev => ({ ...prev, property_type: undefined }));
+                      }
+                    }}
                     placeholder="Ex: Casa, Apartamento, Comercial, Terreno"
                     required
+                    className={errors.property_type ? 'border-destructive' : ''}
                   />
+                  {errors.property_type && (
+                    <p className="text-sm text-destructive">{errors.property_type}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="purpose">Finalidade *</Label>
                   <Input
                     id="purpose"
                     value={purpose}
-                    onChange={(e) => setPurpose(e.target.value)}
+                    onChange={(e) => {
+                      setPurpose(e.target.value);
+                      if (errors.purpose) {
+                        setErrors(prev => ({ ...prev, purpose: undefined }));
+                      }
+                    }}
                     placeholder="Ex: Venda, Aluguel"
                     required
+                    className={errors.purpose ? 'border-destructive' : ''}
                   />
+                  {errors.purpose && (
+                    <p className="text-sm text-destructive">{errors.purpose}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="status">Status *</Label>
                   <Input
                     id="status"
                     value={status}
-                    onChange={(e) => setStatus(e.target.value)}
+                    onChange={(e) => {
+                      setStatus(e.target.value);
+                      if (errors.status) {
+                        setErrors(prev => ({ ...prev, status: undefined }));
+                      }
+                    }}
                     placeholder="Ex: Ativo, Inativo, Vendido, Alugado"
                     required
+                    className={errors.status ? 'border-destructive' : ''}
                   />
+                  {errors.status && (
+                    <p className="text-sm text-destructive">{errors.status}</p>
+                  )}
                 </div>
               </div>
 
