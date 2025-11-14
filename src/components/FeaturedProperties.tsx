@@ -194,8 +194,8 @@ export const FeaturedProperties = ({ filterPurpose }: { filterPurpose?: 'sale' |
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {properties.map((property) => (
-              <Card key={property.id} className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-card border-0 shadow-lg">
-                <CardHeader className="p-0">
+              <Card key={property.id} className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-card border-0 shadow-lg flex flex-col h-full">
+                <CardHeader className="p-0 flex-shrink-0">
                   <div className="relative overflow-hidden rounded-t-lg">
                     {property.images && property.images.length > 0 ? (
                       <div 
@@ -298,16 +298,6 @@ export const FeaturedProperties = ({ filterPurpose }: { filterPurpose?: 'sale' |
                       >
                         <Share2 className="h-4 w-4" />
                       </Button>
-                      {user && user.id === property.user_id && (
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          className="rounded-full p-2 bg-white/90 border-none"
-                           onClick={() => navigate(`/edit-property/${property.id}`)}
-                         >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      )}
                     </div>
                     <div className="absolute bottom-3 left-3">
                       <Badge variant="outline" className="bg-white/90 text-primary border-none">
@@ -317,18 +307,18 @@ export const FeaturedProperties = ({ filterPurpose }: { filterPurpose?: 'sale' |
                   </div>
                 </CardHeader>
                 
-                <CardContent className="p-4">
-                  <div className="mb-3">
+                <CardContent className="p-4 flex flex-col flex-grow">
+                  <div className="mb-3 flex-grow">
                     {property.property_code && (
                       <div className="text-xs font-mono text-muted-foreground mb-1.5 bg-muted/50 px-2 py-1 rounded inline-block">
                         {property.property_code}
                       </div>
                     )}
-                    <h3 className="font-bold text-lg text-primary mb-1 line-clamp-2">
+                    <h3 className="font-bold text-lg text-primary mb-1 line-clamp-2 min-h-[3.5rem]">
                       {property.title}
                     </h3>
-                    <div className="flex items-center text-muted-foreground text-sm mb-2">
-                      <MapPin className="h-4 w-4 mr-1" />
+                    <div className="flex items-center text-muted-foreground text-sm mb-2 min-h-[1.5rem]">
+                      <MapPin className="h-4 w-4 mr-1 flex-shrink-0" />
                       <span className="line-clamp-1">{property.location}</span>
                     </div>
                     <div className="text-2xl font-bold text-accent">
@@ -336,33 +326,37 @@ export const FeaturedProperties = ({ filterPurpose }: { filterPurpose?: 'sale' |
                     </div>
                   </div>
 
-                  {property.bedrooms && (
-                    <div className="flex justify-between items-center text-sm text-muted-foreground mb-4">
-                      <div className="flex items-center">
-                        <Bed className="h-4 w-4 mr-1" />
-                        {property.bedrooms}
-                      </div>
-                      <div className="flex items-center">
-                        <Bath className="h-4 w-4 mr-1" />
-                        {property.bathrooms}
-                      </div>
-                      <div className="flex items-center">
-                        <Car className="h-4 w-4 mr-1" />
-                        {property.parking_spaces}
-                      </div>
-                      {property.area && (
-                        <div className="font-medium text-xs">
-                          {property.area.toLocaleString('pt-BR', {
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: 2
-                          })}m²
+                  <div className="flex justify-between items-center text-sm text-muted-foreground mb-4 min-h-[1.5rem]">
+                    {property.bedrooms ? (
+                      <>
+                        <div className="flex items-center">
+                          <Bed className="h-4 w-4 mr-1" />
+                          {property.bedrooms}
                         </div>
-                      )}
-                    </div>
-                  )}
+                        <div className="flex items-center">
+                          <Bath className="h-4 w-4 mr-1" />
+                          {property.bathrooms}
+                        </div>
+                        <div className="flex items-center">
+                          <Car className="h-4 w-4 mr-1" />
+                          {property.parking_spaces}
+                        </div>
+                        {property.area && (
+                          <div className="font-medium text-xs">
+                            {property.area.toLocaleString('pt-BR', {
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 2
+                            })}m²
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="text-xs text-muted-foreground italic">Informações em breve</div>
+                    )}
+                  </div>
 
                   <Button 
-                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-auto"
                     onClick={() => navigate(`/property/${property.id}`)}
                   >
                     Ver Detalhes
