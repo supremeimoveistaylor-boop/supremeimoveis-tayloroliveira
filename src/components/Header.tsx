@@ -48,13 +48,13 @@ export const Header = () => {
             <a href="#inicio" className="text-white-soft hover:text-accent transition-colors font-medium text-sm xl:text-base">
               Início
             </a>
-            <a href="#comprar" className="text-white-soft hover:text-accent transition-colors font-medium text-sm xl:text-base">
+            <a href="#imoveis" className="text-white-soft hover:text-accent transition-colors font-medium text-sm xl:text-base">
               Comprar
             </a>
-            <a href="#alugar" className="text-white-soft hover:text-accent transition-colors font-medium text-sm xl:text-base">
+            <a href="#imoveis" className="text-white-soft hover:text-accent transition-colors font-medium text-sm xl:text-base">
               Alugar
             </a>
-            <a href="#rurais" className="text-white-soft hover:text-accent transition-colors font-medium text-sm xl:text-base">
+            <a href="#imoveis" className="text-white-soft hover:text-accent transition-colors font-medium text-sm xl:text-base">
               Propriedades Rurais
             </a>
             <a href="#sobre" className="text-white-soft hover:text-accent transition-colors font-medium text-sm xl:text-base">
