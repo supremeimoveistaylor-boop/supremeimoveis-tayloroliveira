@@ -66,15 +66,8 @@ serve(async (req) => {
       .order("created_at", { ascending: false })
       .limit(safeLimit);
 
-    // Status filtering logic
-    if (!include_all_statuses) {
-      if (status) {
-        query = query.eq("status", status);
-      } else {
-        query = query.eq("status", "active");
-      }
-    } else if (status) {
-      // If include_all_statuses=true but a specific status was requested, honor it
+    // Status filtering logic - show all by default
+    if (status && !include_all_statuses) {
       query = query.eq("status", status);
     }
 
