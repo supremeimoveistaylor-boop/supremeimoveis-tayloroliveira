@@ -62,7 +62,9 @@ const Index = () => {
     <div className="min-h-screen">
       <Header />
       <Hero />
-      <FeaturedProperties />
+      <div id="imoveis">
+        <FeaturedProperties />
+      </div>
       
       {/* Map Section */}
       {properties.length > 0 && (
