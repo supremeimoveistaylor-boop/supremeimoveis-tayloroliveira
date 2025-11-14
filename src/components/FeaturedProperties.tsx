@@ -204,13 +204,20 @@ export const FeaturedProperties = () => {
                           src={property.images[0]}
                           alt={property.title}
                           loading="lazy"
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${
+                            property.listing_status === 'sold' || property.listing_status === 'rented'
+                              ? 'opacity-60'
+                              : ''
+                          }`}
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
                             target.src = '/placeholder.svg';
                             console.error('❌ Erro ao carregar imagem:', property.images[0]);
                           }}
                         />
+                        {(property.listing_status === 'sold' || property.listing_status === 'rented') && (
+                          <div className="absolute inset-0 bg-black/20 pointer-events-none" />
+                        )}
                         {property.images.length > 1 && (
                           <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1 z-10">
                             <Camera className="h-3 w-3" />
@@ -223,28 +230,28 @@ export const FeaturedProperties = () => {
                         <span className="text-muted-foreground">Sem imagem</span>
                       </div>
                     )}
-                    <div className="absolute top-3 left-3 flex gap-2">
+                    <div className="absolute top-3 left-3 flex gap-2 z-20">
                       <Badge 
                         variant={property.purpose === "sale" ? "default" : "secondary"}
-                        className={property.purpose === "sale" ? "bg-accent text-accent-foreground" : "bg-primary text-primary-foreground"}
+                        className={`${property.purpose === "sale" ? "bg-accent text-accent-foreground" : "bg-primary text-primary-foreground"} font-semibold shadow-lg`}
                       >
                         {translatePurpose(property.purpose)}
                       </Badge>
                       <Badge 
                         variant="outline"
-                        className={
+                        className={`font-bold shadow-xl border-2 ${
                           (property.listing_status === 'available' || !property.listing_status)
-                            ? "bg-success text-success-foreground border-success" 
+                            ? "bg-green-500 text-white border-green-600" 
                             : property.listing_status === 'sold'
-                            ? "bg-destructive text-destructive-foreground border-destructive"
-                            : "bg-info text-info-foreground border-info"
-                        }
+                            ? "bg-red-600 text-white border-red-700 animate-pulse"
+                            : "bg-blue-600 text-white border-blue-700 animate-pulse"
+                        }`}
                       >
                         {(property.listing_status === 'available' || !property.listing_status)
-                          ? 'Disponível' 
+                          ? '✓ Disponível' 
                           : property.listing_status === 'sold' 
-                          ? 'Vendido' 
-                          : 'Alugado'}
+                          ? '✗ VENDIDO' 
+                          : '✗ ALUGADO'}
                       </Badge>
                     </div>
                     <div className="absolute top-3 right-3 flex gap-2">

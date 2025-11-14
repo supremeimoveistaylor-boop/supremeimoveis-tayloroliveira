@@ -238,7 +238,11 @@ const PropertyDetails = () => {
                       src={property.images[0]}
                       alt={property.title}
                       loading="lazy"
-                      className="w-full h-[400px] object-cover rounded-lg shadow-lg group-hover:scale-105 transition-transform duration-300"
+                      className={`w-full h-[400px] object-cover rounded-lg shadow-lg group-hover:scale-105 transition-transform duration-300 ${
+                        property.listing_status === 'sold' || property.listing_status === 'rented'
+                          ? 'opacity-60'
+                          : ''
+                      }`}
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
@@ -255,7 +259,11 @@ const PropertyDetails = () => {
                           src={image}
                           alt={`${property.title} - ${index + 2}`}
                           loading="lazy"
-                          className="w-full h-[192px] object-cover rounded-lg shadow-md group-hover:scale-105 transition-transform duration-300"
+                          className={`w-full h-[192px] object-cover rounded-lg shadow-md group-hover:scale-105 transition-transform duration-300 ${
+                            property.listing_status === 'sold' || property.listing_status === 'rented'
+                              ? 'opacity-60'
+                              : ''
+                          }`}
                         />
                         {index === 3 && property.images.length > 5 && (
                           <div className="absolute inset-0 bg-black/60 rounded-lg flex items-center justify-center">
@@ -311,7 +319,11 @@ const PropertyDetails = () => {
                           src={image}
                           alt={`${property.title} - ${index + 1}`}
                           loading="lazy"
-                          className="w-full h-[60vw] object-cover rounded-lg shadow-lg"
+                          className={`w-full h-[60vw] object-cover rounded-lg shadow-lg ${
+                            property.listing_status === 'sold' || property.listing_status === 'rented'
+                              ? 'opacity-60'
+                              : ''
+                          }`}
                         />
                         <div className="absolute bottom-3 right-3 bg-black/80 text-white text-sm px-3 py-1.5 rounded-full font-medium">
                           {index + 1} / {property.images.length}
@@ -346,7 +358,7 @@ const PropertyDetails = () => {
               <Card>
                 <CardContent className="p-6">
                   <div className="flex flex-wrap gap-2 mb-4">
-                    <Badge variant={property.purpose === "sale" ? "default" : "secondary"}>
+                    <Badge variant={property.purpose === "sale" ? "default" : "secondary"} className="font-semibold shadow-lg">
                       {translatePurpose(property.purpose)}
                     </Badge>
                     <Badge variant="outline">
@@ -355,19 +367,19 @@ const PropertyDetails = () => {
                     {property.listing_status && (
                       <Badge 
                         variant="outline"
-                        className={
+                        className={`font-bold shadow-xl border-2 ${
                           property.listing_status === 'available' 
-                            ? "bg-green-500 text-white border-green-500" 
+                            ? "bg-green-500 text-white border-green-600" 
                             : property.listing_status === 'sold'
-                            ? "bg-red-500 text-white border-red-500"
-                            : "bg-blue-500 text-white border-blue-500"
-                        }
+                            ? "bg-red-600 text-white border-red-700 text-lg px-4 py-1"
+                            : "bg-blue-600 text-white border-blue-700 text-lg px-4 py-1"
+                        }`}
                       >
                         {property.listing_status === 'available' 
-                          ? 'Disponível' 
+                          ? '✓ Disponível' 
                           : property.listing_status === 'sold' 
-                          ? 'Vendido' 
-                          : 'Alugado'}
+                          ? '✗ VENDIDO' 
+                          : '✗ ALUGADO'}
                       </Badge>
                     )}
                     {property.property_code && (
