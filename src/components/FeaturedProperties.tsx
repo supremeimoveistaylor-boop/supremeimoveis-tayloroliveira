@@ -192,9 +192,9 @@ export const FeaturedProperties = ({ filterPurpose }: { filterPurpose?: 'sale' |
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {properties.map((property) => (
-              <Card key={property.id} className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-card border-0 shadow-lg flex flex-col h-full">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
+        {properties.map((property) => (
+          <Card key={property.id} className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-card border-0 shadow-lg flex flex-col min-h-[580px]">
                 <CardHeader className="p-0 flex-shrink-0">
                   <div className="relative overflow-hidden rounded-t-lg">
                     {property.images && property.images.length > 0 ? (
@@ -307,61 +307,61 @@ export const FeaturedProperties = ({ filterPurpose }: { filterPurpose?: 'sale' |
                   </div>
                 </CardHeader>
                 
-                <CardContent className="p-4 flex flex-col flex-grow">
-                  <div className="mb-3 flex-grow">
-                    {property.property_code && (
-                      <div className="text-xs font-mono text-muted-foreground mb-1.5 bg-muted/50 px-2 py-1 rounded inline-block">
-                        {property.property_code}
+            <CardContent className="p-4 flex flex-col flex-grow justify-between">
+              <div className="space-y-3">
+                {property.property_code && (
+                  <div className="text-xs font-mono text-muted-foreground bg-muted/50 px-2 py-1 rounded inline-block">
+                    {property.property_code}
+                  </div>
+                )}
+                <h3 className="font-bold text-lg text-primary line-clamp-2 h-[3.5rem] flex items-start">
+                  {property.title}
+                </h3>
+                <div className="flex items-center text-muted-foreground text-sm h-[1.5rem]">
+                  <MapPin className="h-4 w-4 mr-1 flex-shrink-0" />
+                  <span className="line-clamp-1">{property.location}</span>
+                </div>
+                <div className="text-2xl font-bold text-accent">
+                  {formatPrice(property.price, property.purpose)}
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center text-sm text-muted-foreground h-[3rem] border-t border-b py-2">
+                {property.bedrooms ? (
+                  <>
+                    <div className="flex items-center">
+                      <Bed className="h-4 w-4 mr-1" />
+                      {property.bedrooms}
+                    </div>
+                    <div className="flex items-center">
+                      <Bath className="h-4 w-4 mr-1" />
+                      {property.bathrooms}
+                    </div>
+                    <div className="flex items-center">
+                      <Car className="h-4 w-4 mr-1" />
+                      {property.parking_spaces}
+                    </div>
+                    {property.area && (
+                      <div className="font-medium text-xs">
+                        {property.area.toLocaleString('pt-BR', {
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 2
+                        })}m²
                       </div>
                     )}
-                    <h3 className="font-bold text-lg text-primary mb-1 line-clamp-2 min-h-[3.5rem]">
-                      {property.title}
-                    </h3>
-                    <div className="flex items-center text-muted-foreground text-sm mb-2 min-h-[1.5rem]">
-                      <MapPin className="h-4 w-4 mr-1 flex-shrink-0" />
-                      <span className="line-clamp-1">{property.location}</span>
-                    </div>
-                    <div className="text-2xl font-bold text-accent">
-                      {formatPrice(property.price, property.purpose)}
-                    </div>
-                  </div>
+                  </>
+                ) : (
+                  <div className="text-xs text-muted-foreground italic">Informações em breve</div>
+                )}
+              </div>
 
-                  <div className="flex justify-between items-center text-sm text-muted-foreground mb-4 min-h-[1.5rem]">
-                    {property.bedrooms ? (
-                      <>
-                        <div className="flex items-center">
-                          <Bed className="h-4 w-4 mr-1" />
-                          {property.bedrooms}
-                        </div>
-                        <div className="flex items-center">
-                          <Bath className="h-4 w-4 mr-1" />
-                          {property.bathrooms}
-                        </div>
-                        <div className="flex items-center">
-                          <Car className="h-4 w-4 mr-1" />
-                          {property.parking_spaces}
-                        </div>
-                        {property.area && (
-                          <div className="font-medium text-xs">
-                            {property.area.toLocaleString('pt-BR', {
-                              minimumFractionDigits: 0,
-                              maximumFractionDigits: 2
-                            })}m²
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <div className="text-xs text-muted-foreground italic">Informações em breve</div>
-                    )}
-                  </div>
-
-                  <Button 
-                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-auto"
-                    onClick={() => navigate(`/property/${property.id}`)}
-                  >
-                    Ver Detalhes
-                  </Button>
-                </CardContent>
+              <Button 
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-4"
+                onClick={() => navigate(`/property/${property.id}`)}
+              >
+                Ver Detalhes
+              </Button>
+            </CardContent>
               </Card>
             ))}
           </div>
