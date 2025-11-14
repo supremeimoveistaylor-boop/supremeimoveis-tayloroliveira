@@ -55,13 +55,13 @@ const Index = () => {
 
   const fetchProperties = async () => {
     try {
-      const { data, error } = await supabase
-        .from('properties')
-        .select('id, title, location, latitude, longitude, price, purpose, property_type');
+      const { data, error } = await supabase.functions.invoke('get_public_properties', {
+        body: { limit: 500, include_all_statuses: true },
+      });
 
-      if (!error && data) {
-        setProperties(data);
-      }
+      if (error) throw error;
+      const items = ((data as any)?.data || []) as Property[];
+      setProperties(items);
     } catch (error) {
       console.error('Error fetching properties for map:', error);
     }
