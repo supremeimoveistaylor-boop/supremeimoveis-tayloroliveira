@@ -133,9 +133,13 @@ export const FeaturedProperties = ({ filterPurpose }: { filterPurpose?: 'sale' |
   };
 
   // Normaliza valores de status vindos do banco (Português/Inglês, com/sem acento)
+  // IMPORTANTE: Verifica AMBOS listing_status e status pois alguns imóveis têm o status no campo errado
   type ListingStatus = 'available' | 'sold' | 'rented';
-  const normalizeListingStatus = (raw?: string | null): ListingStatus => {
+  const normalizeListingStatus = (property: Property): ListingStatus => {
+    // Verifica primeiro o listing_status, depois o status
+    const raw = property.listing_status || property.status || '';
     if (!raw) return 'available';
+    
     const s = String(raw)
       .toLowerCase()
       .normalize('NFD')
@@ -222,7 +226,7 @@ export const FeaturedProperties = ({ filterPurpose }: { filterPurpose?: 'sale' |
                           alt={property.title}
                           loading="lazy"
                           className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${
-                            ['sold', 'rented'].includes(normalizeListingStatus(property.listing_status))
+                            ['sold', 'rented'].includes(normalizeListingStatus(property))
                               ? 'opacity-60'
                               : ''
                           }`}
@@ -232,7 +236,7 @@ export const FeaturedProperties = ({ filterPurpose }: { filterPurpose?: 'sale' |
                             console.error('❌ Erro ao carregar imagem:', property.images[0]);
                           }}
                         />
-                        {['sold', 'rented'].includes(normalizeListingStatus(property.listing_status)) && (
+                        {['sold', 'rented'].includes(normalizeListingStatus(property)) && (
                           <div className="absolute inset-0 bg-black/20 pointer-events-none" />
                         )}
                         {property.images.length > 1 && (
@@ -257,16 +261,16 @@ export const FeaturedProperties = ({ filterPurpose }: { filterPurpose?: 'sale' |
                       <Badge 
                         variant="outline"
                         className={`font-bold shadow-xl border-2 ${
-                          normalizeListingStatus(property.listing_status) === 'available'
+                          normalizeListingStatus(property) === 'available'
                             ? "bg-green-500 text-white border-green-600" 
-                            : normalizeListingStatus(property.listing_status) === 'sold'
+                            : normalizeListingStatus(property) === 'sold'
                             ? "bg-red-600 text-white border-red-700 animate-pulse"
                             : "bg-blue-600 text-white border-blue-700 animate-pulse"
                         }`}
                       >
-                        {normalizeListingStatus(property.listing_status) === 'available'
+                        {normalizeListingStatus(property) === 'available'
                           ? '✓ Disponível' 
-                          : normalizeListingStatus(property.listing_status) === 'sold' 
+                          : normalizeListingStatus(property) === 'sold' 
                           ? '✗ VENDIDO' 
                           : '✗ ALUGADO'}
                       </Badge>

@@ -55,7 +55,7 @@ export const ImageModal = ({
             <img
               src={images[currentIndex]}
               alt={`${propertyTitle} - Foto ${currentIndex + 1}`}
-              className="w-full h-auto max-h-[70vh] md:max-h-[75vh] object-contain"
+              className="w-full h-full max-h-[80vh] object-contain"
             />
             
             {/* Navigation arrows */}
