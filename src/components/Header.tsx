@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Phone, MapPin, User } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import supremeLogo from "@/assets/supreme-logo-new.png";
 
 export const Header = () => {
@@ -45,18 +45,18 @@ export const Header = () => {
 
           {/* Navigation */}
           <nav className="hidden lg:flex items-center space-x-6 xl:space-x-8">
-            <a href="#inicio" className="text-white-soft hover:text-accent transition-colors font-medium text-sm xl:text-base">
+            <Link to="/" className="text-white-soft hover:text-accent transition-colors font-medium text-sm xl:text-base">
               Início
-            </a>
-            <a href="#imoveis" className="text-white-soft hover:text-accent transition-colors font-medium text-sm xl:text-base">
+            </Link>
+            <Link to="/comprar" className="text-white-soft hover:text-accent transition-colors font-medium text-sm xl:text-base">
               Comprar
-            </a>
-            <a href="#imoveis" className="text-white-soft hover:text-accent transition-colors font-medium text-sm xl:text-base">
+            </Link>
+            <Link to="/alugar" className="text-white-soft hover:text-accent transition-colors font-medium text-sm xl:text-base">
               Alugar
-            </a>
-            <a href="#imoveis" className="text-white-soft hover:text-accent transition-colors font-medium text-sm xl:text-base">
+            </Link>
+            <Link to="/rurais" className="text-white-soft hover:text-accent transition-colors font-medium text-sm xl:text-base">
               Propriedades Rurais
-            </a>
+            </Link>
             <a href="#sobre" className="text-white-soft hover:text-accent transition-colors font-medium text-sm xl:text-base">
               Sobre Nós
             </a>

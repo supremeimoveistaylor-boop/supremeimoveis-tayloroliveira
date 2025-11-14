@@ -29,6 +29,9 @@ const App = () => (
           <HashRouter>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/comprar" element={<Index />} />
+              <Route path="/alugar" element={<Index />} />
+              <Route path="/rurais" element={<Index />} />
               <Route path="/chat" element={<Chat />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/reset-password" element={<ResetPassword />} />

@@ -7,7 +7,7 @@ import { Contact } from "@/components/Contact";
 import { Footer } from "@/components/Footer";
 import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Property {
@@ -23,7 +23,9 @@ interface Property {
 
 const Index = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [properties, setProperties] = useState<Property[]>([]);
+  const [purposeFilter, setPurposeFilter] = useState<"sale" | "rent" | null>(null);
 
   useEffect(() => {
     try {
@@ -31,14 +33,25 @@ const Index = () => {
       const propertyId = params.get('property');
       if (propertyId) {
         navigate(`/property/${propertyId}`, { replace: true });
+        return;
       }
-    } catch (e) {
-      // no-op
+    } catch {}
+
+    // Handle route-based shortcuts: /comprar, /alugar, /rurais
+    if (location.pathname === '/comprar') {
+      setPurposeFilter('sale');
+      setTimeout(() => document.getElementById('imoveis')?.scrollIntoView({ behavior: 'smooth' }), 0);
+    } else if (location.pathname === '/alugar') {
+      setPurposeFilter('rent');
+      setTimeout(() => document.getElementById('imoveis')?.scrollIntoView({ behavior: 'smooth' }), 0);
+    } else if (location.pathname === '/rurais') {
+      setPurposeFilter(null);
+      setTimeout(() => document.getElementById('imoveis')?.scrollIntoView({ behavior: 'smooth' }), 0);
     }
 
     // Fetch properties for map
     fetchProperties();
-  }, [navigate]);
+  }, [navigate, location.pathname]);
 
   const fetchProperties = async () => {
     try {
@@ -63,7 +76,7 @@ const Index = () => {
       <Header />
       <Hero />
       <div id="imoveis">
-        <FeaturedProperties />
+        <FeaturedProperties filterPurpose={purposeFilter || undefined} />
       </div>
       
       {/* Map Section */}
