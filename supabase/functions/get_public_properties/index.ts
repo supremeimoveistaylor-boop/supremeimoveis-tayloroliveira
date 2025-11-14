@@ -66,10 +66,12 @@ serve(async (req) => {
       .order("created_at", { ascending: false })
       .limit(safeLimit);
 
-    // Status filtering logic - show all by default
-    if (status && !include_all_statuses) {
+    // Status filtering logic - by default, show all statuses (active, sold, rented)
+    // Only filter if a specific status is requested
+    if (status) {
       query = query.eq("status", status);
     }
+    // Note: We no longer filter by status='active' by default, so all properties show
 
     if (typeof featured === "boolean") {
       query = query.eq("featured", featured);
