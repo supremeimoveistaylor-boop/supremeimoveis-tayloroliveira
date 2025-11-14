@@ -65,6 +65,7 @@ const EditProperty = () => {
   const { id } = useParams();
   const [isLoading, setIsLoading] = useState(false);
   const [property, setProperty] = useState<Property | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [allImages, setAllImages] = useState<Array<File | string>>([]);
   const [amenities, setAmenities] = useState<string[]>([]);
   const [newAmenity, setNewAmenity] = useState('');
@@ -147,14 +148,28 @@ const EditProperty = () => {
         description: error.message,
         variant: "destructive",
       });
-      navigate('/dashboard');
+      setLoadError(error.message || 'Falha ao carregar o imóvel.');
     }
   };
 
   if (!property) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="min-h-screen flex items-center justify-center p-6">
+        {loadError ? (
+          <div className="max-w-md text-center space-y-4">
+            <h1 className="text-xl font-semibold">Não foi possível carregar o imóvel</h1>
+            <p className="text-muted-foreground">{loadError}</p>
+            <div className="flex gap-3 justify-center">
+              <Button variant="secondary" onClick={() => navigate('/dashboard')}>Voltar ao painel</Button>
+              <Button onClick={() => window.location.reload()}>Tentar novamente</Button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-3">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+            <p className="text-sm text-muted-foreground">Carregando imóvel...</p>
+          </div>
+        )}
       </div>
     );
   }
@@ -345,6 +360,7 @@ const EditProperty = () => {
 
       // Clear errors if validation passed
       setErrors({});
+      const normalized = metadataValidation.data;
 
       const formData = new FormData(e.currentTarget);
       

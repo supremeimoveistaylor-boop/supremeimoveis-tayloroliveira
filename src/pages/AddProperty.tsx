@@ -329,10 +329,7 @@ const AddProperty = () => {
 
       // Clear errors if validation passed
       setErrors({});
-
-      if (title && location) {
-        // noop just to satisfy type narrowing
-      }
+      const normalized = propertyMetadataSchema.parse({ property_type: propertyType, purpose, status });
 
       if (!validateRoomCount(bedroomsValue) || !validateRoomCount(bathroomsValue) || !validateRoomCount(parkingValue)) {
         toast({
@@ -360,15 +357,15 @@ const AddProperty = () => {
           description,
           price: priceValue,
           location,
-          property_type: propertyType,
-          purpose: purpose,
+          property_type: normalized.property_type,
+          purpose: normalized.purpose,
           bedrooms: bedroomsValue,
           bathrooms: bathroomsValue,
           parking_spaces: parkingValue,
           area: areaValue,
           amenities: sanitizeAmenitiesArray(amenities),
           images: [], // Will be updated after image upload
-          status: status,
+          status: normalized.status,
           whatsapp_link: whatsappLink,
           youtube_link: youtubeLink,
           latitude,
