@@ -269,6 +269,8 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_current_user_whitelisted: { Args: never; Returns: boolean }
+      is_email_whitelisted: { Args: { user_email: string }; Returns: boolean }
       log_security_event: {
         Args: { event_details?: Json; event_type: string }
         Returns: undefined

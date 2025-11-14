@@ -44,8 +44,7 @@ const Index = () => {
     try {
       const { data, error } = await supabase
         .from('properties')
-        .select('id, title, location, latitude, longitude, price, purpose, property_type')
-        .eq('status', 'active');
+        .select('id, title, location, latitude, longitude, price, purpose, property_type');
 
       if (!error && data) {
         setProperties(data);
