@@ -34,7 +34,7 @@ interface Property {
   longitude?: number;
 }
 
-export const FeaturedProperties = () => {
+export const FeaturedProperties = ({ filterPurpose }: { filterPurpose?: 'sale' | 'rent' }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [properties, setProperties] = useState<Property[]>([]);
@@ -66,9 +66,11 @@ export const FeaturedProperties = () => {
         });
 
         if (error) throw error;
-        const items = (data as any)?.data || [];
+        let items = ((data as any)?.data || []) as Property[];
         console.log(`📊 Edge function retornou ${items.length} imóveis`);
-        
+        if (filterPurpose) {
+          items = items.filter((p) => p.purpose === filterPurpose);
+        }
         // Log properties with images for debugging
         items.forEach((prop: any, index: number) => {
           if (prop.images && prop.images.length > 0) {
@@ -78,7 +80,6 @@ export const FeaturedProperties = () => {
             console.log(`🏠 Imóvel ${index + 1} (${prop.title}): SEM IMAGENS`);
           }
         });
-        
         setProperties(items);
       } catch (edgeFunctionError) {
         console.warn('Edge function failed, trying direct query:', edgeFunctionError);
@@ -91,7 +92,8 @@ export const FeaturedProperties = () => {
           .limit(100);
 
         if (error) throw error;
-        setProperties((data || []) as Property[]);
+        const list = ((data || []) as Property[]).filter(p => !filterPurpose || p.purpose === filterPurpose);
+        setProperties(list);
       }
     } catch (error: any) {
       console.error('Property fetch error:', error);
