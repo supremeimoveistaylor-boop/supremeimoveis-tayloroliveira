@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
@@ -520,44 +520,34 @@ const AddProperty = () => {
               {/* Property Type, Purpose and Status */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label>Tipo de Imóvel *</Label>
-                  <Select value={propertyType} onValueChange={setPropertyType}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="house">Casa</SelectItem>
-                      <SelectItem value="apartment">Apartamento</SelectItem>
-                      <SelectItem value="commercial">Comercial</SelectItem>
-                      <SelectItem value="land">Terreno</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="property_type">Tipo de Imóvel *</Label>
+                  <Input
+                    id="property_type"
+                    value={propertyType}
+                    onChange={(e) => setPropertyType(e.target.value)}
+                    placeholder="Ex: Casa, Apartamento, Comercial, Terreno"
+                    required
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label>Finalidade *</Label>
-                  <Select value={purpose} onValueChange={setPurpose}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione a finalidade" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="sale">Venda</SelectItem>
-                      <SelectItem value="rent">Aluguel</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="purpose">Finalidade *</Label>
+                  <Input
+                    id="purpose"
+                    value={purpose}
+                    onChange={(e) => setPurpose(e.target.value)}
+                    placeholder="Ex: Venda, Aluguel"
+                    required
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label>Status *</Label>
-                  <Select value={status} onValueChange={setStatus}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="active">Ativo</SelectItem>
-                      <SelectItem value="inactive">Inativo</SelectItem>
-                      <SelectItem value="sold">Vendido</SelectItem>
-                      <SelectItem value="rented">Alugado</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="status">Status *</Label>
+                  <Input
+                    id="status"
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                    placeholder="Ex: Ativo, Inativo, Vendido, Alugado"
+                    required
+                  />
                 </div>
               </div>
 
