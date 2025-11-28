@@ -26,23 +26,23 @@ import {
   validateImageFile
 } from '@/lib/security';
 
-// Validation schema
+// Validation schema (all optional)
 const propertyMetadataSchema = z.object({
   property_type: z.string()
     .trim()
-    .min(1, { message: "Tipo de imóvel é obrigatório" })
     .max(50, { message: "Tipo de imóvel deve ter no máximo 50 caracteres" })
-    .transform(val => val.trim()),
+    .optional()
+    .transform(val => val?.trim() || ''),
   purpose: z.string()
     .trim()
-    .min(1, { message: "Finalidade é obrigatória" })
     .max(30, { message: "Finalidade deve ter no máximo 30 caracteres" })
-    .transform(val => val.trim()),
+    .optional()
+    .transform(val => val?.trim() || ''),
   status: z.string()
     .trim()
-    .min(1, { message: "Status é obrigatório" })
     .max(30, { message: "Status deve ter no máximo 30 caracteres" })
-    .transform(val => val.trim())
+    .optional()
+    .transform(val => val?.trim() || 'active')
 });
 
 const AddProperty = () => {
@@ -272,74 +272,15 @@ const AddProperty = () => {
       const whatsappLink = sanitizeUrl(formData.get('whatsapp_link') as string);
       const youtubeLink = sanitizeUrl(formData.get('youtube_link') as string);
 
-      // Validate inputs
-      if (!title || title.length < 5 || title.length > 200) {
-        toast({
-          title: "Título inválido",
-          description: "O título deve ter entre 5 e 200 caracteres.",
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      if (!validatePrice(priceValue)) {
-        toast({
-          title: "Preço inválido",
-          description: "O preço deve ser um valor positivo válido.",
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      if (!validateArea(areaValue)) {
-        toast({
-          title: "Área inválida",
-          description: "A área deve ser um valor positivo válido (máximo 100.000 m²).",
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      // Validate property type, purpose and status with Zod
-      const metadataValidation = propertyMetadataSchema.safeParse({
-        property_type: propertyType,
-        purpose: purpose,
-        status: status
-      });
-
-      if (!metadataValidation.success) {
-        const validationErrors = metadataValidation.error.flatten().fieldErrors;
-        setErrors({
-          property_type: validationErrors.property_type?.[0],
-          purpose: validationErrors.purpose?.[0],
-          status: validationErrors.status?.[0]
-        });
-        
-        toast({
-          title: "Campos inválidos",
-          description: "Por favor, corrija os erros nos campos destacados.",
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      // Clear errors if validation passed
+      // Clear errors
       setErrors({});
-      const normalized = propertyMetadataSchema.parse({ property_type: propertyType, purpose, status });
-
-      if (!validateRoomCount(bedroomsValue) || !validateRoomCount(bathroomsValue) || !validateRoomCount(parkingValue)) {
-        toast({
-          title: "Dados inválidos",
-          description: "Verifique os valores de quartos, banheiros e vagas (devem ser entre 0 e 50).",
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
-      }
+      
+      // Parse metadata (all optional now)
+      const normalized = propertyMetadataSchema.parse({ 
+        property_type: propertyType, 
+        purpose, 
+        status 
+      });
 
       console.log('Criando imóvel:', {
         propertyType,
@@ -477,22 +418,20 @@ const AddProperty = () => {
               {/* Basic Information */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="title">Título *</Label>
+                  <Label htmlFor="title">Título</Label>
                   <Input
                     id="title"
                     name="title"
                     placeholder="Ex: Casa com 3 quartos no centro"
-                    required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="price">Preço (R$) *</Label>
+                  <Label htmlFor="price">Preço (R$)</Label>
                   <Input
                     id="price"
                     name="price"
                     type="text"
                     placeholder="Ex: R$ 350.000,00"
-                    required
                     onChange={(e) => {
                       // Remove all non-digits
                       let value = e.target.value.replace(/\D/g, '');
@@ -523,12 +462,11 @@ const AddProperty = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="location">Localização *</Label>
+                <Label htmlFor="location">Localização</Label>
                   <Input
                     id="location"
                     name="location"
                     placeholder="Ex: Centro, Patos de Minas - MG"
-                    required
                   />
               </div>
 
@@ -561,61 +499,31 @@ const AddProperty = () => {
               {/* Property Type, Purpose and Status */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="property_type">Tipo de Imóvel *</Label>
+                  <Label htmlFor="property_type">Tipo de Imóvel</Label>
                   <Input
                     id="property_type"
                     value={propertyType}
-                    onChange={(e) => {
-                      setPropertyType(e.target.value);
-                      if (errors.property_type) {
-                        setErrors(prev => ({ ...prev, property_type: undefined }));
-                      }
-                    }}
+                    onChange={(e) => setPropertyType(e.target.value)}
                     placeholder="Ex: Casa, Apartamento, Comercial, Terreno"
-                    required
-                    className={errors.property_type ? 'border-destructive' : ''}
                   />
-                  {errors.property_type && (
-                    <p className="text-sm text-destructive">{errors.property_type}</p>
-                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="purpose">Finalidade *</Label>
+                  <Label htmlFor="purpose">Finalidade</Label>
                   <Input
                     id="purpose"
                     value={purpose}
-                    onChange={(e) => {
-                      setPurpose(e.target.value);
-                      if (errors.purpose) {
-                        setErrors(prev => ({ ...prev, purpose: undefined }));
-                      }
-                    }}
+                    onChange={(e) => setPurpose(e.target.value)}
                     placeholder="Ex: Venda, Aluguel"
-                    required
-                    className={errors.purpose ? 'border-destructive' : ''}
                   />
-                  {errors.purpose && (
-                    <p className="text-sm text-destructive">{errors.purpose}</p>
-                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="status">Status *</Label>
+                  <Label htmlFor="status">Status</Label>
                   <Input
                     id="status"
                     value={status}
-                    onChange={(e) => {
-                      setStatus(e.target.value);
-                      if (errors.status) {
-                        setErrors(prev => ({ ...prev, status: undefined }));
-                      }
-                    }}
+                    onChange={(e) => setStatus(e.target.value)}
                     placeholder="Ex: Ativo, Inativo, Vendido, Alugado"
-                    required
-                    className={errors.status ? 'border-destructive' : ''}
                   />
-                  {errors.status && (
-                    <p className="text-sm text-destructive">{errors.status}</p>
-                  )}
                 </div>
               </div>
 

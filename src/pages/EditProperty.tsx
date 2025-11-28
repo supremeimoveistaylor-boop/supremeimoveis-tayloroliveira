@@ -16,23 +16,23 @@ import { MapSelector } from '@/components/MapSelector';
 import { validateImageFile } from '@/lib/security';
 import { z } from 'zod';
 
-// Validation schema
+// Validation schema (all optional)
 const propertyMetadataSchema = z.object({
   property_type: z.string()
     .trim()
-    .min(1, { message: "Tipo de imóvel é obrigatório" })
     .max(50, { message: "Tipo de imóvel deve ter no máximo 50 caracteres" })
-    .transform(val => val.trim()),
+    .optional()
+    .transform(val => val?.trim() || ''),
   purpose: z.string()
     .trim()
-    .min(1, { message: "Finalidade é obrigatória" })
     .max(30, { message: "Finalidade deve ter no máximo 30 caracteres" })
-    .transform(val => val.trim()),
+    .optional()
+    .transform(val => val?.trim() || ''),
   status: z.string()
     .trim()
-    .min(1, { message: "Status é obrigatório" })
     .max(30, { message: "Status deve ter no máximo 30 caracteres" })
-    .transform(val => val.trim())
+    .optional()
+    .transform(val => val?.trim() || 'active')
 });
 
 interface Property {
@@ -334,33 +334,15 @@ const EditProperty = () => {
     setIsLoading(true);
 
     try {
-      // Validate property type, purpose and status with Zod
-      const metadataValidation = propertyMetadataSchema.safeParse({
-        property_type: propertyType,
-        purpose: purpose,
-        status: status
-      });
-
-      if (!metadataValidation.success) {
-        const validationErrors = metadataValidation.error.flatten().fieldErrors;
-        setErrors({
-          property_type: validationErrors.property_type?.[0],
-          purpose: validationErrors.purpose?.[0],
-          status: validationErrors.status?.[0]
-        });
-        
-        toast({
-          title: "Campos inválidos",
-          description: "Por favor, corrija os erros nos campos destacados.",
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      // Clear errors if validation passed
+      // Clear errors
       setErrors({});
-      const normalized = metadataValidation.data;
+      
+      // Parse metadata (all optional now)
+      const normalized = propertyMetadataSchema.parse({ 
+        property_type: propertyType, 
+        purpose, 
+        status 
+      });
 
       const formData = new FormData(e.currentTarget);
       
@@ -477,16 +459,15 @@ const EditProperty = () => {
               {/* Basic Information */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="title">Título *</Label>
+                  <Label htmlFor="title">Título</Label>
                   <Input
                     id="title"
                     name="title"
                     defaultValue={property.title}
-                    required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="price">Preço (R$) *</Label>
+                  <Label htmlFor="price">Preço (R$)</Label>
                   <Input
                     id="price"
                     name="price"
@@ -497,7 +478,6 @@ const EditProperty = () => {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2
                     }).format(property.price)}
-                    required
                     onChange={(e) => {
                       // Remove all non-digits
                       let value = e.target.value.replace(/\D/g, '');
@@ -528,12 +508,11 @@ const EditProperty = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="location">Localização *</Label>
+                <Label htmlFor="location">Localização</Label>
                 <Input
                   id="location"
                   name="location"
                   defaultValue={property.location}
-                  required
                 />
               </div>
 
@@ -568,64 +547,34 @@ const EditProperty = () => {
               {/* Property Type and Purpose */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="property_type">Tipo de Imóvel *</Label>
+                  <Label htmlFor="property_type">Tipo de Imóvel</Label>
                   <Input
                     id="property_type"
                     value={propertyType}
-                    onChange={(e) => {
-                      setPropertyType(e.target.value);
-                      if (errors.property_type) {
-                        setErrors(prev => ({ ...prev, property_type: undefined }));
-                      }
-                    }}
+                    onChange={(e) => setPropertyType(e.target.value)}
                     placeholder="Ex: Casa, Apartamento, Comercial, Terreno"
-                    required
-                    className={errors.property_type ? 'border-destructive' : ''}
                   />
-                  {errors.property_type && (
-                    <p className="text-sm text-destructive">{errors.property_type}</p>
-                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="purpose">Finalidade *</Label>
+                  <Label htmlFor="purpose">Finalidade</Label>
                   <Input
                     id="purpose"
                     value={purpose}
-                    onChange={(e) => {
-                      setPurpose(e.target.value);
-                      if (errors.purpose) {
-                        setErrors(prev => ({ ...prev, purpose: undefined }));
-                      }
-                    }}
+                    onChange={(e) => setPurpose(e.target.value)}
                     placeholder="Ex: Venda, Aluguel"
-                    required
-                    className={errors.purpose ? 'border-destructive' : ''}
                   />
-                  {errors.purpose && (
-                    <p className="text-sm text-destructive">{errors.purpose}</p>
-                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="status">Status *</Label>
+                  <Label htmlFor="status">Status</Label>
                   <Input
                     id="status"
                     value={status}
-                    onChange={(e) => {
-                      setStatus(e.target.value);
-                      if (errors.status) {
-                        setErrors(prev => ({ ...prev, status: undefined }));
-                      }
-                    }}
+                    onChange={(e) => setStatus(e.target.value)}
                     placeholder="Ex: Ativo, Inativo, Vendido, Alugado"
-                    required
-                    className={errors.status ? 'border-destructive' : ''}
                   />
-                  {errors.status && (
-                    <p className="text-sm text-destructive">{errors.status}</p>
-                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label>Status de Listagem *</Label>
+                  <Label>Status de Listagem</Label>
                   <Select value={listingStatus} onValueChange={(value: 'available' | 'sold' | 'rented') => setListingStatus(value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o status de listagem" />
