@@ -4,9 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -53,8 +53,8 @@ const AddProperty = () => {
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [amenities, setAmenities] = useState<string[]>([]);
   const [newAmenity, setNewAmenity] = useState('');
-  const [propertyType, setPropertyType] = useState<string>('');
-  const [purpose, setPurpose] = useState<string>('');
+  const [propertyType, setPropertyType] = useState<string>('house');
+  const [purpose, setPurpose] = useState<string>('sale');
   const [status, setStatus] = useState<string>('active');
   const [latitude, setLatitude] = useState<number | undefined>();
   const [longitude, setLongitude] = useState<number | undefined>();
@@ -500,30 +500,43 @@ const AddProperty = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="property_type">Tipo de Imóvel</Label>
-                  <Input
-                    id="property_type"
-                    value={propertyType}
-                    onChange={(e) => setPropertyType(e.target.value)}
-                    placeholder="Ex: Casa, Apartamento, Comercial, Terreno"
-                  />
+                  <Select value={propertyType} onValueChange={setPropertyType}>
+                    <SelectTrigger id="property_type">
+                      <SelectValue placeholder="Selecione o tipo de imóvel" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="house">Casa</SelectItem>
+                      <SelectItem value="apartment">Apartamento</SelectItem>
+                      <SelectItem value="commercial">Comercial</SelectItem>
+                      <SelectItem value="land">Terreno</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="purpose">Finalidade</Label>
-                  <Input
-                    id="purpose"
-                    value={purpose}
-                    onChange={(e) => setPurpose(e.target.value)}
-                    placeholder="Ex: Venda, Aluguel"
-                  />
+                  <Select value={purpose} onValueChange={setPurpose}>
+                    <SelectTrigger id="purpose">
+                      <SelectValue placeholder="Selecione a finalidade" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sale">Venda</SelectItem>
+                      <SelectItem value="rent">Aluguel</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="status">Status</Label>
-                  <Input
-                    id="status"
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
-                    placeholder="Ex: Ativo, Inativo, Vendido, Alugado"
-                  />
+                  <Select value={status} onValueChange={setStatus}>
+                    <SelectTrigger id="status">
+                      <SelectValue placeholder="Selecione o status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Ativo</SelectItem>
+                      <SelectItem value="sold">Vendido</SelectItem>
+                      <SelectItem value="rented">Alugado</SelectItem>
+                      <SelectItem value="inactive">Inativo</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 

@@ -548,30 +548,43 @@ const EditProperty = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="property_type">Tipo de Imóvel</Label>
-                  <Input
-                    id="property_type"
-                    value={propertyType}
-                    onChange={(e) => setPropertyType(e.target.value)}
-                    placeholder="Ex: Casa, Apartamento, Comercial, Terreno"
-                  />
+                  <Select value={propertyType} onValueChange={setPropertyType}>
+                    <SelectTrigger id="property_type">
+                      <SelectValue placeholder="Selecione o tipo de imóvel" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="house">Casa</SelectItem>
+                      <SelectItem value="apartment">Apartamento</SelectItem>
+                      <SelectItem value="commercial">Comercial</SelectItem>
+                      <SelectItem value="land">Terreno</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="purpose">Finalidade</Label>
-                  <Input
-                    id="purpose"
-                    value={purpose}
-                    onChange={(e) => setPurpose(e.target.value)}
-                    placeholder="Ex: Venda, Aluguel"
-                  />
+                  <Select value={purpose} onValueChange={setPurpose}>
+                    <SelectTrigger id="purpose">
+                      <SelectValue placeholder="Selecione a finalidade" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sale">Venda</SelectItem>
+                      <SelectItem value="rent">Aluguel</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="status">Status</Label>
-                  <Input
-                    id="status"
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
-                    placeholder="Ex: Ativo, Inativo, Vendido, Alugado"
-                  />
+                  <Select value={status} onValueChange={setStatus}>
+                    <SelectTrigger id="status">
+                      <SelectValue placeholder="Selecione o status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Ativo</SelectItem>
+                      <SelectItem value="sold">Vendido</SelectItem>
+                      <SelectItem value="rented">Alugado</SelectItem>
+                      <SelectItem value="inactive">Inativo</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label>Status de Listagem</Label>
