@@ -15,6 +15,7 @@ import Admin from "./pages/Admin";
 import PropertyDetails from "./pages/PropertyDetails";
 import NotFound from "./pages/NotFound";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ExitPopup } from "@/components/ExitPopup";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +25,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        <ExitPopup />
         {/* Error boundary to avoid blank screens */}
         <ErrorBoundary>
           <HashRouter>
