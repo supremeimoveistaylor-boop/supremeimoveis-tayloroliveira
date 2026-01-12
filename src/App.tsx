@@ -25,10 +25,10 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <ExitPopup />
         {/* Error boundary to avoid blank screens */}
         <ErrorBoundary>
           <HashRouter>
+            <ExitPopup />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/comprar" element={<Index />} />
