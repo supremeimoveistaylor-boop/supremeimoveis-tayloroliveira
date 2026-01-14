@@ -77,6 +77,9 @@ const Auth = () => {
           <CardDescription className="text-center">
             Sistema de gestão de imóveis
           </CardDescription>
+          <div className="bg-amber-50 border border-amber-200 text-amber-800 px-3 py-2 rounded-md text-sm text-center mt-2">
+            ⚠️ Novos cadastros não são permitidos. Entre em contato com o administrador.
+          </div>
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
