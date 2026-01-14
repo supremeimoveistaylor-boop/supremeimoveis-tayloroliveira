@@ -113,17 +113,11 @@ const Auth = () => {
           <CardDescription className="text-center">
             Sistema de gestão de imóveis
           </CardDescription>
-          <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mt-3">
-            <p className="text-xs text-amber-800 text-center">
-              ⚠️ Acesso restrito: Apenas emails autorizados podem usar esta plataforma
-            </p>
-          </div>
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">Entrar</TabsTrigger>
-              <TabsTrigger value="signup">Cadastrar</TabsTrigger>
               <TabsTrigger value="reset">Recuperar</TabsTrigger>
             </TabsList>
             
@@ -156,52 +150,6 @@ const Auth = () => {
                 >
                   {isLoading ? "Entrando..." : "Entrar"}
                 </Button>
-              </form>
-            </TabsContent>
-            
-            <TabsContent value="signup" className="space-y-4">
-              <form onSubmit={handleSignUp} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-name">Nome Completo</Label>
-                  <Input
-                    id="signup-name"
-                    name="fullName"
-                    type="text"
-                    placeholder="Seu nome completo"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <Input
-                    id="signup-email"
-                    name="email"
-                    type="email"
-                    placeholder="seu@email.com"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Senha</Label>
-                  <Input
-                    id="signup-password"
-                    name="password"
-                    type="password"
-                    placeholder="Mínimo 6 caracteres"
-                    minLength={6}
-                    required
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Cadastrando..." : "Cadastrar"}
-                </Button>
-                <p className="text-sm text-muted-foreground text-center">
-                  Você receberá um email de confirmação
-                </p>
               </form>
             </TabsContent>
             
