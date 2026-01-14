@@ -10,7 +10,7 @@ import { sanitizeInput } from '@/lib/security';
 import { Eye, EyeOff } from 'lucide-react';
 
 const Auth = () => {
-  const { user, signIn, signUp, resetPassword, loading } = useAuth();
+  const { user, signIn, resetPassword, loading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('signin');
   const [showPassword, setShowPassword] = useState(false);
@@ -43,44 +43,6 @@ const Auth = () => {
     setIsLoading(false);
   };
 
-  const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsLoading(true);
-    
-    const formData = new FormData(e.currentTarget);
-    const email = sanitizeInput(formData.get('email') as string).toLowerCase();
-    const password = formData.get('password') as string;
-    const fullName = sanitizeInput(formData.get('fullName') as string);
-    
-    // Basic validation
-    if (!email || !password || !fullName) {
-      setIsLoading(false);
-      return;
-    }
-    
-    if (!email.includes('@') || email.length < 5) {
-      setIsLoading(false);
-      return;
-    }
-    
-    if (password.length < 6) {
-      setIsLoading(false);
-      return;
-    }
-    
-    if (fullName.length < 2) {
-      setIsLoading(false);
-      return;
-    }
-    
-    const { error } = await signUp(email, password, fullName);
-    
-    if (!error) {
-      setActiveTab('signin');
-    }
-    
-    setIsLoading(false);
-  };
 
   const handleResetPassword = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
