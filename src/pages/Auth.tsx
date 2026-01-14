@@ -7,11 +7,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import { sanitizeInput } from '@/lib/security';
+import { Eye, EyeOff } from 'lucide-react';
 
 const Auth = () => {
   const { user, signIn, signUp, resetPassword, loading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('signin');
+  const [showPassword, setShowPassword] = useState(false);
 
   // Redirect if already authenticated
   if (user && !loading) {
@@ -135,13 +137,23 @@ const Auth = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signin-password">Senha</Label>
-                  <Input
-                    id="signin-password"
-                    name="password"
-                    type="password"
-                    placeholder="Sua senha"
-                    required
-                  />
+                  <div className="relative">
+                    <Input
+                      id="signin-password"
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Sua senha"
+                      required
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
                 <Button
                   type="submit"
