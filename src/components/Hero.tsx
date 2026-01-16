@@ -3,9 +3,36 @@ import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Search, Home, Building2, TreePine } from "lucide-react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import heroProperty from "@/assets/hero-property.jpg";
 
 export const Hero = () => {
+  const navigate = useNavigate();
+  
+  // Search form state
+  const [propertyType, setPropertyType] = useState<string>("");
+  const [purpose, setPurpose] = useState<string>("");
+  const [neighborhood, setNeighborhood] = useState<string>("");
+  const [minPrice, setMinPrice] = useState<string>("");
+  const [maxPrice, setMaxPrice] = useState<string>("");
+
+  const handleSearch = () => {
+    const params = new URLSearchParams();
+    
+    if (propertyType) params.set("tipo", propertyType);
+    if (purpose) params.set("finalidade", purpose);
+    if (neighborhood) params.set("bairro", neighborhood);
+    if (minPrice) params.set("preco_min", minPrice);
+    if (maxPrice) params.set("preco_max", maxPrice);
+    
+    navigate(`/buscar?${params.toString()}`);
+  };
+
+  const handlePropertyTypeClick = (type: string) => {
+    setPropertyType(propertyType === type ? "" : type);
+  };
+
   return (
     <section id="inicio" className="relative min-h-[80vh] flex items-center bg-gradient-to-br from-black-soft to-primary">
       {/* Background image with overlay */}
@@ -45,7 +72,11 @@ export const Hero = () => {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 font-semibold px-8">
+              <Button 
+                size="lg" 
+                className="bg-accent text-accent-foreground hover:bg-accent/90 font-semibold px-8"
+                onClick={() => navigate("/buscar")}
+              >
                 Ver Propriedades
               </Button>
               <Button 
@@ -70,22 +101,49 @@ export const Hero = () => {
               <div className="space-y-4">
                 {/* Property Type */}
                 <div className="grid grid-cols-3 gap-2">
-                  <Button variant="outline" size="sm" className="flex flex-col items-center p-3 h-auto hover:border-accent hover:text-accent">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className={`flex flex-col items-center p-3 h-auto ${
+                      propertyType === "casa" 
+                        ? "border-accent bg-accent/10 text-accent" 
+                        : "hover:border-accent hover:text-accent"
+                    }`}
+                    onClick={() => handlePropertyTypeClick("casa")}
+                  >
                     <Home className="h-5 w-5 mb-1" />
                     <span className="text-xs">Casas</span>
                   </Button>
-                  <Button variant="outline" size="sm" className="flex flex-col items-center p-3 h-auto hover:border-accent hover:text-accent">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className={`flex flex-col items-center p-3 h-auto ${
+                      propertyType === "apartamento" 
+                        ? "border-accent bg-accent/10 text-accent" 
+                        : "hover:border-accent hover:text-accent"
+                    }`}
+                    onClick={() => handlePropertyTypeClick("apartamento")}
+                  >
                     <Building2 className="h-5 w-5 mb-1" />
                     <span className="text-xs">Apartamentos</span>
                   </Button>
-                  <Button variant="outline" size="sm" className="flex flex-col items-center p-3 h-auto hover:border-accent hover:text-accent">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className={`flex flex-col items-center p-3 h-auto ${
+                      propertyType === "rural" 
+                        ? "border-accent bg-accent/10 text-accent" 
+                        : "hover:border-accent hover:text-accent"
+                    }`}
+                    onClick={() => handlePropertyTypeClick("rural")}
+                  >
                     <TreePine className="h-5 w-5 mb-1" />
                     <span className="text-xs">Rurais</span>
                   </Button>
                 </div>
 
                 {/* Purpose */}
-                <Select>
+                <Select value={purpose} onValueChange={setPurpose}>
                   <SelectTrigger>
                     <SelectValue placeholder="Finalidade" />
                   </SelectTrigger>
@@ -96,7 +154,7 @@ export const Hero = () => {
                 </Select>
 
                 {/* Location */}
-                <Select>
+                <Select value={neighborhood} onValueChange={setNeighborhood}>
                   <SelectTrigger>
                     <SelectValue placeholder="Bairro" />
                   </SelectTrigger>
@@ -111,12 +169,25 @@ export const Hero = () => {
 
                 {/* Price Range */}
                 <div className="grid grid-cols-2 gap-2">
-                  <Input type="text" placeholder="Preço mín." />
-                  <Input type="text" placeholder="Preço máx." />
+                  <Input 
+                    type="number" 
+                    placeholder="Preço mín." 
+                    value={minPrice}
+                    onChange={(e) => setMinPrice(e.target.value)}
+                  />
+                  <Input 
+                    type="number" 
+                    placeholder="Preço máx." 
+                    value={maxPrice}
+                    onChange={(e) => setMaxPrice(e.target.value)}
+                  />
                 </div>
 
                 {/* Search Button */}
-                <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90 font-semibold">
+                <Button 
+                  className="w-full bg-accent text-accent-foreground hover:bg-accent/90 font-semibold"
+                  onClick={handleSearch}
+                >
                   <Search className="h-4 w-4 mr-2" />
                   Buscar Imóveis
                 </Button>
