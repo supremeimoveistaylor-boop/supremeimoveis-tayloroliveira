@@ -2,3 +2,6 @@ project_id = "ypkmorgcpooygsvhcpvo"
 
 [functions.get_public_properties]
 verify_jwt = false
+
+[functions.real-estate-chat]
+verify_jwt = false
