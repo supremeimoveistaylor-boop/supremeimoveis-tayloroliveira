@@ -12,6 +12,7 @@ import { toast } from "@/hooks/use-toast";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { ImageModal } from "@/components/ImageModal";
+import { RealEstateChat } from "@/components/RealEstateChat";
 
 interface Property {
   id: string;
@@ -540,6 +541,11 @@ const PropertyDetails = () => {
         images={property.images}
         propertyTitle={property.title}
         initialIndex={selectedImageIndex}
+      />
+      <RealEstateChat 
+        propertyId={property.id} 
+        propertyName={property.title}
+        origin="Página do Imóvel"
       />
     </>
   );

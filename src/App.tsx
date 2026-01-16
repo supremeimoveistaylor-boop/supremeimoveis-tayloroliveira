@@ -13,6 +13,7 @@ import AddProperty from "./pages/AddProperty";
 import EditProperty from "./pages/EditProperty";
 import Admin from "./pages/Admin";
 import PropertyDetails from "./pages/PropertyDetails";
+import LeadsManagement from "./pages/LeadsManagement";
 import NotFound from "./pages/NotFound";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ExitPopup } from "@/components/ExitPopup";
@@ -41,6 +42,7 @@ const App = () => (
               <Route path="/add-property" element={<AddProperty />} />
               <Route path="/edit-property/:id" element={<EditProperty />} />
               <Route path="/admin" element={<Admin />} />
+              <Route path="/leads" element={<LeadsManagement />} />
               <Route path="/property/:id" element={<PropertyDetails />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
