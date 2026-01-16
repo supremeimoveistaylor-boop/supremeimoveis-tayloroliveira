@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.real-estate-chat]
 verify_jwt = false
+
+[functions.search-properties]
+verify_jwt = false

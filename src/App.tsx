@@ -14,6 +14,7 @@ import EditProperty from "./pages/EditProperty";
 import Admin from "./pages/Admin";
 import PropertyDetails from "./pages/PropertyDetails";
 import LeadsManagement from "./pages/LeadsManagement";
+import SearchResults from "./pages/SearchResults";
 import NotFound from "./pages/NotFound";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ExitPopup } from "@/components/ExitPopup";
@@ -35,6 +36,7 @@ const App = () => (
               <Route path="/comprar" element={<Index />} />
               <Route path="/alugar" element={<Index />} />
               <Route path="/rurais" element={<Index />} />
+              <Route path="/buscar" element={<SearchResults />} />
               <Route path="/chat" element={<Chat />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/reset-password" element={<ResetPassword />} />
