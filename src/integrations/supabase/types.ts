@@ -14,6 +14,195 @@ export type Database = {
   }
   public: {
     Tables: {
+      brokers: {
+        Row: {
+          active: boolean
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+          updated_at: string
+          user_id: string | null
+          whatsapp: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          updated_at?: string
+          user_id?: string | null
+          whatsapp: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          updated_at?: string
+          user_id?: string | null
+          whatsapp?: string
+        }
+        Relationships: []
+      }
+      chat_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          lead_id: string
+          role: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          lead_id: string
+          role: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          lead_id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_settings: {
+        Row: {
+          created_at: string
+          default_broker_id: string | null
+          distribution_rule: string
+          id: string
+          last_assigned_broker_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          default_broker_id?: string | null
+          distribution_rule?: string
+          id?: string
+          last_assigned_broker_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          default_broker_id?: string | null
+          distribution_rule?: string
+          id?: string
+          last_assigned_broker_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_settings_default_broker_id_fkey"
+            columns: ["default_broker_id"]
+            isOneToOne: false
+            referencedRelation: "brokers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_settings_last_assigned_broker_id_fkey"
+            columns: ["last_assigned_broker_id"]
+            isOneToOne: false
+            referencedRelation: "brokers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          broker_id: string | null
+          created_at: string
+          email: string | null
+          id: string
+          intent: string | null
+          name: string | null
+          origin: string | null
+          page_url: string | null
+          phone: string | null
+          property_id: string | null
+          status: string
+          updated_at: string
+          visit_date: string | null
+          visit_requested: boolean | null
+          whatsapp_sent: boolean | null
+          whatsapp_sent_at: string | null
+        }
+        Insert: {
+          broker_id?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          intent?: string | null
+          name?: string | null
+          origin?: string | null
+          page_url?: string | null
+          phone?: string | null
+          property_id?: string | null
+          status?: string
+          updated_at?: string
+          visit_date?: string | null
+          visit_requested?: boolean | null
+          whatsapp_sent?: boolean | null
+          whatsapp_sent_at?: string | null
+        }
+        Update: {
+          broker_id?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          intent?: string | null
+          name?: string | null
+          origin?: string | null
+          page_url?: string | null
+          phone?: string | null
+          property_id?: string | null
+          status?: string
+          updated_at?: string
+          visit_date?: string | null
+          visit_requested?: boolean | null
+          whatsapp_sent?: boolean | null
+          whatsapp_sent_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "brokers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "public_properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -52,6 +241,7 @@ export type Database = {
           bedrooms: number | null
           created_at: string
           description: string | null
+          exclusive_broker_id: string | null
           featured: boolean | null
           id: string
           images: string[] | null
@@ -78,6 +268,7 @@ export type Database = {
           bedrooms?: number | null
           created_at?: string
           description?: string | null
+          exclusive_broker_id?: string | null
           featured?: boolean | null
           id?: string
           images?: string[] | null
@@ -104,6 +295,7 @@ export type Database = {
           bedrooms?: number | null
           created_at?: string
           description?: string | null
+          exclusive_broker_id?: string | null
           featured?: boolean | null
           id?: string
           images?: string[] | null
@@ -123,7 +315,15 @@ export type Database = {
           whatsapp_link?: string | null
           youtube_link?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "properties_exclusive_broker_id_fkey"
+            columns: ["exclusive_broker_id"]
+            isOneToOne: false
+            referencedRelation: "brokers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       security_logs: {
         Row: {
@@ -252,6 +452,10 @@ export type Database = {
       }
     }
     Functions: {
+      assign_lead_to_broker: {
+        Args: { p_lead_id: string; p_property_id: string }
+        Returns: string
+      }
       generate_property_code: { Args: never; Returns: string }
       get_user_role: {
         Args: { user_id_param: string }
