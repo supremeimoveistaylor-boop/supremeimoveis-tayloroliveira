@@ -14,7 +14,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { toast } from "@/hooks/use-toast";
 import { 
   Users, MessageSquare, Settings, Plus, Phone, Mail, 
-  ArrowLeft, Eye, UserPlus, Trash2, Edit2, Flame, Thermometer
+  ArrowLeft, Eye, UserPlus, Trash2, Edit2, Flame, Thermometer,
+  Search, ArrowUpDown, Filter
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -66,6 +67,43 @@ const LeadsManagement = () => {
   const [leadMessages, setLeadMessages] = useState<any[]>([]);
   const [newBroker, setNewBroker] = useState({ name: "", email: "", phone: "", whatsapp: "" });
   const [isAddBrokerOpen, setIsAddBrokerOpen] = useState(false);
+  
+  // Filters and sorting
+  const [qualificationFilter, setQualificationFilter] = useState<string>("todos");
+  const [sortBy, setSortBy] = useState<string>("created_at");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Filtered and sorted leads
+  const filteredLeads = leads
+    .filter((lead) => {
+      // Qualification filter
+      if (qualificationFilter !== "todos" && lead.qualification !== qualificationFilter) {
+        return false;
+      }
+      // Search filter
+      if (searchTerm) {
+        const search = searchTerm.toLowerCase();
+        return (
+          lead.name?.toLowerCase().includes(search) ||
+          lead.phone?.includes(search) ||
+          lead.email?.toLowerCase().includes(search) ||
+          lead.properties?.title?.toLowerCase().includes(search)
+        );
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      let comparison = 0;
+      if (sortBy === "lead_score") {
+        comparison = (b.lead_score || 0) - (a.lead_score || 0);
+      } else if (sortBy === "created_at") {
+        comparison = new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      } else if (sortBy === "message_count") {
+        comparison = (b.message_count || 0) - (a.message_count || 0);
+      }
+      return sortOrder === "desc" ? comparison : -comparison;
+    });
 
   useEffect(() => {
     if (!authLoading && !isAdmin) {
@@ -235,7 +273,86 @@ const LeadsManagement = () => {
           <TabsContent value="leads">
             <Card>
               <CardHeader>
-                <CardTitle>Todos os Leads</CardTitle>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <CardTitle>Todos os Leads</CardTitle>
+                  
+                  {/* Filters */}
+                  <div className="flex flex-wrap items-center gap-3">
+                    {/* Search */}
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Buscar..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-9 w-40 md:w-56"
+                      />
+                    </div>
+
+                    {/* Qualification Filter */}
+                    <Select value={qualificationFilter} onValueChange={setQualificationFilter}>
+                      <SelectTrigger className="w-40">
+                        <Filter className="h-4 w-4 mr-2" />
+                        <SelectValue placeholder="Qualificação" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todos">Todas</SelectItem>
+                        <SelectItem value="muito_quente">🔥🔥 Muito Quente</SelectItem>
+                        <SelectItem value="quente">🔥 Quente</SelectItem>
+                        <SelectItem value="morno">🌤️ Morno</SelectItem>
+                        <SelectItem value="frio">❄️ Frio</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    {/* Sort By */}
+                    <Select value={sortBy} onValueChange={setSortBy}>
+                      <SelectTrigger className="w-40">
+                        <ArrowUpDown className="h-4 w-4 mr-2" />
+                        <SelectValue placeholder="Ordenar por" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="created_at">Data</SelectItem>
+                        <SelectItem value="lead_score">Score</SelectItem>
+                        <SelectItem value="message_count">Mensagens</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    {/* Sort Order */}
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setSortOrder(sortOrder === "desc" ? "asc" : "desc")}
+                      title={sortOrder === "desc" ? "Maior primeiro" : "Menor primeiro"}
+                    >
+                      <ArrowUpDown className={`h-4 w-4 ${sortOrder === "asc" ? "rotate-180" : ""}`} />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Stats summary */}
+                <div className="flex flex-wrap gap-4 mt-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full bg-red-500" />
+                    <span>Muito Quente: {leads.filter(l => l.qualification === "muito_quente").length}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full bg-orange-500" />
+                    <span>Quente: {leads.filter(l => l.qualification === "quente").length}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full bg-yellow-500" />
+                    <span>Morno: {leads.filter(l => l.qualification === "morno").length}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full bg-blue-500" />
+                    <span>Frio: {leads.filter(l => l.qualification === "frio" || !l.qualification).length}</span>
+                  </div>
+                  {qualificationFilter !== "todos" && (
+                    <Badge variant="secondary" className="ml-auto">
+                      Mostrando {filteredLeads.length} de {leads.length}
+                    </Badge>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
@@ -254,7 +371,7 @@ const LeadsManagement = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {leads.map((lead) => (
+                      {filteredLeads.map((lead) => (
                         <tr key={lead.id} className="border-b hover:bg-muted/50">
                           <td className="p-3 text-sm text-muted-foreground">
                             {new Date(lead.created_at).toLocaleDateString("pt-BR")}
@@ -344,10 +461,12 @@ const LeadsManagement = () => {
                           </td>
                         </tr>
                       ))}
-                      {leads.length === 0 && (
+                      {filteredLeads.length === 0 && (
                         <tr>
                           <td colSpan={9} className="text-center p-8 text-muted-foreground">
-                            Nenhum lead registrado ainda
+                            {leads.length === 0 
+                              ? "Nenhum lead registrado ainda" 
+                              : "Nenhum lead encontrado com os filtros selecionados"}
                           </td>
                         </tr>
                       )}
