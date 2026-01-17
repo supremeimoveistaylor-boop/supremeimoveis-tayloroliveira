@@ -148,6 +148,15 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
     }
   }, []);
 
+  // Auto-open chat after 3 seconds to increase engagement
+  useEffect(() => {
+    const autoOpenTimer = setTimeout(() => {
+      setIsOpen(true);
+    }, 3000);
+    
+    return () => clearTimeout(autoOpenTimer);
+  }, []);
+
   useEffect(() => {
     if (leadId) {
       localStorage.setItem(LEAD_STORAGE_KEY, leadId);
