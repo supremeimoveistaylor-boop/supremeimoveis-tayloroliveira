@@ -17,18 +17,32 @@ export const Hero = () => {
   const [minPrice, setMinPrice] = useState<string>("");
   const [maxPrice, setMaxPrice] = useState<string>("");
 
+  const goToSearch = (params?: URLSearchParams) => {
+    const query = params?.toString();
+    const hashPath = query ? `/buscar?${query}` : "/buscar";
+
+    // Force hash-based navigation to avoid 404 on hosts without SPA rewrites
+    window.location.hash = hashPath;
+
+    // Also update router state (no-op if hash navigation already handled)
+    try {
+      navigate(hashPath);
+    } catch {
+      // ignore
+    }
+  };
+
   const handleSearch = () => {
     const params = new URLSearchParams();
-    
+
     if (propertyType) params.set("tipo", propertyType);
     if (purpose) params.set("finalidade", purpose);
     if (neighborhood) params.set("bairro", neighborhood);
     if (minPrice) params.set("preco_min", minPrice);
     if (maxPrice) params.set("preco_max", maxPrice);
-    
-    const searchUrl = `/buscar?${params.toString()}`;
-    console.log("[Hero] Navigating to search:", searchUrl);
-    navigate(searchUrl);
+
+    console.log("[Hero] Navigating to search (hash):", `#/buscar?${params.toString()}`);
+    goToSearch(params);
   };
 
   const handlePropertyTypeClick = (type: string) => {
@@ -77,7 +91,7 @@ export const Hero = () => {
               <Button 
                 size="lg" 
                 className="bg-accent text-accent-foreground hover:bg-accent/90 font-semibold px-8"
-                onClick={() => navigate("/buscar")}
+                onClick={() => goToSearch()}
               >
                 Ver Propriedades
               </Button>
