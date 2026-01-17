@@ -1,6 +1,6 @@
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Shield, Users, Award, TrendingUp } from "lucide-react";
@@ -130,7 +130,7 @@ const Sobre = () => {
       </main>
 
       <Footer />
-      <FloatingWhatsApp />
+      
     </div>
   );
 };
