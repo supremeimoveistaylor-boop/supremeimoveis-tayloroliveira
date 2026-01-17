@@ -15,7 +15,7 @@ import { toast } from "@/hooks/use-toast";
 import { 
   Users, MessageSquare, Settings, Plus, Phone, Mail, 
   ArrowLeft, Eye, UserPlus, Trash2, Edit2, Flame, Thermometer,
-  Search, ArrowUpDown, Filter, BarChart3
+  Search, ArrowUpDown, Filter, BarChart3, Download
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -226,6 +226,90 @@ const LeadsManagement = () => {
     );
   };
 
+  const exportToCSV = () => {
+    const headers = [
+      "Data",
+      "Nome",
+      "Telefone",
+      "Email",
+      "Score",
+      "Qualificação",
+      "Status",
+      "Intenção",
+      "Origem",
+      "Visita Solicitada",
+      "Imóvel",
+      "Corretor",
+      "Mensagens",
+      "Detalhamento Score"
+    ];
+
+    const qualificationLabels: Record<string, string> = {
+      frio: "Frio",
+      morno: "Morno",
+      quente: "Quente",
+      muito_quente: "Muito Quente"
+    };
+
+    const statusLabels: Record<string, string> = {
+      novo: "Novo",
+      em_atendimento: "Em Atendimento",
+      qualificado: "Qualificado",
+      visita_solicitada: "Visita Solicitada",
+      nao_respondeu: "Não Respondeu",
+      encerrado: "Encerrado"
+    };
+
+    const rows = filteredLeads.map((lead) => [
+      new Date(lead.created_at).toLocaleDateString("pt-BR"),
+      lead.name || "",
+      lead.phone || "",
+      lead.email || "",
+      lead.lead_score?.toString() || "0",
+      qualificationLabels[lead.qualification || "frio"] || lead.qualification || "Frio",
+      statusLabels[lead.status] || lead.status,
+      lead.intent || "",
+      lead.origin || "",
+      lead.visit_requested ? "Sim" : "Não",
+      lead.properties?.title || "",
+      lead.brokers?.name || "",
+      lead.message_count?.toString() || "0",
+      lead.score_breakdown 
+        ? Object.entries(lead.score_breakdown)
+            .map(([k, v]) => `${k.replace(/_/g, " ")}: ${v}`)
+            .join("; ")
+        : ""
+    ]);
+
+    const escapeCSV = (value: string) => {
+      if (value.includes(",") || value.includes('"') || value.includes("\n")) {
+        return `"${value.replace(/"/g, '""')}"`;
+      }
+      return value;
+    };
+
+    const csvContent = [
+      headers.map(escapeCSV).join(","),
+      ...rows.map((row) => row.map(escapeCSV).join(","))
+    ].join("\n");
+
+    const BOM = "\uFEFF";
+    const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `leads_${new Date().toISOString().split("T")[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Exportação concluída",
+      description: `${filteredLeads.length} leads exportados para CSV`
+    });
+  };
+
   const getScoreColor = (score: number | null) => {
     if (!score || score < 25) return "bg-blue-500";
     if (score < 50) return "bg-yellow-500";
@@ -335,6 +419,12 @@ const LeadsManagement = () => {
                       title={sortOrder === "desc" ? "Maior primeiro" : "Menor primeiro"}
                     >
                       <ArrowUpDown className={`h-4 w-4 ${sortOrder === "asc" ? "rotate-180" : ""}`} />
+                    </Button>
+
+                    {/* Export Button */}
+                    <Button onClick={exportToCSV} variant="outline">
+                      <Download className="h-4 w-4 mr-2" />
+                      Exportar CSV
                     </Button>
                   </div>
                 </div>
