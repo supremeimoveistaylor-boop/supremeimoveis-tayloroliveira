@@ -26,6 +26,29 @@
     return String(str || "");
   }
 
+  // Notification sound using Web Audio API
+  function playNotificationSound() {
+    try {
+      var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      var oscillator = audioCtx.createOscillator();
+      var gainNode = audioCtx.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      
+      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 note
+      oscillator.frequency.setValueAtTime(1108.73, audioCtx.currentTime + 0.1); // C#6 note
+      
+      gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+      
+      oscillator.start(audioCtx.currentTime);
+      oscillator.stop(audioCtx.currentTime + 0.3);
+    } catch (e) {
+      // Audio not supported or blocked
+    }
+  }
+
   function el(tag, attrs) {
     var node = document.createElement(tag);
     if (attrs) {
@@ -186,7 +209,7 @@
           try { localStorage.setItem(LEAD_STORAGE_KEY, responseLeadId); } catch (_) {}
         }
 
-        await processStream(resp);
+        await processStream(resp, false); // No sound on initial greeting
       } catch (e) {
         // fallback
         state.messages.push({
@@ -199,13 +222,14 @@
       }
     }
 
-    async function processStream(resp) {
+    async function processStream(resp, shouldPlaySound) {
       var reader = resp.body && resp.body.getReader ? resp.body.getReader() : null;
       if (!reader) return;
 
       var decoder = new TextDecoder();
       var buffer = '';
       var assistantContent = '';
+      var soundPlayed = false;
 
       // add placeholder assistant message
       state.messages.push({ role: 'assistant', content: '' });
@@ -234,6 +258,11 @@
             var delta = parsed && parsed.choices && parsed.choices[0] && parsed.choices[0].delta;
             var c = delta && delta.content;
             if (c) {
+              // Play sound on first content received
+              if (!soundPlayed && shouldPlaySound) {
+                playNotificationSound();
+                soundPlayed = true;
+              }
               assistantContent += c;
               state.messages[idx].content = assistantContent;
               renderMessages();
@@ -289,7 +318,7 @@
           try { localStorage.setItem(LEAD_STORAGE_KEY, responseLeadId); } catch (_) {}
         }
 
-        await processStream(resp);
+        await processStream(resp, true); // Play sound on new messages
       } catch (e) {
         state.messages.push({ role: 'assistant', content: 'Desculpe, ocorreu um erro. Tente novamente.' });
         renderMessages();
