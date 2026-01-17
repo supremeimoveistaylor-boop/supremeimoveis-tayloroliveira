@@ -47,13 +47,18 @@ const SearchResults = () => {
   const [total, setTotal] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
   
-  const [filters, setFilters] = useState<SearchFilters>({
-    q: searchParams.get("q") || "",
-    finalidade: searchParams.get("finalidade") || "",
-    tipo: searchParams.get("tipo") || "",
-    bairro: searchParams.get("bairro") || "",
-    preco_min: searchParams.get("preco_min") || "",
-    preco_max: searchParams.get("preco_max") || "",
+  // Initialize filters from URL params
+  const [filters, setFilters] = useState<SearchFilters>(() => {
+    const initial = {
+      q: searchParams.get("q") || "",
+      finalidade: searchParams.get("finalidade") || "",
+      tipo: searchParams.get("tipo") || "",
+      bairro: searchParams.get("bairro") || "",
+      preco_min: searchParams.get("preco_min") || "",
+      preco_max: searchParams.get("preco_max") || "",
+    };
+    console.log("[SearchResults] Initial filters from URL:", initial);
+    return initial;
   });
 
   const fetchProperties = useCallback(async () => {
@@ -70,24 +75,32 @@ const SearchResults = () => {
       if (filters.preco_min) searchBody.preco_min = Number(filters.preco_min);
       if (filters.preco_max) searchBody.preco_max = Number(filters.preco_max);
 
-      console.log("Searching properties with:", searchBody);
+      console.log("[SearchResults] Calling search-properties with:", JSON.stringify(searchBody));
 
       const { data, error: apiError } = await supabase.functions.invoke("search-properties", {
         body: searchBody,
       });
 
+      console.log("[SearchResults] Response received:", { data, error: apiError });
+
       if (apiError) {
-        console.error("Search API error:", apiError);
+        console.error("[SearchResults] API error:", apiError);
         throw new Error(apiError.message || "Erro ao buscar imóveis");
       }
 
-      console.log("Search results:", data);
-      setProperties(data?.data || []);
-      setTotal(data?.total || 0);
+      // Handle both response formats
+      const properties = data?.data || [];
+      const total = data?.total ?? properties.length;
+      
+      console.log(`[SearchResults] Found ${properties.length} properties out of ${total} total`);
+      
+      setProperties(properties);
+      setTotal(total);
     } catch (err) {
-      console.error("Error fetching properties:", err);
+      console.error("[SearchResults] Error fetching properties:", err);
       setError(err instanceof Error ? err.message : "Erro ao buscar imóveis");
       setProperties([]);
+      setTotal(0);
     } finally {
       setLoading(false);
     }

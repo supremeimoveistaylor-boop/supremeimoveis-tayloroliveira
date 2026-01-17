@@ -26,7 +26,9 @@ export const Hero = () => {
     if (minPrice) params.set("preco_min", minPrice);
     if (maxPrice) params.set("preco_max", maxPrice);
     
-    navigate(`/buscar?${params.toString()}`);
+    const searchUrl = `/buscar?${params.toString()}`;
+    console.log("[Hero] Navigating to search:", searchUrl);
+    navigate(searchUrl);
   };
 
   const handlePropertyTypeClick = (type: string) => {
