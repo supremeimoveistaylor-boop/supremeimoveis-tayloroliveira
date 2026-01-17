@@ -5,7 +5,7 @@ import { PropertyMap } from "@/components/PropertyMap";
 import { About } from "@/components/About";
 import { Contact } from "@/components/Contact";
 import { Footer } from "@/components/Footer";
-import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
+
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -101,7 +101,7 @@ const Index = () => {
       <About />
       <Contact />
       <Footer />
-      <FloatingWhatsApp />
+      
     </div>
   );
 };
