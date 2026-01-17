@@ -15,10 +15,11 @@ import { toast } from "@/hooks/use-toast";
 import { 
   Users, MessageSquare, Settings, Plus, Phone, Mail, 
   ArrowLeft, Eye, UserPlus, Trash2, Edit2, Flame, Thermometer,
-  Search, ArrowUpDown, Filter
+  Search, ArrowUpDown, Filter, BarChart3
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import LeadsDashboard from "@/components/LeadsDashboard";
 
 interface Broker {
   id: string;
@@ -253,8 +254,12 @@ const LeadsManagement = () => {
           </div>
         </div>
 
-        <Tabs defaultValue="leads" className="space-y-4">
+        <Tabs defaultValue="dashboard" className="space-y-4">
           <TabsList>
+            <TabsTrigger value="dashboard">
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Dashboard
+            </TabsTrigger>
             <TabsTrigger value="leads">
               <MessageSquare className="h-4 w-4 mr-2" />
               Leads ({leads.length})
@@ -268,6 +273,11 @@ const LeadsManagement = () => {
               Configurações
             </TabsTrigger>
           </TabsList>
+
+          {/* Dashboard Tab */}
+          <TabsContent value="dashboard">
+            <LeadsDashboard leads={leads} />
+          </TabsContent>
 
           {/* Leads Tab */}
           <TabsContent value="leads">
