@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Send, MessageCircle, X, Minimize2, History, Image, Loader2 } from "lucide-react";
+import { Send, MessageCircle, X, Minimize2, History, Loader2, Paperclip, FileText, Image as ImageIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface MessageContent {
@@ -11,12 +11,19 @@ interface MessageContent {
   image_url?: { url: string };
 }
 
+interface Attachment {
+  type: "image" | "document";
+  url: string;
+  name: string;
+  mimeType: string;
+}
+
 interface Message {
   id: string;
   role: "user" | "assistant";
   content: string | MessageContent[];
   timestamp: Date;
-  imageUrl?: string;
+  attachment?: Attachment;
 }
 
 interface RealEstateChatProps {
@@ -27,7 +34,18 @@ interface RealEstateChatProps {
 
 const CHAT_URL = `https://ypkmorgcpooygsvhcpvo.supabase.co/functions/v1/real-estate-chat`;
 const LEAD_STORAGE_KEY = "supreme_chat_lead_id";
-const SUPABASE_URL = "https://ypkmorgcpooygsvhcpvo.supabase.co";
+
+// Allowed file types
+const IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
+const DOCUMENT_TYPES = [
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "text/plain",
+];
+const ALL_ALLOWED_TYPES = [...IMAGE_TYPES, ...DOCUMENT_TYPES];
 
 export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateChatProps) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -40,7 +58,7 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
   const [leadId, setLeadId] = useState<string | null>(null);
   const [hasStarted, setHasStarted] = useState(false);
   const [hasHistory, setHasHistory] = useState(false);
-  const [pendingImage, setPendingImage] = useState<{ url: string; file: File } | null>(null);
+  const [pendingAttachment, setPendingAttachment] = useState<Attachment | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -52,7 +70,6 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
     scrollToBottom();
   }, [messages]);
 
-  // Carregar leadId do localStorage ao iniciar
   useEffect(() => {
     const storedLeadId = localStorage.getItem(LEAD_STORAGE_KEY);
     if (storedLeadId) {
@@ -60,14 +77,12 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
     }
   }, []);
 
-  // Salvar leadId no localStorage quando mudar
   useEffect(() => {
     if (leadId) {
       localStorage.setItem(LEAD_STORAGE_KEY, leadId);
     }
   }, [leadId]);
 
-  // Carregar histórico de mensagens do banco
   const loadChatHistory = useCallback(async (currentLeadId: string) => {
     setIsLoadingHistory(true);
     try {
@@ -102,12 +117,10 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
     }
   }, []);
 
-  // Iniciar conversa automaticamente ao abrir
   const startConversation = useCallback(async () => {
     if (hasStarted) return;
     setHasStarted(true);
 
-    // Se já tem leadId, tentar carregar histórico primeiro
     if (leadId) {
       const hasLoadedHistory = await loadChatHistory(leadId);
       if (hasLoadedHistory) {
@@ -143,7 +156,7 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
         setLeadId(responseLeadId);
       }
 
-      await processStream(response, "", responseLeadId || leadId);
+      await processStream(response, responseLeadId || leadId);
     } catch (error) {
       console.error("Erro ao iniciar:", error);
       setMessages([{
@@ -165,7 +178,7 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
     }
   }, [isOpen, hasStarted, startConversation]);
 
-  const processStream = async (response: Response, userContent: string, currentLeadId: string | null) => {
+  const processStream = async (response: Response, currentLeadId: string | null) => {
     const reader = response.body?.getReader();
     if (!reader) return;
 
@@ -226,33 +239,31 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
     }
   };
 
-  // Handle file upload
+  const getFileExtension = (filename: string): string => {
+    return filename.split(".").pop()?.toUpperCase() || "FILE";
+  };
+
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
-    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
-    if (!allowedTypes.includes(file.type)) {
-      alert("Formato não suportado. Use JPG, PNG, WebP ou GIF.");
+    if (!ALL_ALLOWED_TYPES.includes(file.type)) {
+      alert("Formato não suportado. Use imagens (JPG, PNG, WebP, GIF) ou documentos (PDF, DOC, DOCX, XLS, XLSX, TXT).");
       return;
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      alert("Arquivo muito grande. Máximo 5MB.");
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Arquivo muito grande. Máximo 10MB.");
       return;
     }
 
     setIsUploading(true);
 
     try {
-      // Generate unique filename
       const timestamp = Date.now();
       const ext = file.name.split(".").pop();
       const fileName = `chat/${leadId || "anonymous"}/${timestamp}.${ext}`;
 
-      // Upload to Supabase Storage
       const { data, error } = await supabase.storage
         .from("chat-attachments")
         .upload(fileName, file, {
@@ -262,22 +273,27 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
 
       if (error) {
         console.error("Upload error:", error);
-        alert("Erro ao enviar imagem. Tente novamente.");
+        alert("Erro ao enviar arquivo. Tente novamente.");
         return;
       }
 
-      // Get public URL
       const { data: urlData } = supabase.storage
         .from("chat-attachments")
         .getPublicUrl(data.path);
 
-      setPendingImage({ url: urlData.publicUrl, file });
+      const isImage = IMAGE_TYPES.includes(file.type);
+      
+      setPendingAttachment({
+        type: isImage ? "image" : "document",
+        url: urlData.publicUrl,
+        name: file.name,
+        mimeType: file.type,
+      });
     } catch (error) {
       console.error("Upload error:", error);
-      alert("Erro ao enviar imagem. Tente novamente.");
+      alert("Erro ao enviar arquivo. Tente novamente.");
     } finally {
       setIsUploading(false);
-      // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
@@ -285,28 +301,32 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
   };
 
   const handleSendMessage = async () => {
-    if ((!inputMessage.trim() && !pendingImage) || isLoading) return;
+    if ((!inputMessage.trim() && !pendingAttachment) || isLoading) return;
 
-    // Build message content
     let messageContent: string | MessageContent[] = inputMessage.trim();
     let displayContent = inputMessage.trim();
-    let imageUrl: string | undefined;
 
-    if (pendingImage) {
-      imageUrl = pendingImage.url;
-      const contentParts: MessageContent[] = [];
-      
-      if (inputMessage.trim()) {
-        contentParts.push({ type: "text", text: inputMessage.trim() });
+    if (pendingAttachment) {
+      if (pendingAttachment.type === "image") {
+        const contentParts: MessageContent[] = [];
+        
+        if (inputMessage.trim()) {
+          contentParts.push({ type: "text", text: inputMessage.trim() });
+        }
+        
+        contentParts.push({
+          type: "image_url",
+          image_url: { url: pendingAttachment.url }
+        });
+        
+        messageContent = contentParts;
+        displayContent = inputMessage.trim() || "[Imagem enviada]";
+      } else {
+        // For documents, append file info to text message
+        const docInfo = `[Documento anexado: ${pendingAttachment.name}]`;
+        displayContent = inputMessage.trim() ? `${inputMessage.trim()}\n${docInfo}` : docInfo;
+        messageContent = displayContent;
       }
-      
-      contentParts.push({
-        type: "image_url",
-        image_url: { url: pendingImage.url }
-      });
-      
-      messageContent = contentParts;
-      displayContent = inputMessage.trim() || "[Imagem enviada]";
     }
 
     const userMessage: Message = {
@@ -314,16 +334,15 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
       role: "user",
       content: displayContent,
       timestamp: new Date(),
-      imageUrl,
+      attachment: pendingAttachment || undefined,
     };
 
     setMessages(prev => [...prev, userMessage]);
     setInputMessage("");
-    setPendingImage(null);
+    setPendingAttachment(null);
     setIsLoading(true);
 
     try {
-      // Build messages array for API
       const apiMessages = [...messages, { role: "user", content: messageContent }].map(m => ({
         role: m.role,
         content: m.content,
@@ -355,7 +374,7 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
         setLeadId(responseLeadId);
       }
 
-      await processStream(response, inputMessage, responseLeadId || leadId);
+      await processStream(response, responseLeadId || leadId);
     } catch (error) {
       console.error("Erro ao enviar:", error);
       setMessages(prev => [...prev, {
@@ -382,7 +401,7 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
     setMessages([]);
     setHasStarted(false);
     setHasHistory(false);
-    setPendingImage(null);
+    setPendingAttachment(null);
   };
 
   const formatTime = (date: Date) => {
@@ -396,6 +415,34 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
     if (typeof content === "string") return content;
     const textPart = content.find(c => c.type === "text");
     return textPart?.text || "";
+  };
+
+  const renderAttachment = (attachment: Attachment) => {
+    if (attachment.type === "image") {
+      return (
+        <img 
+          src={attachment.url} 
+          alt={attachment.name} 
+          className="max-w-full h-auto rounded-lg mb-2 max-h-48 object-cover cursor-pointer"
+          onClick={() => window.open(attachment.url, "_blank")}
+        />
+      );
+    }
+
+    return (
+      <a 
+        href={attachment.url} 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg mb-2 hover:bg-muted transition-colors"
+      >
+        <FileText className="h-8 w-8 text-primary shrink-0" />
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-medium truncate">{attachment.name}</p>
+          <p className="text-xs text-muted-foreground">{getFileExtension(attachment.name)}</p>
+        </div>
+      </a>
+    );
   };
 
   if (!isOpen) {
@@ -438,7 +485,7 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
           <div>
             <h3 className="font-semibold text-sm">Supreme Imóveis</h3>
             <p className="text-xs opacity-80">
-              {isLoading ? "Digitando..." : isLoadingHistory ? "Carregando histórico..." : hasHistory ? "Conversa retomada" : "Online"}
+              {isLoading ? "Digitando..." : isLoadingHistory ? "Carregando..." : hasHistory ? "Conversa retomada" : "Online"}
             </p>
           </div>
         </div>
@@ -473,10 +520,9 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
         </div>
       </div>
 
-      {/* History indicator */}
       {hasHistory && (
         <div className="bg-muted/50 px-4 py-2 text-xs text-muted-foreground text-center border-b">
-          📜 Histórico de conversa carregado
+          📜 Histórico carregado
         </div>
       )}
 
@@ -503,14 +549,7 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
                       : "bg-card"
                   }`}
                 >
-                  {/* Show image if present */}
-                  {message.imageUrl && (
-                    <img 
-                      src={message.imageUrl} 
-                      alt="Imagem enviada" 
-                      className="max-w-full h-auto rounded-lg mb-2 max-h-48 object-cover"
-                    />
-                  )}
+                  {message.attachment && renderAttachment(message.attachment)}
                   <p className="text-sm whitespace-pre-wrap">
                     {typeof message.content === "string" ? message.content : getTextContent(message.content)}
                   </p>
@@ -542,17 +581,24 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Pending image preview */}
-      {pendingImage && (
+      {/* Pending attachment preview */}
+      {pendingAttachment && (
         <div className="px-3 py-2 border-t bg-muted/30">
           <div className="relative inline-block">
-            <img 
-              src={pendingImage.url} 
-              alt="Preview" 
-              className="h-16 w-auto rounded-lg object-cover"
-            />
+            {pendingAttachment.type === "image" ? (
+              <img 
+                src={pendingAttachment.url} 
+                alt="Preview" 
+                className="h-16 w-auto rounded-lg object-cover"
+              />
+            ) : (
+              <div className="flex items-center gap-2 p-2 bg-background rounded-lg border">
+                <FileText className="h-6 w-6 text-primary" />
+                <span className="text-xs truncate max-w-32">{pendingAttachment.name}</span>
+              </div>
+            )}
             <button
-              onClick={() => setPendingImage(null)}
+              onClick={() => setPendingAttachment(null)}
               className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs"
             >
               ×
@@ -564,28 +610,26 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
       {/* Input */}
       <div className="p-3 border-t bg-background rounded-b-2xl">
         <div className="flex gap-2">
-          {/* Hidden file input */}
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+            accept={ALL_ALLOWED_TYPES.join(",")}
             onChange={handleFileSelect}
             className="hidden"
           />
           
-          {/* Image upload button */}
           <Button
             variant="ghost"
             size="icon"
             onClick={() => fileInputRef.current?.click()}
             disabled={isLoading || isLoadingHistory || isUploading}
             className="shrink-0"
-            title="Enviar imagem"
+            title="Enviar arquivo"
           >
             {isUploading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <Image className="h-4 w-4" />
+              <Paperclip className="h-4 w-4" />
             )}
           </Button>
 
@@ -593,18 +637,21 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder={pendingImage ? "Adicione uma legenda..." : "Digite sua mensagem..."}
+            placeholder={pendingAttachment ? "Adicione uma legenda..." : "Digite sua mensagem..."}
             disabled={isLoading || isLoadingHistory}
             className="flex-1"
           />
           <Button
             onClick={handleSendMessage}
-            disabled={(!inputMessage.trim() && !pendingImage) || isLoading || isLoadingHistory}
+            disabled={(!inputMessage.trim() && !pendingAttachment) || isLoading || isLoadingHistory}
             size="icon"
           >
             <Send className="h-4 w-4" />
           </Button>
         </div>
+        <p className="text-xs text-muted-foreground text-center mt-2">
+          📎 Imagens, PDFs, DOC, XLS até 10MB
+        </p>
       </div>
     </div>
   );
