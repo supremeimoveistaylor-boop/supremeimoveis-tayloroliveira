@@ -23,7 +23,7 @@ import SearchResults from "./pages/SearchResults";
 import NotFound from "./pages/NotFound";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ExitPopup } from "@/components/ExitPopup";
-import { RealEstateChat } from "@/components/RealEstateChat";
+// Chat agora é injetado via script no <head> (index.html), não via React
 
 const queryClient = new QueryClient();
 
@@ -57,9 +57,6 @@ const App = () => (
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
-
-              {/* Atendimento remoto (chat) global — aparece em todas as páginas */}
-              <RealEstateChat origin="Site" />
             </HashRouter>
           </ErrorBoundary>
       </TooltipProvider>
