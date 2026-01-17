@@ -244,7 +244,7 @@ Posso te ajudar a encontrar um imóvel que combine com você?"`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "gpt-4o",
         messages: [
           { 
             role: "system", 
