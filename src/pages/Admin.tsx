@@ -5,9 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, Home, Edit, Trash2, Eye, ArrowLeft, Users } from 'lucide-react';
+import { Plus, Home, Edit, Trash2, ArrowLeft, Users, UserCheck, MessageSquare } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { LeadsImobiliariosPanel } from '@/components/admin/LeadsImobiliariosPanel';
 
 interface Property {
   id: string;
@@ -44,7 +45,7 @@ const Admin = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'properties' | 'users'>('properties');
+  const [activeTab, setActiveTab] = useState<'properties' | 'users' | 'leads'>('properties');
 
   // Redirect if not authenticated or not admin
   if (!user && !loading) {
@@ -85,7 +86,6 @@ const Admin = () => {
 
   const fetchAllProfiles = async () => {
     try {
-      // Fetch profiles and join with user_roles to get role information
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
@@ -93,14 +93,12 @@ const Admin = () => {
 
       if (profilesError) throw profilesError;
 
-      // Fetch roles separately
       const { data: rolesData, error: rolesError } = await supabase
         .from('user_roles')
         .select('user_id, role');
 
       if (rolesError) throw rolesError;
 
-      // Map roles to profiles
       const rolesMap = new Map(rolesData?.map(r => [r.user_id, r.role]) || []);
       const profilesWithRoles = (profilesData || []).map(profile => ({
         ...profile,
@@ -142,7 +140,6 @@ const Admin = () => {
 
   const updateUserRole = async (userId: string, role: 'admin' | 'user') => {
     try {
-      // First, check if role exists for this user
       const { data: existingRole } = await supabase
         .from('user_roles')
         .select('id, role')
@@ -150,7 +147,6 @@ const Admin = () => {
         .maybeSingle();
 
       if (existingRole) {
-        // Update existing role
         const { error } = await supabase
           .from('user_roles')
           .update({ role })
@@ -158,7 +154,6 @@ const Admin = () => {
 
         if (error) throw error;
       } else {
-        // Insert new role
         const { error } = await supabase
           .from('user_roles')
           .insert({ user_id: userId, role });
@@ -226,7 +221,7 @@ const Admin = () => {
               </Button>
               <div>
                 <h1 className="text-2xl font-bold">Painel do Administrador</h1>
-                <p className="text-muted-foreground">Gerencie todos os imóveis e usuários</p>
+                <p className="text-muted-foreground">Gerencie imóveis, usuários e leads</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -242,13 +237,20 @@ const Admin = () => {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         {/* Tabs */}
-        <div className="flex gap-4 mb-8">
+        <div className="flex gap-4 mb-8 flex-wrap">
           <Button
             variant={activeTab === 'properties' ? 'default' : 'outline'}
             onClick={() => setActiveTab('properties')}
           >
             <Home className="mr-2 h-4 w-4" />
             Imóveis ({properties.length})
+          </Button>
+          <Button
+            variant={activeTab === 'leads' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('leads')}
+          >
+            <MessageSquare className="mr-2 h-4 w-4" />
+            Leads / Contatos
           </Button>
           <Button
             variant={activeTab === 'users' ? 'default' : 'outline'}
@@ -372,6 +374,11 @@ const Admin = () => {
               </div>
             )}
           </div>
+        )}
+
+        {/* Leads Tab */}
+        {activeTab === 'leads' && (
+          <LeadsImobiliariosPanel />
         )}
 
         {/* Users Tab */}

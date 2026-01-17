@@ -242,6 +242,51 @@ export type Database = {
           },
         ]
       }
+      leads_imobiliarios: {
+        Row: {
+          created_at: string
+          descricao: string | null
+          email: string | null
+          finalidade: string | null
+          id: string
+          nome: string
+          origem: string | null
+          pagina_origem: string | null
+          status: string | null
+          telefone: string
+          tipo_imovel: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          descricao?: string | null
+          email?: string | null
+          finalidade?: string | null
+          id?: string
+          nome: string
+          origem?: string | null
+          pagina_origem?: string | null
+          status?: string | null
+          telefone: string
+          tipo_imovel?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          descricao?: string | null
+          email?: string | null
+          finalidade?: string | null
+          id?: string
+          nome?: string
+          origem?: string | null
+          pagina_origem?: string | null
+          status?: string | null
+          telefone?: string
+          tipo_imovel?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
