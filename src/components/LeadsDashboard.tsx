@@ -2,9 +2,9 @@ import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, LineChart, Line, Legend
+  PieChart, Pie, Cell, LineChart, Line, Legend, FunnelChart, Funnel, LabelList
 } from "recharts";
-import { TrendingUp, Users, CalendarCheck, Target } from "lucide-react";
+import { TrendingUp, Users, CalendarCheck, Target, GitBranch } from "lucide-react";
 
 interface Lead {
   id: string;
@@ -126,6 +126,26 @@ const LeadsDashboard = ({ leads }: LeadsDashboardProps) => {
       qualified: stats.qualified,
       taxa: stats.total > 0 ? Math.round((stats.qualified / stats.total) * 100) : 0,
     }));
+  }, [leads]);
+
+  // Funnel data - conversão de leads
+  const funnelData = useMemo(() => {
+    const total = leads.length;
+    const qualified = leads.filter(
+      (lead) => lead.qualification === "quente" || lead.qualification === "muito_quente" || 
+                lead.status === "qualificado" || lead.status === "visita_solicitada" || lead.status === "encerrado"
+    ).length;
+    const visitRequested = leads.filter(
+      (lead) => lead.visit_requested || lead.status === "visita_solicitada" || lead.status === "encerrado"
+    ).length;
+    const closed = leads.filter((lead) => lead.status === "encerrado").length;
+
+    return [
+      { name: "Novos Leads", value: total, fill: "#3b82f6" },
+      { name: "Qualificados", value: qualified, fill: "#eab308" },
+      { name: "Visita Solicitada", value: visitRequested, fill: "#f97316" },
+      { name: "Fechados", value: closed, fill: "#22c55e" },
+    ];
   }, [leads]);
 
   return (
@@ -274,7 +294,80 @@ const LeadsDashboard = ({ leads }: LeadsDashboardProps) => {
       </div>
 
       {/* Charts Row 2 */}
-      <div className="grid gap-4 md:grid-cols-1">
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* Funil de Conversão */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <GitBranch className="h-4 w-4" />
+              Funil de Conversão
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px]">
+              {leads.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <FunnelChart>
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: "hsl(var(--popover))", 
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "8px"
+                      }}
+                      formatter={(value: number, name: string) => {
+                        const total = funnelData[0].value;
+                        const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                        return [`${value} (${percent}%)`, name];
+                      }}
+                    />
+                    <Funnel
+                      dataKey="value"
+                      data={funnelData}
+                      isAnimationActive
+                    >
+                      <LabelList 
+                        position="right" 
+                        fill="hsl(var(--foreground))" 
+                        stroke="none" 
+                        dataKey="name" 
+                        fontSize={12}
+                      />
+                      <LabelList 
+                        position="center" 
+                        fill="#fff" 
+                        stroke="none" 
+                        dataKey="value"
+                        fontSize={14}
+                        fontWeight="bold"
+                      />
+                    </Funnel>
+                  </FunnelChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full text-muted-foreground">
+                  Nenhum lead para exibir
+                </div>
+              )}
+            </div>
+            {/* Funnel Stats */}
+            <div className="mt-4 grid grid-cols-4 gap-2 text-center text-xs">
+              {funnelData.map((stage, index) => {
+                const prevValue = index === 0 ? stage.value : funnelData[index - 1].value;
+                const conversionRate = prevValue > 0 ? ((stage.value / prevValue) * 100).toFixed(0) : 0;
+                return (
+                  <div key={stage.name} className="space-y-1">
+                    <div className="font-medium" style={{ color: stage.fill }}>{stage.value}</div>
+                    <div className="text-muted-foreground truncate">{stage.name}</div>
+                    {index > 0 && (
+                      <div className="text-muted-foreground">↓ {conversionRate}%</div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Conversão por Origem */}
         <Card>
           <CardHeader>
