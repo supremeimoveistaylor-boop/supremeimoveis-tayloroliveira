@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Send, MessageCircle, X, Minimize2, History, Loader2, Paperclip, FileText, Volume2, VolumeX } from "lucide-react";
+import { Send, MessageCircle, X, Minimize2, History, Loader2, Paperclip, FileText, Volume2, VolumeX, Mic, Square, Play, Pause } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 // Notification sound using Web Audio API
@@ -28,6 +28,29 @@ const playNotificationSound = () => {
   }
 };
 
+// Wave animation component for typing indicator
+const TypingWaveAnimation = () => (
+  <div className="flex items-center gap-1 px-2">
+    {[...Array(5)].map((_, i) => (
+      <div
+        key={i}
+        className="w-1 bg-primary rounded-full animate-pulse"
+        style={{
+          height: `${Math.random() * 12 + 8}px`,
+          animationDelay: `${i * 0.1}s`,
+          animationDuration: "0.6s",
+        }}
+      />
+    ))}
+    <style>{`
+      @keyframes wave {
+        0%, 100% { transform: scaleY(0.5); }
+        50% { transform: scaleY(1); }
+      }
+    `}</style>
+  </div>
+);
+
 interface MessageContent {
   type: "text" | "image_url";
   text?: string;
@@ -35,7 +58,7 @@ interface MessageContent {
 }
 
 interface Attachment {
-  type: "image" | "document";
+  type: "image" | "document" | "audio";
   url: string;
   name: string;
   mimeType: string;
@@ -83,8 +106,14 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
   const [hasHistory, setHasHistory] = useState(false);
   const [pendingAttachment, setPendingAttachment] = useState<Attachment | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -272,6 +301,110 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
     return filename.split(".").pop()?.toUpperCase() || "FILE";
   };
 
+  // Voice recording functions
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        setAudioBlob(audioBlob);
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordingTime(0);
+
+      recordingIntervalRef.current = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+    } catch (error) {
+      console.error("Error starting recording:", error);
+      alert("Não foi possível acessar o microfone. Verifique as permissões.");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
+      }
+    }
+  };
+
+  const cancelRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+    }
+    setIsRecording(false);
+    setAudioBlob(null);
+    setRecordingTime(0);
+    if (recordingIntervalRef.current) {
+      clearInterval(recordingIntervalRef.current);
+    }
+  };
+
+  const sendVoiceMessage = async () => {
+    if (!audioBlob) return;
+
+    setIsUploading(true);
+
+    try {
+      const timestamp = Date.now();
+      const fileName = `chat/${leadId || "anonymous"}/${timestamp}.webm`;
+
+      const { data, error } = await supabase.storage
+        .from("chat-attachments")
+        .upload(fileName, audioBlob, {
+          cacheControl: "3600",
+          contentType: "audio/webm",
+        });
+
+      if (error) {
+        console.error("Upload error:", error);
+        alert("Erro ao enviar áudio. Tente novamente.");
+        return;
+      }
+
+      const { data: urlData } = supabase.storage
+        .from("chat-attachments")
+        .getPublicUrl(data.path);
+
+      setPendingAttachment({
+        type: "audio",
+        url: urlData.publicUrl,
+        name: `audio_${timestamp}.webm`,
+        mimeType: "audio/webm",
+      });
+
+      setAudioBlob(null);
+      setRecordingTime(0);
+    } catch (error) {
+      console.error("Upload error:", error);
+      alert("Erro ao enviar áudio. Tente novamente.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const formatRecordingTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -350,6 +483,11 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
         
         messageContent = contentParts;
         displayContent = inputMessage.trim() || "[Imagem enviada]";
+      } else if (pendingAttachment.type === "audio") {
+        // For audio, append audio info to text message
+        const audioInfo = "[🎤 Mensagem de voz]";
+        displayContent = inputMessage.trim() ? `${inputMessage.trim()}\n${audioInfo}` : audioInfo;
+        messageContent = displayContent;
       } else {
         // For documents, append file info to text message
         const docInfo = `[Documento anexado: ${pendingAttachment.name}]`;
@@ -455,6 +593,14 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
           className="max-w-full h-auto rounded-lg mb-2 max-h-48 object-cover cursor-pointer"
           onClick={() => window.open(attachment.url, "_blank")}
         />
+      );
+    }
+
+    if (attachment.type === "audio") {
+      return (
+        <div className="mb-2">
+          <audio src={attachment.url} controls className="w-full h-10" />
+        </div>
       );
     }
 
@@ -605,12 +751,9 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
             ))}
             {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
               <div className="flex justify-start">
-                <Card className="bg-card p-3">
-                  <div className="flex gap-1">
-                    <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                    <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                    <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
-                  </div>
+                <Card className="bg-card p-3 flex items-center gap-2">
+                  <TypingWaveAnimation />
+                  <span className="text-xs text-muted-foreground">Digitando...</span>
                 </Card>
               </div>
             )}
@@ -645,6 +788,60 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
         </div>
       )}
 
+      {/* Audio recording preview */}
+      {audioBlob && !isRecording && (
+        <div className="px-3 py-2 border-t bg-muted/30">
+          <div className="flex items-center gap-2">
+            <audio src={URL.createObjectURL(audioBlob)} controls className="h-8 flex-1" />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setAudioBlob(null)}
+              className="shrink-0 h-8 w-8"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+            <Button
+              size="icon"
+              onClick={sendVoiceMessage}
+              disabled={isUploading}
+              className="shrink-0 h-8 w-8"
+            >
+              {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Recording in progress */}
+      {isRecording && (
+        <div className="px-3 py-2 border-t bg-destructive/10">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 flex-1">
+              <div className="w-3 h-3 bg-destructive rounded-full animate-pulse" />
+              <span className="text-sm font-medium text-destructive">Gravando...</span>
+              <span className="text-sm text-muted-foreground">{formatRecordingTime(recordingTime)}</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={cancelRecording}
+              className="shrink-0 h-8 w-8"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="destructive"
+              size="icon"
+              onClick={stopRecording}
+              className="shrink-0 h-8 w-8"
+            >
+              <Square className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Input */}
       <div className="p-3 border-t bg-background rounded-b-2xl">
         <div className="flex gap-2">
@@ -660,7 +857,7 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
             variant="ghost"
             size="icon"
             onClick={() => fileInputRef.current?.click()}
-            disabled={isLoading || isLoadingHistory || isUploading}
+            disabled={isLoading || isLoadingHistory || isUploading || isRecording}
             className="shrink-0"
             title="Enviar arquivo"
           >
@@ -671,24 +868,35 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
             )}
           </Button>
 
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={startRecording}
+            disabled={isLoading || isLoadingHistory || isUploading || isRecording}
+            className="shrink-0"
+            title="Gravar áudio"
+          >
+            <Mic className="h-4 w-4" />
+          </Button>
+
           <Input
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder={pendingAttachment ? "Adicione uma legenda..." : "Digite sua mensagem..."}
-            disabled={isLoading || isLoadingHistory}
+            disabled={isLoading || isLoadingHistory || isRecording}
             className="flex-1"
           />
           <Button
             onClick={handleSendMessage}
-            disabled={(!inputMessage.trim() && !pendingAttachment) || isLoading || isLoadingHistory}
+            disabled={(!inputMessage.trim() && !pendingAttachment) || isLoading || isLoadingHistory || isRecording}
             size="icon"
           >
             <Send className="h-4 w-4" />
           </Button>
         </div>
         <p className="text-xs text-muted-foreground text-center mt-2">
-          📎 Imagens, PDFs, DOC, XLS até 10MB
+          📎 Arquivos • 🎤 Áudio • até 10MB
         </p>
       </div>
     </div>
