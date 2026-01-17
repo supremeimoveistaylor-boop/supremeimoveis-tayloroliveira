@@ -6,6 +6,59 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// =====================================================
+// RATE LIMITING E VALIDAÇÃO
+// =====================================================
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const leadCreationMap = new Map<string, { count: number; resetAt: number }>();
+
+const RATE_LIMIT = 30; // requests por minuto por IP
+const RATE_LIMIT_WINDOW = 60 * 1000;
+const MAX_LEADS_PER_IP = 10; // leads por hora por IP
+const LEAD_LIMIT_WINDOW = 60 * 60 * 1000;
+const MAX_MESSAGES = 50;
+const MAX_MESSAGE_LENGTH = 5000;
+const MAX_IMAGES_PER_MESSAGE = 3;
+
+function getClientIp(req: Request): string {
+  return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || 
+         req.headers.get("x-real-ip") || 
+         "unknown";
+}
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const userLimit = rateLimitMap.get(ip);
+  
+  if (!userLimit || now > userLimit.resetAt) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
+    return false;
+  }
+  
+  if (userLimit.count >= RATE_LIMIT) return true;
+  
+  userLimit.count++;
+  return false;
+}
+
+function checkLeadCreationLimit(ip: string): boolean {
+  const now = Date.now();
+  const ipLeads = leadCreationMap.get(ip);
+  
+  if (!ipLeads || now > ipLeads.resetAt) {
+    leadCreationMap.set(ip, { count: 1, resetAt: now + LEAD_LIMIT_WINDOW });
+    return false;
+  }
+  
+  if (ipLeads.count >= MAX_LEADS_PER_IP) return true;
+  
+  ipLeads.count++;
+  return false;
+}
+
+// =====================================================
+// SYSTEM PROMPT
+// =====================================================
 const SYSTEM_PROMPT = `⚠️ INSTRUÇÃO DE SISTEMA (NÃO EXIBIR AO VISITANTE)
 
 Você é um AGENTE DE ATENDIMENTO IMOBILIÁRIO HUMANO da Supreme Empreendimentos.
@@ -155,14 +208,72 @@ interface ChatRequest {
   origin?: string;
 }
 
+// =====================================================
+// VALIDAÇÃO DE ENTRADA
+// =====================================================
+function validateMessages(messages: unknown): { valid: boolean; error?: string } {
+  if (!messages || !Array.isArray(messages)) {
+    return { valid: false, error: "Formato de mensagens inválido" };
+  }
+
+  if (messages.length > MAX_MESSAGES) {
+    return { valid: false, error: "Número excessivo de mensagens" };
+  }
+
+  for (const msg of messages) {
+    if (!msg || typeof msg !== "object" || !("role" in msg) || !("content" in msg)) {
+      return { valid: false, error: "Mensagem mal formatada" };
+    }
+
+    if (Array.isArray(msg.content)) {
+      const images = msg.content.filter((c: MessageContent) => c.type === "image_url");
+      if (images.length > MAX_IMAGES_PER_MESSAGE) {
+        return { valid: false, error: "Número excessivo de imagens" };
+      }
+
+      const textContent = msg.content.find((c: MessageContent) => c.type === "text");
+      if (textContent?.text && textContent.text.length > MAX_MESSAGE_LENGTH) {
+        return { valid: false, error: "Mensagem muito longa" };
+      }
+    } else if (typeof msg.content === "string") {
+      if (msg.content.length > MAX_MESSAGE_LENGTH) {
+        return { valid: false, error: "Mensagem muito longa" };
+      }
+    }
+  }
+
+  return { valid: true };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { messages, leadId, propertyId, propertyName, pageUrl, origin } = await req.json() as ChatRequest;
+    // Rate limiting por IP
+    const clientIp = getClientIp(req);
+    if (checkRateLimit(clientIp)) {
+      console.warn(`Rate limit exceeded for IP: ${clientIp}`);
+      return new Response(
+        JSON.stringify({ error: "Muitas requisições. Aguarde um momento." }), 
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const body = await req.json();
+    const { messages, leadId, propertyId, propertyName, pageUrl, origin } = body as ChatRequest;
     
+    // Validar mensagens
+    const validation = validateMessages(messages);
+    if (!validation.valid) {
+      console.warn(`Invalid input from IP ${clientIp}: ${validation.error}`);
+      return new Response(
+        JSON.stringify({ error: validation.error }), 
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -172,13 +283,19 @@ serve(async (req) => {
       throw new Error("OPENAI_API_KEY is not configured");
     }
 
-    // Criar cliente Supabase com service role para operações do sistema
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
-    // Criar ou atualizar lead
+    // Verificar limite de criação de leads
     let currentLeadId = leadId;
     if (!currentLeadId) {
-      // Criar novo lead
+      if (checkLeadCreationLimit(clientIp)) {
+        console.warn(`Lead creation limit exceeded for IP: ${clientIp}`);
+        return new Response(
+          JSON.stringify({ error: "Limite de conversas atingido. Tente novamente mais tarde." }), 
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       const { data: newLead, error: leadError } = await supabase
         .from("leads")
         .insert({
@@ -196,7 +313,6 @@ serve(async (req) => {
         currentLeadId = newLead.id;
         console.log("Lead criado:", currentLeadId);
 
-        // Atribuir corretor automaticamente
         if (propertyId) {
           const { data: brokerId } = await supabase.rpc("assign_lead_to_broker", {
             p_lead_id: currentLeadId,
@@ -211,7 +327,6 @@ serve(async (req) => {
     if (currentLeadId && messages.length > 0) {
       const lastUserMessage = messages[messages.length - 1];
       if (lastUserMessage.role === "user") {
-        // Extract text content for storage (handle both string and array formats)
         let textContent = "";
         if (typeof lastUserMessage.content === "string") {
           textContent = lastUserMessage.content;
@@ -223,14 +338,13 @@ serve(async (req) => {
         await supabase.from("chat_messages").insert({
           lead_id: currentLeadId,
           role: "user",
-          content: textContent
+          content: textContent.substring(0, MAX_MESSAGE_LENGTH) // Limitar tamanho
         });
 
-        // Tentar extrair informações do usuário da mensagem
+        // Extrair informações do usuário
         const content = textContent.toLowerCase();
-        const updates: Record<string, any> = {};
+        const updates: Record<string, unknown> = {};
 
-        // Detectar nome (padrões simples)
         const namePatterns = [
           /meu nome é ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
           /me chamo ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
@@ -239,26 +353,23 @@ serve(async (req) => {
         for (const pattern of namePatterns) {
           const match = textContent.match(pattern);
           if (match) {
-            updates.name = match[1].trim();
+            updates.name = match[1].trim().substring(0, 100);
             break;
           }
         }
 
-        // Detectar telefone
         const phonePattern = /(\d{2}[\s.-]?\d{4,5}[\s.-]?\d{4})/;
         const phoneMatch = textContent.match(phonePattern);
         if (phoneMatch) {
-          updates.phone = phoneMatch[1].replace(/[\s.-]/g, "");
+          updates.phone = phoneMatch[1].replace(/[\s.-]/g, "").substring(0, 20);
         }
 
-        // Detectar intenção
         if (content.includes("comprar") || content.includes("compra")) {
           updates.intent = "comprar";
         } else if (content.includes("alugar") || content.includes("aluguel") || content.includes("locação")) {
           updates.intent = "alugar";
         }
 
-        // Detectar interesse em visita
         if (content.includes("visita") || content.includes("conhecer") || content.includes("ver o imóvel")) {
           updates.visit_requested = true;
           updates.status = "visita_solicitada";
@@ -270,7 +381,7 @@ serve(async (req) => {
       }
     }
 
-    // Construir contexto do imóvel e origem
+    // Contexto do imóvel
     let propertyContext = "";
     const isFromAd = origin && (origin.toLowerCase().includes("meta") || origin.toLowerCase().includes("instagram") || origin.toLowerCase().includes("facebook") || origin.toLowerCase().includes("ads"));
     
@@ -283,7 +394,7 @@ Este atendimento é EXCLUSIVO para este imóvel.`;
       propertyContext = "\n\nCONTEXTO: O visitante acessou o site sem um imóvel específico. Ajude-o a encontrar o imóvel ideal.";
     }
 
-    // Mensagem de abertura personalizada
+    // Mensagem de abertura
     let openingInstruction = "";
     if (messages.length === 0) {
       if (propertyName && isFromAd) {
@@ -345,7 +456,6 @@ Posso te ajudar a encontrar um imóvel que combine com você?"`;
       });
     }
 
-    // Retornar stream e leadId
     const headers = new Headers(corsHeaders);
     headers.set("Content-Type", "text/event-stream");
     headers.set("X-Lead-Id", currentLeadId || "");
