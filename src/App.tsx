@@ -5,6 +5,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HashRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
+import Comprar from "./pages/Comprar";
+import Alugar from "./pages/Alugar";
+import Rurais from "./pages/Rurais";
+import Sobre from "./pages/Sobre";
+import Contato from "./pages/Contato";
 import Chat from "./pages/Chat";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
@@ -33,9 +38,11 @@ const App = () => (
             <ExitPopup />
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/comprar" element={<Index />} />
-              <Route path="/alugar" element={<Index />} />
-              <Route path="/rurais" element={<Index />} />
+              <Route path="/comprar" element={<Comprar />} />
+              <Route path="/alugar" element={<Alugar />} />
+              <Route path="/rurais" element={<Rurais />} />
+              <Route path="/sobre" element={<Sobre />} />
+              <Route path="/contato" element={<Contato />} />
               <Route path="/buscar" element={<SearchResults />} />
               <Route path="/chat" element={<Chat />} />
               <Route path="/auth" element={<Auth />} />

@@ -1,12 +1,26 @@
 import { Button } from "@/components/ui/button";
-import { Phone, MapPin, User } from "lucide-react";
+import { Phone, MapPin, User, Menu, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
+import { useState } from "react";
 import supremeLogo from "@/assets/supreme-logo-new.png";
 
 export const Header = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const isActive = (path: string) => location.pathname === path;
+
+  const navLinks = [
+    { to: "/", label: "Início" },
+    { to: "/comprar", label: "Comprar" },
+    { to: "/alugar", label: "Alugar" },
+    { to: "/rurais", label: "Propriedades Rurais" },
+    { to: "/sobre", label: "Sobre Nós" },
+    { to: "/contato", label: "Contato" },
+  ];
 
   return (
     <header className="bg-primary text-primary-foreground shadow-lg sticky top-0 z-50">
@@ -33,44 +47,49 @@ export const Header = () => {
 
       {/* Main navigation */}
       <div className="container mx-auto px-4 py-4">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="flex justify-between items-center">
           {/* Logo */}
-          <div className="flex items-center">
+          <Link to="/" className="flex items-center">
             <img 
               src={supremeLogo} 
               alt="Supreme Empreendimentos Imobiliários" 
-              className="h-auto w-auto max-h-32 md:max-h-40 lg:max-h-48"
+              className="h-auto w-auto max-h-24 md:max-h-32 lg:max-h-40"
             />
-          </div>
+          </Link>
 
-          {/* Navigation */}
+          {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center space-x-6 xl:space-x-8">
-            <Link to="/" className="text-white-soft hover:text-accent transition-colors font-medium text-sm xl:text-base">
-              Início
-            </Link>
-            <Link to="/comprar" className="text-white-soft hover:text-accent transition-colors font-medium text-sm xl:text-base">
-              Comprar
-            </Link>
-            <Link to="/alugar" className="text-white-soft hover:text-accent transition-colors font-medium text-sm xl:text-base">
-              Alugar
-            </Link>
-            <Link to="/rurais" className="text-white-soft hover:text-accent transition-colors font-medium text-sm xl:text-base">
-              Propriedades Rurais
-            </Link>
-            <a href="#sobre" className="text-white-soft hover:text-accent transition-colors font-medium text-sm xl:text-base">
-              Sobre Nós
-            </a>
-            <a href="#contato" className="text-white-soft hover:text-accent transition-colors font-medium text-sm xl:text-base">
-              Contato
-            </a>
+            {navLinks.map((link) => (
+              <Link 
+                key={link.to}
+                to={link.to} 
+                className={`transition-colors font-medium text-sm xl:text-base ${
+                  isActive(link.to) 
+                    ? "text-accent" 
+                    : "text-white-soft hover:text-accent"
+                }`}
+              >
+                {link.label}
+              </Link>
+            ))}
           </nav>
 
           {/* CTA Buttons */}
           <div className="flex gap-3 items-center">
+            {/* Mobile Menu Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden text-white-soft hover:text-accent"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </Button>
+
             {user ? (
               <Button 
                 variant="outline" 
-                className="border-accent text-accent hover:bg-accent hover:text-accent-foreground"
+                className="hidden sm:flex border-accent text-accent hover:bg-accent hover:text-accent-foreground"
                 onClick={() => navigate('/dashboard')}
               >
                 <User className="mr-2 h-4 w-4" />
@@ -79,7 +98,7 @@ export const Header = () => {
             ) : (
               <Button 
                 variant="outline" 
-                className="border-accent text-accent hover:bg-accent hover:text-accent-foreground"
+                className="hidden sm:flex border-accent text-accent hover:bg-accent hover:text-accent-foreground"
                 onClick={() => navigate('/auth')}
               >
                 <User className="mr-2 h-4 w-4" />
@@ -91,10 +110,58 @@ export const Header = () => {
               className="bg-green-600 hover:bg-green-700 text-white font-semibold text-sm md:text-base px-4 md:px-6"
               onClick={() => window.open('https://wa.me/5562999918353', '_blank')}
             >
-              Falar com Especialista
+              <span className="hidden sm:inline">Falar com Especialista</span>
+              <span className="sm:hidden">WhatsApp</span>
             </Button>
           </div>
         </div>
+
+        {/* Mobile Navigation Menu */}
+        {mobileMenuOpen && (
+          <nav className="lg:hidden mt-4 pb-4 border-t border-white-soft/20 pt-4">
+            <div className="flex flex-col space-y-3">
+              {navLinks.map((link) => (
+                <Link 
+                  key={link.to}
+                  to={link.to} 
+                  className={`py-2 px-4 rounded transition-colors font-medium ${
+                    isActive(link.to) 
+                      ? "bg-accent text-accent-foreground" 
+                      : "text-white-soft hover:bg-white-soft/10"
+                  }`}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {link.label}
+                </Link>
+              ))}
+              {user ? (
+                <Button 
+                  variant="outline" 
+                  className="mt-2 border-accent text-accent hover:bg-accent hover:text-accent-foreground"
+                  onClick={() => {
+                    navigate('/dashboard');
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  <User className="mr-2 h-4 w-4" />
+                  Painel
+                </Button>
+              ) : (
+                <Button 
+                  variant="outline" 
+                  className="mt-2 border-accent text-accent hover:bg-accent hover:text-accent-foreground"
+                  onClick={() => {
+                    navigate('/auth');
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  <User className="mr-2 h-4 w-4" />
+                  Entrar
+                </Button>
+              )}
+            </div>
+          </nav>
+        )}
       </div>
     </header>
   );
