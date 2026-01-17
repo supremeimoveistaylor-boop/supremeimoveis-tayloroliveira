@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Send, MessageCircle, X, Minimize2 } from "lucide-react";
+import { Send, MessageCircle, X, Minimize2, History } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Message {
@@ -19,6 +19,7 @@ interface RealEstateChatProps {
 }
 
 const CHAT_URL = `https://ypkmorgcpooygsvhcpvo.supabase.co/functions/v1/real-estate-chat`;
+const LEAD_STORAGE_KEY = "supreme_chat_lead_id";
 
 export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateChatProps) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -26,8 +27,10 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [leadId, setLeadId] = useState<string | null>(null);
   const [hasStarted, setHasStarted] = useState(false);
+  const [hasHistory, setHasHistory] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -38,10 +41,70 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
     scrollToBottom();
   }, [messages]);
 
+  // Carregar leadId do localStorage ao iniciar
+  useEffect(() => {
+    const storedLeadId = localStorage.getItem(LEAD_STORAGE_KEY);
+    if (storedLeadId) {
+      setLeadId(storedLeadId);
+    }
+  }, []);
+
+  // Salvar leadId no localStorage quando mudar
+  useEffect(() => {
+    if (leadId) {
+      localStorage.setItem(LEAD_STORAGE_KEY, leadId);
+    }
+  }, [leadId]);
+
+  // Carregar histórico de mensagens do banco
+  const loadChatHistory = useCallback(async (currentLeadId: string) => {
+    setIsLoadingHistory(true);
+    try {
+      const { data, error } = await supabase
+        .from("chat_messages")
+        .select("id, role, content, created_at")
+        .eq("lead_id", currentLeadId)
+        .order("created_at", { ascending: true });
+
+      if (error) {
+        console.error("Erro ao carregar histórico:", error);
+        return false;
+      }
+
+      if (data && data.length > 0) {
+        const historyMessages: Message[] = data.map((msg) => ({
+          id: msg.id,
+          role: msg.role as "user" | "assistant",
+          content: msg.content,
+          timestamp: new Date(msg.created_at),
+        }));
+        setMessages(historyMessages);
+        setHasHistory(true);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Erro ao carregar histórico:", error);
+      return false;
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  }, []);
+
   // Iniciar conversa automaticamente ao abrir
   const startConversation = useCallback(async () => {
     if (hasStarted) return;
     setHasStarted(true);
+
+    // Se já tem leadId, tentar carregar histórico primeiro
+    if (leadId) {
+      const hasLoadedHistory = await loadChatHistory(leadId);
+      if (hasLoadedHistory) {
+        // Histórico carregado, não precisa iniciar nova conversa
+        return;
+      }
+    }
+
     setIsLoading(true);
 
     try {
@@ -54,6 +117,7 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
         },
         body: JSON.stringify({
           messages: [],
+          leadId,
           propertyId,
           propertyName,
           pageUrl: window.location.href,
@@ -72,7 +136,7 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
       }
 
       // Processar stream
-      await processStream(response, "");
+      await processStream(response, "", responseLeadId || leadId);
     } catch (error) {
       console.error("Erro ao iniciar:", error);
       // Fallback para mensagem padrão
@@ -87,7 +151,7 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
     } finally {
       setIsLoading(false);
     }
-  }, [hasStarted, propertyId, propertyName, origin]);
+  }, [hasStarted, propertyId, propertyName, origin, leadId, loadChatHistory]);
 
   useEffect(() => {
     if (isOpen && !hasStarted) {
@@ -95,7 +159,7 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
     }
   }, [isOpen, hasStarted, startConversation]);
 
-  const processStream = async (response: Response, userContent: string) => {
+  const processStream = async (response: Response, userContent: string, currentLeadId: string | null) => {
     const reader = response.body?.getReader();
     if (!reader) return;
 
@@ -149,9 +213,9 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
     }
 
     // Salvar resposta do assistente no banco
-    if (leadId && assistantContent) {
+    if (currentLeadId && assistantContent) {
       await supabase.from("chat_messages").insert({
-        lead_id: leadId,
+        lead_id: currentLeadId,
         role: "assistant",
         content: assistantContent,
       });
@@ -203,7 +267,7 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
         setLeadId(responseLeadId);
       }
 
-      await processStream(response, inputMessage);
+      await processStream(response, inputMessage, responseLeadId || leadId);
     } catch (error) {
       console.error("Erro ao enviar:", error);
       setMessages(prev => [...prev, {
@@ -222,6 +286,15 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
       e.preventDefault();
       handleSendMessage();
     }
+  };
+
+  // Limpar conversa e iniciar nova
+  const handleNewConversation = () => {
+    localStorage.removeItem(LEAD_STORAGE_KEY);
+    setLeadId(null);
+    setMessages([]);
+    setHasStarted(false);
+    setHasHistory(false);
   };
 
   const formatTime = (date: Date) => {
@@ -271,11 +344,22 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
           <div>
             <h3 className="font-semibold text-sm">Supreme Imóveis</h3>
             <p className="text-xs opacity-80">
-              {isLoading ? "Digitando..." : "Online"}
+              {isLoading ? "Digitando..." : isLoadingHistory ? "Carregando histórico..." : hasHistory ? "Conversa retomada" : "Online"}
             </p>
           </div>
         </div>
         <div className="flex gap-1">
+          {hasHistory && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-primary-foreground hover:bg-primary-foreground/20"
+              onClick={handleNewConversation}
+              title="Nova conversa"
+            >
+              <History className="h-4 w-4" />
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"
@@ -295,43 +379,61 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
         </div>
       </div>
 
+      {/* History indicator */}
+      {hasHistory && (
+        <div className="bg-muted/50 px-4 py-2 text-xs text-muted-foreground text-center border-b">
+          📜 Histórico de conversa carregado
+        </div>
+      )}
+
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-muted/30">
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
-          >
-            <Card
-              className={`max-w-[85%] p-3 ${
-                message.role === "user"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-card"
-              }`}
-            >
-              <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-              <span
-                className={`text-xs mt-1 block ${
-                  message.role === "user"
-                    ? "text-primary-foreground/70"
-                    : "text-muted-foreground"
-                }`}
+        {isLoadingHistory ? (
+          <div className="flex justify-center items-center h-full">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">Carregando histórico...</p>
+            </div>
+          </div>
+        ) : (
+          <>
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
               >
-                {formatTime(message.timestamp)}
-              </span>
-            </Card>
-          </div>
-        ))}
-        {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
-          <div className="flex justify-start">
-            <Card className="bg-card p-3">
-              <div className="flex gap-1">
-                <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                <Card
+                  className={`max-w-[85%] p-3 ${
+                    message.role === "user"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-card"
+                  }`}
+                >
+                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                  <span
+                    className={`text-xs mt-1 block ${
+                      message.role === "user"
+                        ? "text-primary-foreground/70"
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    {formatTime(message.timestamp)}
+                  </span>
+                </Card>
               </div>
-            </Card>
-          </div>
+            ))}
+            {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
+              <div className="flex justify-start">
+                <Card className="bg-card p-3">
+                  <div className="flex gap-1">
+                    <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                    <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                    <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                  </div>
+                </Card>
+              </div>
+            )}
+          </>
         )}
         <div ref={messagesEndRef} />
       </div>
@@ -344,12 +446,12 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Digite sua mensagem..."
-            disabled={isLoading}
+            disabled={isLoading || isLoadingHistory}
             className="flex-1"
           />
           <Button
             onClick={handleSendMessage}
-            disabled={!inputMessage.trim() || isLoading}
+            disabled={!inputMessage.trim() || isLoading || isLoadingHistory}
             size="icon"
           >
             <Send className="h-4 w-4" />
