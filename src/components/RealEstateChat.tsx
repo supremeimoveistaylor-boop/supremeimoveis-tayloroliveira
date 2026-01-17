@@ -2,7 +2,12 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Send, MessageCircle, X, Minimize2, History, Loader2, Paperclip, FileText, Volume2, VolumeX, Mic, Square, Play, Pause } from "lucide-react";
+import { Send, MessageCircle, X, Minimize2, History, Loader2, Paperclip, FileText, Volume2, VolumeX, Mic, Square, Smile } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
 
 // Notification sound using Web Audio API
@@ -70,7 +75,18 @@ interface Message {
   content: string | MessageContent[];
   timestamp: Date;
   attachment?: Attachment;
+  reactions?: string[];
 }
+
+// Emoji categories for picker
+const EMOJI_CATEGORIES = {
+  smileys: ["😀", "😃", "😄", "😁", "😅", "😂", "🤣", "😊", "😇", "🙂", "😉", "😍", "🥰", "😘", "😋", "😜", "🤗", "🤔", "😐", "😏"],
+  gestures: ["👍", "👎", "👏", "🙌", "🤝", "👊", "✌️", "🤞", "🤟", "🤙", "👋", "🙏", "💪", "👀", "❤️", "💕", "💯", "🔥", "⭐", "✨"],
+  objects: ["🏠", "🏡", "🏢", "🏗️", "🏘️", "📍", "📞", "📧", "💰", "💵", "🔑", "🚗", "📝", "📋", "📅", "🎉", "🎊", "🛏️", "🛁", "🚿"],
+};
+
+// Quick reactions for messages
+const QUICK_REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🔥"];
 
 interface RealEstateChatProps {
   propertyId?: string;
@@ -109,6 +125,8 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [activeReactionMsgId, setActiveReactionMsgId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -584,6 +602,63 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
     return textPart?.text || "";
   };
 
+  const insertEmoji = (emoji: string) => {
+    setInputMessage(prev => prev + emoji);
+    setShowEmojiPicker(false);
+  };
+
+  const toggleReaction = (messageId: string, emoji: string) => {
+    setMessages(prev => prev.map(msg => {
+      if (msg.id === messageId) {
+        const currentReactions = msg.reactions || [];
+        const hasReaction = currentReactions.includes(emoji);
+        return {
+          ...msg,
+          reactions: hasReaction 
+            ? currentReactions.filter(r => r !== emoji)
+            : [...currentReactions, emoji]
+        };
+      }
+      return msg;
+    }));
+    setActiveReactionMsgId(null);
+  };
+
+  const EmojiPicker = () => (
+    <div className="w-64 max-h-48 overflow-y-auto p-2">
+      {Object.entries(EMOJI_CATEGORIES).map(([category, emojis]) => (
+        <div key={category} className="mb-2">
+          <p className="text-xs text-muted-foreground capitalize mb-1">{category}</p>
+          <div className="flex flex-wrap gap-1">
+            {emojis.map((emoji) => (
+              <button
+                key={emoji}
+                onClick={() => insertEmoji(emoji)}
+                className="w-7 h-7 flex items-center justify-center hover:bg-muted rounded transition-colors text-base"
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  const ReactionPicker = ({ messageId }: { messageId: string }) => (
+    <div className="flex gap-1 bg-background shadow-lg rounded-full px-2 py-1 border">
+      {QUICK_REACTIONS.map((emoji) => (
+        <button
+          key={emoji}
+          onClick={() => toggleReaction(messageId, emoji)}
+          className="w-6 h-6 flex items-center justify-center hover:scale-125 transition-transform text-sm"
+        >
+          {emoji}
+        </button>
+      ))}
+    </div>
+  );
+
   const renderAttachment = (attachment: Attachment) => {
     if (attachment.type === "image") {
       return (
@@ -724,29 +799,62 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
             {messages.map((message) => (
               <div
                 key={message.id}
-                className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                className={`flex flex-col ${message.role === "user" ? "items-end" : "items-start"}`}
               >
-                <Card
-                  className={`max-w-[85%] p-3 ${
-                    message.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-card"
-                  }`}
-                >
-                  {message.attachment && renderAttachment(message.attachment)}
-                  <p className="text-sm whitespace-pre-wrap">
-                    {typeof message.content === "string" ? message.content : getTextContent(message.content)}
-                  </p>
-                  <span
-                    className={`text-xs mt-1 block ${
+                <div className="relative group">
+                  <Card
+                    className={`max-w-[85%] p-3 ${
                       message.role === "user"
-                        ? "text-primary-foreground/70"
-                        : "text-muted-foreground"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-card"
                     }`}
+                    onDoubleClick={() => setActiveReactionMsgId(activeReactionMsgId === message.id ? null : message.id)}
                   >
-                    {formatTime(message.timestamp)}
-                  </span>
-                </Card>
+                    {message.attachment && renderAttachment(message.attachment)}
+                    <p className="text-sm whitespace-pre-wrap">
+                      {typeof message.content === "string" ? message.content : getTextContent(message.content)}
+                    </p>
+                    <span
+                      className={`text-xs mt-1 block ${
+                        message.role === "user"
+                          ? "text-primary-foreground/70"
+                          : "text-muted-foreground"
+                      }`}
+                    >
+                      {formatTime(message.timestamp)}
+                    </span>
+                  </Card>
+                  
+                  {/* Reaction trigger button */}
+                  <button
+                    onClick={() => setActiveReactionMsgId(activeReactionMsgId === message.id ? null : message.id)}
+                    className={`absolute -bottom-1 ${message.role === "user" ? "left-0" : "right-0"} opacity-0 group-hover:opacity-100 transition-opacity bg-background shadow rounded-full w-6 h-6 flex items-center justify-center text-xs border`}
+                  >
+                    😊
+                  </button>
+
+                  {/* Reaction picker */}
+                  {activeReactionMsgId === message.id && (
+                    <div className={`absolute -bottom-8 ${message.role === "user" ? "right-0" : "left-0"} z-10`}>
+                      <ReactionPicker messageId={message.id} />
+                    </div>
+                  )}
+                </div>
+
+                {/* Display reactions */}
+                {message.reactions && message.reactions.length > 0 && (
+                  <div className={`flex gap-0.5 mt-1 ${message.role === "user" ? "mr-1" : "ml-1"}`}>
+                    {message.reactions.map((reaction, idx) => (
+                      <span 
+                        key={idx} 
+                        className="text-xs bg-muted rounded-full px-1.5 py-0.5 cursor-pointer hover:bg-muted/80"
+                        onClick={() => toggleReaction(message.id, reaction)}
+                      >
+                        {reaction}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
             {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
@@ -879,6 +987,23 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
             <Mic className="h-4 w-4" />
           </Button>
 
+          <Popover open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                disabled={isLoading || isLoadingHistory || isRecording}
+                className="shrink-0"
+                title="Emojis"
+              >
+                <Smile className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent side="top" align="start" className="p-0 w-auto">
+              <EmojiPicker />
+            </PopoverContent>
+          </Popover>
+
           <Input
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
@@ -896,7 +1021,7 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
           </Button>
         </div>
         <p className="text-xs text-muted-foreground text-center mt-2">
-          📎 Arquivos • 🎤 Áudio • até 10MB
+          📎 Arquivos • 🎤 Áudio • 😊 Emojis • 2x toque para reagir
         </p>
       </div>
     </div>
