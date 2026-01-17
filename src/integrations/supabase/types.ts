@@ -155,11 +155,16 @@ export type Database = {
           email: string | null
           id: string
           intent: string | null
+          last_interaction_at: string | null
+          lead_score: number | null
+          message_count: number | null
           name: string | null
           origin: string | null
           page_url: string | null
           phone: string | null
           property_id: string | null
+          qualification: string | null
+          score_breakdown: Json | null
           status: string
           updated_at: string
           visit_date: string | null
@@ -173,11 +178,16 @@ export type Database = {
           email?: string | null
           id?: string
           intent?: string | null
+          last_interaction_at?: string | null
+          lead_score?: number | null
+          message_count?: number | null
           name?: string | null
           origin?: string | null
           page_url?: string | null
           phone?: string | null
           property_id?: string | null
+          qualification?: string | null
+          score_breakdown?: Json | null
           status?: string
           updated_at?: string
           visit_date?: string | null
@@ -191,11 +201,16 @@ export type Database = {
           email?: string | null
           id?: string
           intent?: string | null
+          last_interaction_at?: string | null
+          lead_score?: number | null
+          message_count?: number | null
           name?: string | null
           origin?: string | null
           page_url?: string | null
           phone?: string | null
           property_id?: string | null
+          qualification?: string | null
+          score_breakdown?: Json | null
           status?: string
           updated_at?: string
           visit_date?: string | null
@@ -480,6 +495,7 @@ export type Database = {
         Args: { p_lead_id: string; p_property_id: string }
         Returns: string
       }
+      calculate_lead_score: { Args: { p_lead_id: string }; Returns: number }
       generate_property_code: { Args: never; Returns: string }
       get_user_role: {
         Args: { user_id_param: string }

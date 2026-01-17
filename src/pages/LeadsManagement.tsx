@@ -14,8 +14,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { toast } from "@/hooks/use-toast";
 import { 
   Users, MessageSquare, Settings, Plus, Phone, Mail, 
-  ArrowLeft, Eye, UserPlus, Trash2, Edit2
+  ArrowLeft, Eye, UserPlus, Trash2, Edit2, Flame, Thermometer
 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Broker {
   id: string;
@@ -39,6 +41,10 @@ interface Lead {
   property_id: string | null;
   broker_id: string | null;
   created_at: string;
+  lead_score: number | null;
+  score_breakdown: Record<string, number> | null;
+  qualification: string | null;
+  message_count: number | null;
   properties?: { title: string } | null;
   brokers?: { name: string } | null;
 }
@@ -163,6 +169,31 @@ const LeadsManagement = () => {
     return <Badge variant={s.variant}>{s.label}</Badge>;
   };
 
+  const getQualificationBadge = (qualification: string | null, score: number | null) => {
+    const qualMap: Record<string, { label: string; color: string; icon: string }> = {
+      frio: { label: "Frio", color: "bg-blue-100 text-blue-800", icon: "❄️" },
+      morno: { label: "Morno", color: "bg-yellow-100 text-yellow-800", icon: "🌤️" },
+      quente: { label: "Quente", color: "bg-orange-100 text-orange-800", icon: "🔥" },
+      muito_quente: { label: "Muito Quente", color: "bg-red-100 text-red-800", icon: "🔥🔥" },
+    };
+    const q = qualMap[qualification || "frio"] || qualMap.frio;
+    return (
+      <div className="flex items-center gap-2">
+        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${q.color}`}>
+          {q.icon} {q.label}
+        </span>
+        <span className="text-xs text-muted-foreground">{score || 0}pts</span>
+      </div>
+    );
+  };
+
+  const getScoreColor = (score: number | null) => {
+    if (!score || score < 25) return "bg-blue-500";
+    if (score < 50) return "bg-yellow-500";
+    if (score < 70) return "bg-orange-500";
+    return "bg-red-500";
+  };
+
   if (authLoading || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -214,6 +245,8 @@ const LeadsManagement = () => {
                         <th className="text-left p-3">Data</th>
                         <th className="text-left p-3">Nome</th>
                         <th className="text-left p-3">Telefone</th>
+                        <th className="text-left p-3">Score</th>
+                        <th className="text-left p-3">Qualificação</th>
                         <th className="text-left p-3">Imóvel</th>
                         <th className="text-left p-3">Corretor</th>
                         <th className="text-left p-3">Status</th>
@@ -235,6 +268,39 @@ const LeadsManagement = () => {
                             ) : (
                               "—"
                             )}
+                          </td>
+                          <td className="p-3">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="w-20">
+                                    <Progress 
+                                      value={lead.lead_score || 0} 
+                                      className="h-2"
+                                    />
+                                    <span className="text-xs text-muted-foreground">{lead.lead_score || 0}/100</span>
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <div className="text-xs space-y-1">
+                                    <p className="font-semibold">Detalhamento do Score:</p>
+                                    {lead.score_breakdown && Object.entries(lead.score_breakdown).map(([key, value]) => (
+                                      <div key={key} className="flex justify-between gap-4">
+                                        <span>{key.replace(/_/g, " ")}:</span>
+                                        <span>+{value}</span>
+                                      </div>
+                                    ))}
+                                    {(!lead.score_breakdown || Object.keys(lead.score_breakdown).length === 0) && (
+                                      <p>Sem pontuação ainda</p>
+                                    )}
+                                    <p className="pt-1 border-t mt-1">Msgs: {lead.message_count || 0}</p>
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </td>
+                          <td className="p-3">
+                            {getQualificationBadge(lead.qualification, lead.lead_score)}
                           </td>
                           <td className="p-3 text-sm">{lead.properties?.title || "Geral"}</td>
                           <td className="p-3 text-sm">{lead.brokers?.name || "Não atribuído"}</td>
@@ -280,7 +346,7 @@ const LeadsManagement = () => {
                       ))}
                       {leads.length === 0 && (
                         <tr>
-                          <td colSpan={7} className="text-center p-8 text-muted-foreground">
+                          <td colSpan={9} className="text-center p-8 text-muted-foreground">
                             Nenhum lead registrado ainda
                           </td>
                         </tr>
