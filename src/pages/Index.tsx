@@ -6,7 +6,6 @@ import { About } from "@/components/About";
 import { Contact } from "@/components/Contact";
 import { Footer } from "@/components/Footer";
 import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
-import { RealEstateChat } from "@/components/RealEstateChat";
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -103,7 +102,6 @@ const Index = () => {
       <Contact />
       <Footer />
       <FloatingWhatsApp />
-      <RealEstateChat origin="Landing Page" />
     </div>
   );
 };

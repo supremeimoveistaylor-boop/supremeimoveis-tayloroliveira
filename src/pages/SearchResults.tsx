@@ -1,7 +1,6 @@
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
-import { RealEstateChat } from "@/components/RealEstateChat";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -453,7 +452,6 @@ const SearchResults = () => {
 
       <Footer />
       <FloatingWhatsApp />
-      <RealEstateChat origin="Página de Busca" />
     </div>
   );
 };
