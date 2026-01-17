@@ -2,14 +2,21 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Send, MessageCircle, X, Minimize2, History } from "lucide-react";
+import { Send, MessageCircle, X, Minimize2, History, Image, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+
+interface MessageContent {
+  type: "text" | "image_url";
+  text?: string;
+  image_url?: { url: string };
+}
 
 interface Message {
   id: string;
   role: "user" | "assistant";
-  content: string;
+  content: string | MessageContent[];
   timestamp: Date;
+  imageUrl?: string;
 }
 
 interface RealEstateChatProps {
@@ -20,6 +27,7 @@ interface RealEstateChatProps {
 
 const CHAT_URL = `https://ypkmorgcpooygsvhcpvo.supabase.co/functions/v1/real-estate-chat`;
 const LEAD_STORAGE_KEY = "supreme_chat_lead_id";
+const SUPABASE_URL = "https://ypkmorgcpooygsvhcpvo.supabase.co";
 
 export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateChatProps) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -28,10 +36,13 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [leadId, setLeadId] = useState<string | null>(null);
   const [hasStarted, setHasStarted] = useState(false);
   const [hasHistory, setHasHistory] = useState(false);
+  const [pendingImage, setPendingImage] = useState<{ url: string; file: File } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -100,7 +111,6 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
     if (leadId) {
       const hasLoadedHistory = await loadChatHistory(leadId);
       if (hasLoadedHistory) {
-        // Histórico carregado, não precisa iniciar nova conversa
         return;
       }
     }
@@ -108,7 +118,6 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
     setIsLoading(true);
 
     try {
-      // Buscar mensagem de abertura da IA
       const response = await fetch(CHAT_URL, {
         method: "POST",
         headers: {
@@ -129,17 +138,14 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
         throw new Error("Erro ao iniciar conversa");
       }
 
-      // Capturar leadId do header
       const responseLeadId = response.headers.get("X-Lead-Id");
       if (responseLeadId) {
         setLeadId(responseLeadId);
       }
 
-      // Processar stream
       await processStream(response, "", responseLeadId || leadId);
     } catch (error) {
       console.error("Erro ao iniciar:", error);
-      // Fallback para mensagem padrão
       setMessages([{
         id: "1",
         role: "assistant",
@@ -167,7 +173,6 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
     let textBuffer = "";
     let assistantContent = "";
 
-    // Adicionar mensagem do assistente vazia para streaming
     const assistantMsgId = Date.now().toString();
     setMessages(prev => [...prev, {
       id: assistantMsgId,
@@ -212,7 +217,6 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
       }
     }
 
-    // Salvar resposta do assistente no banco
     if (currentLeadId && assistantContent) {
       await supabase.from("chat_messages").insert({
         lead_id: currentLeadId,
@@ -222,21 +226,109 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
     }
   };
 
+  // Handle file upload
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
+    if (!allowedTypes.includes(file.type)) {
+      alert("Formato não suportado. Use JPG, PNG, WebP ou GIF.");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Arquivo muito grande. Máximo 5MB.");
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      // Generate unique filename
+      const timestamp = Date.now();
+      const ext = file.name.split(".").pop();
+      const fileName = `chat/${leadId || "anonymous"}/${timestamp}.${ext}`;
+
+      // Upload to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from("chat-attachments")
+        .upload(fileName, file, {
+          cacheControl: "3600",
+          upsert: false,
+        });
+
+      if (error) {
+        console.error("Upload error:", error);
+        alert("Erro ao enviar imagem. Tente novamente.");
+        return;
+      }
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from("chat-attachments")
+        .getPublicUrl(data.path);
+
+      setPendingImage({ url: urlData.publicUrl, file });
+    } catch (error) {
+      console.error("Upload error:", error);
+      alert("Erro ao enviar imagem. Tente novamente.");
+    } finally {
+      setIsUploading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
   const handleSendMessage = async () => {
-    if (!inputMessage.trim() || isLoading) return;
+    if ((!inputMessage.trim() && !pendingImage) || isLoading) return;
+
+    // Build message content
+    let messageContent: string | MessageContent[] = inputMessage.trim();
+    let displayContent = inputMessage.trim();
+    let imageUrl: string | undefined;
+
+    if (pendingImage) {
+      imageUrl = pendingImage.url;
+      const contentParts: MessageContent[] = [];
+      
+      if (inputMessage.trim()) {
+        contentParts.push({ type: "text", text: inputMessage.trim() });
+      }
+      
+      contentParts.push({
+        type: "image_url",
+        image_url: { url: pendingImage.url }
+      });
+      
+      messageContent = contentParts;
+      displayContent = inputMessage.trim() || "[Imagem enviada]";
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
-      content: inputMessage,
+      content: displayContent,
       timestamp: new Date(),
+      imageUrl,
     };
 
     setMessages(prev => [...prev, userMessage]);
     setInputMessage("");
+    setPendingImage(null);
     setIsLoading(true);
 
     try {
+      // Build messages array for API
+      const apiMessages = [...messages, { role: "user", content: messageContent }].map(m => ({
+        role: m.role,
+        content: m.content,
+      }));
+
       const response = await fetch(CHAT_URL, {
         method: "POST",
         headers: {
@@ -244,10 +336,7 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
           Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlwa21vcmdjcG9veWdzdmhjcHZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY5ODY1MjAsImV4cCI6MjA3MjU2MjUyMH0.A8MoJFe_ACtVDl7l0crAyU7ZxxOhdWJ8NShaqSHBxQc`,
         },
         body: JSON.stringify({
-          messages: [...messages, userMessage].map(m => ({
-            role: m.role,
-            content: m.content,
-          })),
+          messages: apiMessages,
           leadId,
           propertyId,
           propertyName,
@@ -261,7 +350,6 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
         throw new Error(error.error || "Erro ao enviar mensagem");
       }
 
-      // Capturar leadId se ainda não tiver
       const responseLeadId = response.headers.get("X-Lead-Id");
       if (responseLeadId && !leadId) {
         setLeadId(responseLeadId);
@@ -288,13 +376,13 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
     }
   };
 
-  // Limpar conversa e iniciar nova
   const handleNewConversation = () => {
     localStorage.removeItem(LEAD_STORAGE_KEY);
     setLeadId(null);
     setMessages([]);
     setHasStarted(false);
     setHasHistory(false);
+    setPendingImage(null);
   };
 
   const formatTime = (date: Date) => {
@@ -302,6 +390,12 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const getTextContent = (content: string | MessageContent[]): string => {
+    if (typeof content === "string") return content;
+    const textPart = content.find(c => c.type === "text");
+    return textPart?.text || "";
   };
 
   if (!isOpen) {
@@ -409,7 +503,17 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
                       : "bg-card"
                   }`}
                 >
-                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                  {/* Show image if present */}
+                  {message.imageUrl && (
+                    <img 
+                      src={message.imageUrl} 
+                      alt="Imagem enviada" 
+                      className="max-w-full h-auto rounded-lg mb-2 max-h-48 object-cover"
+                    />
+                  )}
+                  <p className="text-sm whitespace-pre-wrap">
+                    {typeof message.content === "string" ? message.content : getTextContent(message.content)}
+                  </p>
                   <span
                     className={`text-xs mt-1 block ${
                       message.role === "user"
@@ -438,20 +542,64 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Pending image preview */}
+      {pendingImage && (
+        <div className="px-3 py-2 border-t bg-muted/30">
+          <div className="relative inline-block">
+            <img 
+              src={pendingImage.url} 
+              alt="Preview" 
+              className="h-16 w-auto rounded-lg object-cover"
+            />
+            <button
+              onClick={() => setPendingImage(null)}
+              className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Input */}
       <div className="p-3 border-t bg-background rounded-b-2xl">
         <div className="flex gap-2">
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+            onChange={handleFileSelect}
+            className="hidden"
+          />
+          
+          {/* Image upload button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isLoading || isLoadingHistory || isUploading}
+            className="shrink-0"
+            title="Enviar imagem"
+          >
+            {isUploading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Image className="h-4 w-4" />
+            )}
+          </Button>
+
           <Input
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Digite sua mensagem..."
+            placeholder={pendingImage ? "Adicione uma legenda..." : "Digite sua mensagem..."}
             disabled={isLoading || isLoadingHistory}
             className="flex-1"
           />
           <Button
             onClick={handleSendMessage}
-            disabled={!inputMessage.trim() || isLoading || isLoadingHistory}
+            disabled={(!inputMessage.trim() && !pendingImage) || isLoading || isLoadingHistory}
             size="icon"
           >
             <Send className="h-4 w-4" />

@@ -89,8 +89,19 @@ REGRAS ABSOLUTAS
 - Nunca redirecionar o visitante ao WhatsApp
 - O WhatsApp é apenas para o corretor receber o lead`;
 
+interface MessageContent {
+  type: "text" | "image_url";
+  text?: string;
+  image_url?: { url: string };
+}
+
+interface ChatMessage {
+  role: string;
+  content: string | MessageContent[];
+}
+
 interface ChatRequest {
-  messages: { role: string; content: string }[];
+  messages: ChatMessage[];
   leadId?: string;
   propertyId?: string;
   propertyName?: string;
@@ -154,14 +165,24 @@ serve(async (req) => {
     if (currentLeadId && messages.length > 0) {
       const lastUserMessage = messages[messages.length - 1];
       if (lastUserMessage.role === "user") {
+        // Extract text content for storage (handle both string and array formats)
+        let textContent = "";
+        if (typeof lastUserMessage.content === "string") {
+          textContent = lastUserMessage.content;
+        } else if (Array.isArray(lastUserMessage.content)) {
+          const textPart = lastUserMessage.content.find(c => c.type === "text");
+          textContent = textPart?.text || "[Imagem enviada]";
+        }
+
         await supabase.from("chat_messages").insert({
           lead_id: currentLeadId,
           role: "user",
-          content: lastUserMessage.content
+          content: textContent
         });
 
         // Tentar extrair informações do usuário da mensagem
-        const content = lastUserMessage.content.toLowerCase();
+        const content = textContent.toLowerCase();
+        const updates: Record<string, any> = {};
         const updates: Record<string, any> = {};
 
         // Detectar nome (padrões simples)
@@ -171,7 +192,7 @@ serve(async (req) => {
           /sou ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
         ];
         for (const pattern of namePatterns) {
-          const match = lastUserMessage.content.match(pattern);
+          const match = textContent.match(pattern);
           if (match) {
             updates.name = match[1].trim();
             break;
@@ -180,7 +201,7 @@ serve(async (req) => {
 
         // Detectar telefone
         const phonePattern = /(\d{2}[\s.-]?\d{4,5}[\s.-]?\d{4})/;
-        const phoneMatch = lastUserMessage.content.match(phonePattern);
+        const phoneMatch = textContent.match(phonePattern);
         if (phoneMatch) {
           updates.phone = phoneMatch[1].replace(/[\s.-]/g, "");
         }
