@@ -699,8 +699,9 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
     return (
       <Button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 left-6 h-14 w-14 rounded-full shadow-lg z-[9999] bg-primary hover:bg-primary/90"
+        className="fixed bottom-24 right-6 h-14 w-14 rounded-full shadow-lg z-[9999] bg-primary hover:bg-primary/90 animate-bounce"
         size="icon"
+        title="Atendimento Remoto"
       >
         <MessageCircle className="h-6 w-6" />
       </Button>
@@ -710,7 +711,7 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
   if (isMinimized) {
     return (
       <div 
-        className="fixed bottom-6 left-6 bg-primary text-primary-foreground rounded-full px-4 py-3 shadow-lg cursor-pointer z-[9999] flex items-center gap-2"
+        className="fixed bottom-24 right-6 bg-primary text-primary-foreground rounded-full px-4 py-3 shadow-lg cursor-pointer z-[9999] flex items-center gap-2"
         onClick={() => setIsMinimized(false)}
       >
         <MessageCircle className="h-5 w-5" />
@@ -725,7 +726,7 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
   }
 
   return (
-    <div className="fixed bottom-6 left-6 w-[380px] max-w-[calc(100vw-48px)] h-[500px] max-h-[calc(100vh-100px)] bg-background rounded-2xl shadow-2xl flex flex-col z-[9999] border">
+    <div className="fixed bottom-24 right-6 w-[380px] max-w-[calc(100vw-48px)] h-[500px] max-h-[calc(100vh-100px)] bg-background rounded-2xl shadow-2xl flex flex-col z-[9999] border">
       {/* Header */}
       <div className="bg-primary text-primary-foreground p-4 rounded-t-2xl flex items-center justify-between">
         <div className="flex items-center gap-3">
