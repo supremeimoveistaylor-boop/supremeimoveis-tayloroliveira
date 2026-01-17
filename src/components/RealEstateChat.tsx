@@ -2,8 +2,31 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Send, MessageCircle, X, Minimize2, History, Loader2, Paperclip, FileText, Image as ImageIcon } from "lucide-react";
+import { Send, MessageCircle, X, Minimize2, History, Loader2, Paperclip, FileText, Volume2, VolumeX } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+
+// Notification sound using Web Audio API
+const playNotificationSound = () => {
+  try {
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.value = 800;
+    oscillator.type = "sine";
+    
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.3);
+  } catch (error) {
+    console.log("Audio not supported");
+  }
+};
 
 interface MessageContent {
   type: "text" | "image_url";
@@ -59,6 +82,7 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
   const [hasStarted, setHasStarted] = useState(false);
   const [hasHistory, setHasHistory] = useState(false);
   const [pendingAttachment, setPendingAttachment] = useState<Attachment | null>(null);
+  const [soundEnabled, setSoundEnabled] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -228,6 +252,11 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
           break;
         }
       }
+    }
+
+    // Play notification sound when message is complete
+    if (assistantContent && soundEnabled) {
+      playNotificationSound();
     }
 
     if (currentLeadId && assistantContent) {
@@ -490,6 +519,15 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
           </div>
         </div>
         <div className="flex gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-primary-foreground hover:bg-primary-foreground/20"
+            onClick={() => setSoundEnabled(!soundEnabled)}
+            title={soundEnabled ? "Desativar som" : "Ativar som"}
+          >
+            {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+          </Button>
           {hasHistory && (
             <Button
               variant="ghost"
