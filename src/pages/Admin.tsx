@@ -5,12 +5,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, Home, Edit, Trash2, ArrowLeft, Users, UserCheck, MessageSquare, Headphones, MessageCircle } from 'lucide-react';
+import { Plus, Home, Edit, Trash2, ArrowLeft, Users, UserCheck, MessageSquare, Headphones, MessageCircle, BarChart3 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LeadsImobiliariosPanel } from '@/components/admin/LeadsImobiliariosPanel';
 import { ChatAttendantsPanel } from '@/components/admin/ChatAttendantsPanel';
 import { ChatSessionsPanel } from '@/components/admin/ChatSessionsPanel';
+import { ChatFlowMetricsPanel } from '@/components/admin/ChatFlowMetricsPanel';
 
 interface Property {
   id: string;
@@ -47,7 +48,7 @@ const Admin = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'properties' | 'users' | 'leads' | 'attendants' | 'sessions'>('properties');
+  const [activeTab, setActiveTab] = useState<'properties' | 'users' | 'leads' | 'attendants' | 'sessions' | 'metrics'>('properties');
 
   // Redirect if not authenticated or not admin
   if (!user && !loading) {
@@ -275,6 +276,13 @@ const Admin = () => {
             <MessageCircle className="mr-2 h-4 w-4" />
             Sessões de Chat
           </Button>
+          <Button
+            variant={activeTab === 'metrics' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('metrics')}
+          >
+            <BarChart3 className="mr-2 h-4 w-4" />
+            Métricas de Fluxo
+          </Button>
         </div>
 
         {/* Properties Tab */}
@@ -455,6 +463,11 @@ const Admin = () => {
         {/* Sessions Tab */}
         {activeTab === 'sessions' && (
           <ChatSessionsPanel />
+        )}
+
+        {/* Metrics Tab */}
+        {activeTab === 'metrics' && (
+          <ChatFlowMetricsPanel />
         )}
       </main>
     </div>

@@ -510,6 +510,28 @@ REGRAS DESTE FLUXO:
     }
 
     // =====================================================
+    // REGISTRAR MÉTRICA DO FLUXO UTILIZADO
+    // =====================================================
+    const flowType = hasSpecificProperty ? "specific" : hasListingContext ? "listing" : "general";
+    const propertiesShown = hasListingContext ? Math.min(pageProperties!.length, 3) : 0;
+    
+    try {
+      await supabase.from("chat_flow_metrics").insert({
+        flow_type: flowType,
+        lead_id: currentLeadId || null,
+        property_id: propertyId || null,
+        page_context: pageContext || null,
+        page_url: pageUrl || null,
+        origin: origin || null,
+        properties_shown: propertiesShown
+      });
+      console.log(`Flow metric recorded: ${flowType}`);
+    } catch (metricError) {
+      console.error("Error recording flow metric:", metricError);
+      // Don't fail the request if metric recording fails
+    }
+
+    // =====================================================
     // MENSAGEM DE ABERTURA (BASEADA NO FLUXO ATIVO)
     // =====================================================
     let openingInstruction = "";
