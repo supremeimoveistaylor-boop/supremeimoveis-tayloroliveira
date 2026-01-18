@@ -83,6 +83,54 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_conversions: {
+        Row: {
+          conversion_source: string | null
+          conversion_type: string
+          created_at: string
+          id: string
+          lead_id: string | null
+          message_content: string | null
+          metadata: Json | null
+          session_id: string | null
+        }
+        Insert: {
+          conversion_source?: string | null
+          conversion_type: string
+          created_at?: string
+          id?: string
+          lead_id?: string | null
+          message_content?: string | null
+          metadata?: Json | null
+          session_id?: string | null
+        }
+        Update: {
+          conversion_source?: string | null
+          conversion_type?: string
+          created_at?: string
+          id?: string
+          lead_id?: string | null
+          message_content?: string | null
+          metadata?: Json | null
+          session_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_conversions_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_conversions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "chat_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_flow_metrics: {
         Row: {
           created_at: string
@@ -299,10 +347,13 @@ export type Database = {
       leads: {
         Row: {
           broker_id: string | null
+          conversion_count: number | null
           created_at: string
           email: string | null
+          first_conversion_at: string | null
           id: string
           intent: string | null
+          last_conversion_at: string | null
           last_interaction_at: string | null
           lead_score: number | null
           message_count: number | null
@@ -322,10 +373,13 @@ export type Database = {
         }
         Insert: {
           broker_id?: string | null
+          conversion_count?: number | null
           created_at?: string
           email?: string | null
+          first_conversion_at?: string | null
           id?: string
           intent?: string | null
+          last_conversion_at?: string | null
           last_interaction_at?: string | null
           lead_score?: number | null
           message_count?: number | null
@@ -345,10 +399,13 @@ export type Database = {
         }
         Update: {
           broker_id?: string | null
+          conversion_count?: number | null
           created_at?: string
           email?: string | null
+          first_conversion_at?: string | null
           id?: string
           intent?: string | null
+          last_conversion_at?: string | null
           last_interaction_at?: string | null
           lead_score?: number | null
           message_count?: number | null
@@ -616,6 +673,15 @@ export type Database = {
       }
     }
     Views: {
+      chat_conversion_metrics: {
+        Row: {
+          conversion_type: string | null
+          date: string | null
+          total_conversions: number | null
+          unique_leads: number | null
+        }
+        Relationships: []
+      }
       public_properties: {
         Row: {
           amenities: string[] | null
@@ -716,6 +782,15 @@ export type Database = {
       log_security_event: {
         Args: { event_details?: Json; event_type: string }
         Returns: undefined
+      }
+      register_chat_conversion: {
+        Args: {
+          p_conversion_type: string
+          p_lead_id: string
+          p_message_content?: string
+          p_metadata?: Json
+        }
+        Returns: string
       }
     }
     Enums: {
