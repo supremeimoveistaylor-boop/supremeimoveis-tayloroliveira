@@ -83,6 +83,64 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_flow_metrics: {
+        Row: {
+          created_at: string
+          flow_type: string
+          id: string
+          lead_id: string | null
+          origin: string | null
+          page_context: string | null
+          page_url: string | null
+          properties_shown: number | null
+          property_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          flow_type: string
+          id?: string
+          lead_id?: string | null
+          origin?: string | null
+          page_context?: string | null
+          page_url?: string | null
+          properties_shown?: number | null
+          property_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          flow_type?: string
+          id?: string
+          lead_id?: string | null
+          origin?: string | null
+          page_context?: string | null
+          page_url?: string | null
+          properties_shown?: number | null
+          property_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_flow_metrics_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_flow_metrics_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_flow_metrics_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "public_properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_messages: {
         Row: {
           content: string
