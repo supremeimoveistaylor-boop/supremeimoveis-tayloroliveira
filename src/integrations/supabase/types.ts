@@ -115,6 +115,63 @@ export type Database = {
           },
         ]
       }
+      chat_sessions: {
+        Row: {
+          attendant_id: string | null
+          created_at: string
+          finished_at: string | null
+          id: string
+          lead_id: string
+          started_at: string
+          status: string
+          summary: string | null
+          updated_at: string
+          whatsapp_sent: boolean | null
+          whatsapp_sent_at: string | null
+        }
+        Insert: {
+          attendant_id?: string | null
+          created_at?: string
+          finished_at?: string | null
+          id?: string
+          lead_id: string
+          started_at?: string
+          status?: string
+          summary?: string | null
+          updated_at?: string
+          whatsapp_sent?: boolean | null
+          whatsapp_sent_at?: string | null
+        }
+        Update: {
+          attendant_id?: string | null
+          created_at?: string
+          finished_at?: string | null
+          id?: string
+          lead_id?: string
+          started_at?: string
+          status?: string
+          summary?: string | null
+          updated_at?: string
+          whatsapp_sent?: boolean | null
+          whatsapp_sent_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_sessions_attendant_id_fkey"
+            columns: ["attendant_id"]
+            isOneToOne: false
+            referencedRelation: "chat_attendants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_sessions_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_settings: {
         Row: {
           created_at: string
@@ -569,11 +626,16 @@ export type Database = {
       }
     }
     Functions: {
+      assign_attendant_round_robin: { Args: never; Returns: string }
       assign_lead_to_broker: {
         Args: { p_lead_id: string; p_property_id: string }
         Returns: string
       }
       calculate_lead_score: { Args: { p_lead_id: string }; Returns: number }
+      finish_chat_session: {
+        Args: { p_session_id: string; p_summary?: string }
+        Returns: Json
+      }
       generate_property_code: { Args: never; Returns: string }
       get_user_role: {
         Args: { user_id_param: string }
