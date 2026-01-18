@@ -444,9 +444,62 @@ Acesse o painel para mais detalhes e inicie o atendimento.`;
           updates.intent = "alugar";
         }
 
-        if (content.includes("visita") || content.includes("conhecer") || content.includes("ver o imóvel")) {
+        // =====================================================
+        // DETECÇÃO DE CONVERSÕES
+        // =====================================================
+        const conversions: { type: string; metadata?: Record<string, unknown> }[] = [];
+
+        // Detectar agendamento solicitado
+        const agendamentoPatterns = [
+          /agendar/i, /marcar/i, /visita/i, /conhecer/i, /ver o imóvel/i,
+          /horário/i, /disponível/i, /quando posso/i, /podemos marcar/i,
+          /gostaria de agendar/i, /quero visitar/i, /posso ir/i
+        ];
+        if (agendamentoPatterns.some(p => p.test(content))) {
+          conversions.push({ type: "agendamento_solicitado" });
           updates.visit_requested = true;
           updates.status = "visita_solicitada";
+        }
+
+        // Detectar telefone coletado
+        if (phoneMatch) {
+          conversions.push({ 
+            type: "telefone_coletado", 
+            metadata: { phone: updates.phone } 
+          });
+        }
+
+        // Detectar nome coletado
+        if (updates.name) {
+          conversions.push({ 
+            type: "nome_coletado", 
+            metadata: { name: updates.name } 
+          });
+        }
+
+        // Detectar interesse qualificado (perguntas específicas sobre o imóvel)
+        const interessePatterns = [
+          /quanto custa/i, /qual o valor/i, /preço/i, /financiamento/i,
+          /entrada/i, /parcela/i, /metragem/i, /quartos/i, /documentação/i,
+          /condomínio/i, /iptu/i
+        ];
+        if (interessePatterns.some(p => p.test(content))) {
+          conversions.push({ type: "interesse_qualificado" });
+        }
+
+        // Registrar conversões no banco
+        for (const conv of conversions) {
+          try {
+            await supabase.rpc("register_chat_conversion", {
+              p_lead_id: currentLeadId,
+              p_conversion_type: conv.type,
+              p_message_content: textContent.substring(0, 500),
+              p_metadata: conv.metadata || {}
+            });
+            console.log(`Conversão registrada: ${conv.type}`);
+          } catch (convError) {
+            console.error("Erro ao registrar conversão:", convError);
+          }
         }
 
         if (Object.keys(updates).length > 0) {
