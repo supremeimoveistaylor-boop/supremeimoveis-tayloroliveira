@@ -5,10 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, Home, Edit, Trash2, ArrowLeft, Users, UserCheck, MessageSquare } from 'lucide-react';
+import { Plus, Home, Edit, Trash2, ArrowLeft, Users, UserCheck, MessageSquare, Headphones } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LeadsImobiliariosPanel } from '@/components/admin/LeadsImobiliariosPanel';
+import { ChatAttendantsPanel } from '@/components/admin/ChatAttendantsPanel';
 
 interface Property {
   id: string;
@@ -45,7 +46,7 @@ const Admin = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'properties' | 'users' | 'leads'>('properties');
+  const [activeTab, setActiveTab] = useState<'properties' | 'users' | 'leads' | 'attendants'>('properties');
 
   // Redirect if not authenticated or not admin
   if (!user && !loading) {
@@ -259,6 +260,13 @@ const Admin = () => {
             <Users className="mr-2 h-4 w-4" />
             Usuários ({profiles.length})
           </Button>
+          <Button
+            variant={activeTab === 'attendants' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('attendants')}
+          >
+            <Headphones className="mr-2 h-4 w-4" />
+            Atendentes
+          </Button>
         </div>
 
         {/* Properties Tab */}
@@ -429,6 +437,11 @@ const Admin = () => {
               ))}
             </div>
           </div>
+        )}
+
+        {/* Attendants Tab */}
+        {activeTab === 'attendants' && (
+          <ChatAttendantsPanel />
         )}
       </main>
     </div>
