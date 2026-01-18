@@ -324,12 +324,98 @@ serve(async (req) => {
         currentLeadId = newLead.id;
         console.log("Lead criado:", currentLeadId);
 
+        // Atribuir corretor e enviar WhatsApp
+        let assignedBrokerId: string | null = null;
+        
         if (propertyId) {
           const { data: brokerId } = await supabase.rpc("assign_lead_to_broker", {
             p_lead_id: currentLeadId,
             p_property_id: propertyId
           });
+          assignedBrokerId = brokerId;
           console.log("Corretor atribuído:", brokerId);
+        } else {
+          // Atribuir sem propriedade específica (round robin geral)
+          const { data: brokerId } = await supabase.rpc("assign_lead_to_broker", {
+            p_lead_id: currentLeadId,
+            p_property_id: null
+          });
+          assignedBrokerId = brokerId;
+          console.log("Corretor atribuído (sem imóvel):", brokerId);
+        }
+
+        // Enviar notificação WhatsApp para o corretor
+        if (assignedBrokerId) {
+          try {
+            // Buscar dados do corretor
+            const { data: broker } = await supabase
+              .from("brokers")
+              .select("id, name, whatsapp, phone")
+              .eq("id", assignedBrokerId)
+              .single();
+
+            if (broker?.whatsapp) {
+              // Buscar nome do imóvel se houver
+              let propertyTitle = "Não especificado";
+              if (propertyId) {
+                const { data: property } = await supabase
+                  .from("properties")
+                  .select("title, location")
+                  .eq("id", propertyId)
+                  .single();
+                if (property) {
+                  propertyTitle = `${property.title}${property.location ? ` - ${property.location}` : ""}`;
+                }
+              }
+
+              // Montar mensagem
+              const whatsappMessage = `🏠 *Novo Lead - Supreme Empreendimentos*
+
+Olá ${broker.name}! Você recebeu um novo lead.
+
+📍 *Imóvel:* ${propertyTitle}
+🌐 *Origem:* ${origin || "Direto"}
+🔗 *Página:* ${pageUrl || "Homepage"}
+
+Acesse o painel para mais detalhes e inicie o atendimento.`;
+
+              // Chamar função de envio de WhatsApp
+              const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+              const sendWhatsappUrl = `${SUPABASE_URL}/functions/v1/send-whatsapp`;
+              
+              const whatsappResponse = await fetch(sendWhatsappUrl, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  to: broker.whatsapp,
+                  message: whatsappMessage
+                })
+              });
+
+              if (whatsappResponse.ok) {
+                console.log(`WhatsApp enviado para corretor ${broker.name}`);
+                
+                // Atualizar lead com status de WhatsApp enviado
+                await supabase
+                  .from("leads")
+                  .update({ 
+                    whatsapp_sent: true, 
+                    whatsapp_sent_at: new Date().toISOString() 
+                  })
+                  .eq("id", currentLeadId);
+              } else {
+                const errorData = await whatsappResponse.json();
+                console.error("Erro ao enviar WhatsApp:", errorData);
+              }
+            } else {
+              console.log("Corretor não tem WhatsApp cadastrado:", broker?.name);
+            }
+          } catch (whatsappError) {
+            console.error("Erro ao processar envio de WhatsApp:", whatsappError);
+            // Não falha o fluxo principal por erro no WhatsApp
+          }
         }
       }
     }
