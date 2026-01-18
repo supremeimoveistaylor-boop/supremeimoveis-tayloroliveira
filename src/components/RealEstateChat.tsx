@@ -2,7 +2,16 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Send, MessageCircle, X, Minimize2, History, Loader2, Paperclip, FileText, Volume2, VolumeX, Mic, Square, Smile } from "lucide-react";
+import { Send, MessageCircle, X, Minimize2, History, Loader2, Paperclip, FileText, Volume2, VolumeX, Mic, Square, Smile, CheckCircle2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Popover,
   PopoverContent,
@@ -120,6 +129,8 @@ const DOCUMENT_TYPES = [
 ];
 const ALL_ALLOWED_TYPES = [...IMAGE_TYPES, ...DOCUMENT_TYPES];
 
+const SESSION_STORAGE_KEY = "supreme_chat_session_id";
+
 export const RealEstateChat = ({ propertyId, propertyName, origin, pageProperties, pageContext }: RealEstateChatProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
@@ -129,6 +140,7 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [leadId, setLeadId] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [hasStarted, setHasStarted] = useState(false);
   const [hasHistory, setHasHistory] = useState(false);
   const [pendingAttachment, setPendingAttachment] = useState<Attachment | null>(null);
@@ -138,6 +150,9 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [activeReactionMsgId, setActiveReactionMsgId] = useState<string | null>(null);
+  const [showFinishDialog, setShowFinishDialog] = useState(false);
+  const [finishSummary, setFinishSummary] = useState("");
+  const [isFinishing, setIsFinishing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -173,6 +188,13 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
       localStorage.setItem(LEAD_STORAGE_KEY, leadId);
     }
   }, [leadId]);
+
+  useEffect(() => {
+    const storedSessionId = localStorage.getItem(SESSION_STORAGE_KEY);
+    if (storedSessionId) {
+      setSessionId(storedSessionId);
+    }
+  }, []);
 
   const loadChatHistory = useCallback(async (currentLeadId: string) => {
     setIsLoadingHistory(true);
@@ -215,6 +237,8 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
     if (leadId) {
       const hasLoadedHistory = await loadChatHistory(leadId);
       if (hasLoadedHistory) {
+        // Criar/recuperar sessão para lead existente
+        await createOrGetSession(leadId);
         return;
       }
     }
@@ -247,6 +271,8 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
       const responseLeadId = response.headers.get("X-Lead-Id");
       if (responseLeadId) {
         setLeadId(responseLeadId);
+        // Criar sessão de chat com atribuição automática de atendente
+        await createOrGetSession(responseLeadId);
       }
 
       await processStream(response, responseLeadId || leadId);
@@ -606,11 +632,128 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
 
   const handleNewConversation = () => {
     localStorage.removeItem(LEAD_STORAGE_KEY);
+    localStorage.removeItem(SESSION_STORAGE_KEY);
     setLeadId(null);
+    setSessionId(null);
     setMessages([]);
     setHasStarted(false);
     setHasHistory(false);
     setPendingAttachment(null);
+  };
+
+  // Criar ou recuperar sessão de chat
+  const createOrGetSession = async (currentLeadId: string) => {
+    const storedSessionId = localStorage.getItem(SESSION_STORAGE_KEY);
+    
+    if (storedSessionId) {
+      // Verificar se a sessão ainda está ativa
+      const { data: existingSession } = await supabase
+        .from("chat_sessions")
+        .select("id, status")
+        .eq("id", storedSessionId)
+        .eq("status", "active")
+        .maybeSingle();
+      
+      if (existingSession) {
+        setSessionId(storedSessionId);
+        return storedSessionId;
+      }
+    }
+
+    // Criar nova sessão com atribuição round-robin
+    const { data: attendantId } = await supabase.rpc("assign_attendant_round_robin");
+    
+    const { data: newSession, error } = await supabase
+      .from("chat_sessions")
+      .insert({
+        lead_id: currentLeadId,
+        attendant_id: attendantId,
+        status: "active",
+      })
+      .select("id")
+      .single();
+
+    if (error) {
+      console.error("Erro ao criar sessão:", error);
+      return null;
+    }
+
+    localStorage.setItem(SESSION_STORAGE_KEY, newSession.id);
+    setSessionId(newSession.id);
+    return newSession.id;
+  };
+
+  // Finalizar atendimento e enviar para WhatsApp
+  const handleFinishAttendance = async () => {
+    if (!sessionId) {
+      console.error("Nenhuma sessão ativa");
+      return;
+    }
+
+    setIsFinishing(true);
+
+    try {
+      const { data: result, error } = await supabase.rpc("finish_chat_session", {
+        p_session_id: sessionId,
+        p_summary: finishSummary || "Atendimento finalizado pelo chat",
+      });
+
+      if (error) throw error;
+
+      const resultData = result as any;
+
+      if (!resultData?.success) {
+        throw new Error(resultData?.error || "Erro ao finalizar sessão");
+      }
+
+      // Gerar mensagem para WhatsApp
+      const whatsappMessage = `📩 NOVO LEAD DO CHAT
+
+👤 Cliente: ${resultData.lead_name}
+📱 Telefone: ${resultData.lead_phone}
+📧 Email: ${resultData.lead_email || "Não informado"}
+🎯 Interesse: ${resultData.lead_intent || "Não informado"}
+💬 Mensagens trocadas: ${resultData.message_count}
+
+📝 Resumo: ${resultData.summary}
+
+➡️ Continuar atendimento pelo WhatsApp.`;
+
+      // Marcar WhatsApp como enviado
+      await supabase
+        .from("chat_sessions")
+        .update({
+          whatsapp_sent: true,
+          whatsapp_sent_at: new Date().toISOString(),
+        })
+        .eq("id", sessionId);
+
+      // Abrir WhatsApp se tiver telefone do atendente
+      if (resultData.attendant_phone) {
+        const encodedMessage = encodeURIComponent(whatsappMessage);
+        const whatsappUrl = `https://wa.me/${resultData.attendant_phone.replace(/\D/g, "")}?text=${encodedMessage}`;
+        window.open(whatsappUrl, "_blank");
+      }
+
+      // Limpar sessão local e iniciar nova conversa
+      setShowFinishDialog(false);
+      setFinishSummary("");
+      handleNewConversation();
+
+      // Adicionar mensagem de despedida
+      setMessages([{
+        id: Date.now().toString(),
+        role: "assistant",
+        content: "Obrigado pelo seu contato! 😊 Um de nossos corretores entrará em contato com você em breve pelo WhatsApp. Até logo!",
+        timestamp: new Date(),
+      }]);
+      setHasStarted(true);
+
+    } catch (error) {
+      console.error("Erro ao finalizar atendimento:", error);
+    } finally {
+      setIsFinishing(false);
+    }
   };
 
   const formatTime = (date: Date) => {
@@ -774,6 +917,17 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
           >
             {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
           </Button>
+          {messages.length > 2 && sessionId && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-primary-foreground hover:bg-green-500/80"
+              onClick={() => setShowFinishDialog(true)}
+              title="Finalizar Atendimento"
+            >
+              <CheckCircle2 className="h-4 w-4" />
+            </Button>
+          )}
           {hasHistory && (
             <Button
               variant="ghost"
@@ -1049,6 +1203,58 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
           📎 Arquivos • 🎤 Áudio • 😊 Emojis • 2x toque para reagir
         </p>
       </div>
+
+      {/* Dialog para finalizar atendimento */}
+      <Dialog open={showFinishDialog} onOpenChange={setShowFinishDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-green-500" />
+              Finalizar Atendimento
+            </DialogTitle>
+            <DialogDescription>
+              Ao finalizar, um resumo será enviado para o WhatsApp do atendente responsável.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Resumo do atendimento (opcional)</label>
+              <Textarea
+                placeholder="Ex: Cliente interessado em apartamento 2 quartos na zona sul. Quer agendar visita para sábado."
+                value={finishSummary}
+                onChange={(e) => setFinishSummary(e.target.value)}
+                rows={4}
+              />
+            </div>
+          </div>
+          <DialogFooter className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowFinishDialog(false)}
+              disabled={isFinishing}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleFinishAttendance}
+              disabled={isFinishing}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {isFinishing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Finalizando...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                  Finalizar e Enviar
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
