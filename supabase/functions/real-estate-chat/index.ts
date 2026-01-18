@@ -199,6 +199,15 @@ interface ChatMessage {
   content: string | MessageContent[];
 }
 
+// Interface para imóveis da página de listagem
+interface PageProperty {
+  id: string;
+  title: string;
+  price: number;
+  location?: string;
+  property_type?: string;
+}
+
 interface ChatRequest {
   messages: ChatMessage[];
   leadId?: string;
@@ -206,6 +215,8 @@ interface ChatRequest {
   propertyName?: string;
   pageUrl?: string;
   origin?: string;
+  pageProperties?: PageProperty[]; // Lista de imóveis da página (contexto de listagem)
+  pageContext?: string; // Contexto da página (ex: "casas em condomínio")
 }
 
 // =====================================================
@@ -262,7 +273,7 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { messages, leadId, propertyId, propertyName, pageUrl, origin } = body as ChatRequest;
+    const { messages, leadId, propertyId, propertyName, pageUrl, origin, pageProperties, pageContext } = body as ChatRequest;
     
     // Validar mensagens
     const validation = validateMessages(messages);
@@ -381,33 +392,89 @@ serve(async (req) => {
       }
     }
 
-    // Contexto do imóvel
+    // =====================================================
+    // CONTEXTO DO ATENDIMENTO
+    // =====================================================
     let propertyContext = "";
     const isFromAd = origin && (origin.toLowerCase().includes("meta") || origin.toLowerCase().includes("instagram") || origin.toLowerCase().includes("facebook") || origin.toLowerCase().includes("ads"));
     
+    // Formatar valor em reais
+    const formatPrice = (price: number): string => {
+      return price.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    };
+
+    // CASO 1: Imóvel específico (comportamento original mantido intacto)
     if (propertyId || propertyName) {
       propertyContext = `\n\nCONTEXTO DO ATENDIMENTO:
 ${isFromAd ? "O visitante veio de um ANÚNCIO PAGO" : "O visitante está navegando no site"}
 Imóvel: "${propertyName || "Imóvel específico"}"
 Este atendimento é EXCLUSIVO para este imóvel.`;
-    } else {
+    }
+    // CASO 2: Página de listagem com imóveis disponíveis
+    else if (pageProperties && pageProperties.length > 0) {
+      const propertiesList = pageProperties.slice(0, 10).map((p, i) => 
+        `${i + 1}. ${p.title} - ${formatPrice(p.price)}${p.location ? ` (${p.location})` : ""}`
+      ).join("\n");
+      
+      propertyContext = `\n\n══════════════════════════════════════════════════════════════
+CONTEXTO: PÁGINA DE LISTAGEM
+══════════════════════════════════════════════════════════════
+${pageContext ? `Categoria: ${pageContext}` : "O visitante está navegando em uma página de listagem"}
+
+IMÓVEIS DISPONÍVEIS NESTA PÁGINA:
+${propertiesList}
+
+REGRAS PARA ATENDIMENTO EM LISTAGEM:
+1. Se o visitante fizer uma PERGUNTA GENÉRICA ou EXPLORATÓRIA:
+   - Sugira no MÁXIMO 3 imóveis da lista acima
+   - Mostre apenas: Título + Valor
+   - NÃO invente imóveis
+   - NÃO sugira imóveis fora desta lista
+   - Pergunte qual opção chamou mais atenção
+
+2. Se o visitante ESCOLHER um imóvel específico:
+   - Continue o atendimento focado NESSE imóvel
+   - Destaque diferenciais e benefícios
+   - Conduza para agendamento
+
+3. NUNCA mencione termos técnicos como "listagem", "página", "sistema"
+4. Use linguagem humana e consultiva
+5. Objetivo: gerar lead qualificado ou agendamento`;
+    }
+    // CASO 3: Sem contexto específico (comportamento original mantido)
+    else {
       propertyContext = "\n\nCONTEXTO: O visitante acessou o site sem um imóvel específico. Ajude-o a encontrar o imóvel ideal.";
     }
 
-    // Mensagem de abertura
+    // =====================================================
+    // MENSAGEM DE ABERTURA
+    // =====================================================
     let openingInstruction = "";
     if (messages.length === 0) {
+      // Abertura para anúncio com imóvel específico
       if (propertyName && isFromAd) {
         openingInstruction = `\n\nPRIMEIRA MENSAGEM - Use exatamente:
 "Olá 😊 Que bom te ver por aqui!
 Vi que você chegou pelo anúncio do imóvel ${propertyName}.
 Posso te ajudar com alguma informação?"`;
-      } else if (propertyName) {
+      } 
+      // Abertura para imóvel específico no site
+      else if (propertyName) {
         openingInstruction = `\n\nPRIMEIRA MENSAGEM - Use exatamente:
 "Olá 😊 Seja bem-vindo(a)!
 Vi que você está olhando o imóvel ${propertyName}.
 Posso te ajudar com alguma dúvida?"`;
-      } else {
+      }
+      // Abertura para página de listagem
+      else if (pageProperties && pageProperties.length > 0) {
+        const contextLabel = pageContext || "imóveis";
+        openingInstruction = `\n\nPRIMEIRA MENSAGEM - Use exatamente:
+"Olá 😊 Seja bem-vindo(a)!
+Vi que você está explorando algumas opções de ${contextLabel}.
+Posso te ajudar a encontrar o imóvel ideal para você?"`;
+      }
+      // Abertura genérica
+      else {
         openingInstruction = `\n\nPRIMEIRA MENSAGEM - Use exatamente:
 "Olá 😊 Seja bem-vindo(a)!
 Posso te ajudar a encontrar um imóvel que combine com você?"`;

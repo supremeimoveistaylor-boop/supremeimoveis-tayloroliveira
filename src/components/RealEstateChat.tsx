@@ -88,10 +88,21 @@ const EMOJI_CATEGORIES = {
 // Quick reactions for messages
 const QUICK_REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🔥"];
 
+// Interface para imóveis da página de listagem
+interface PageProperty {
+  id: string;
+  title: string;
+  price: number;
+  location?: string;
+  property_type?: string;
+}
+
 interface RealEstateChatProps {
   propertyId?: string;
   propertyName?: string;
   origin?: string;
+  pageProperties?: PageProperty[]; // Lista de imóveis da página atual (para contexto de listagem)
+  pageContext?: string; // Contexto da página (ex: "casas em condomínio", "apartamentos para alugar")
 }
 
 const CHAT_URL = `https://ypkmorgcpooygsvhcpvo.supabase.co/functions/v1/real-estate-chat`;
@@ -109,7 +120,7 @@ const DOCUMENT_TYPES = [
 ];
 const ALL_ALLOWED_TYPES = [...IMAGE_TYPES, ...DOCUMENT_TYPES];
 
-export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateChatProps) => {
+export const RealEstateChat = ({ propertyId, propertyName, origin, pageProperties, pageContext }: RealEstateChatProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -224,6 +235,8 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
           propertyName,
           pageUrl: window.location.href,
           origin: origin || "Direto",
+          pageProperties: pageProperties?.slice(0, 10), // Limita a 10 imóveis para contexto
+          pageContext,
         }),
       });
 
@@ -250,7 +263,7 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
     } finally {
       setIsLoading(false);
     }
-  }, [hasStarted, propertyId, propertyName, origin, leadId, loadChatHistory]);
+  }, [hasStarted, propertyId, propertyName, origin, leadId, loadChatHistory, pageProperties, pageContext]);
 
   useEffect(() => {
     if (isOpen && !hasStarted) {
@@ -555,6 +568,8 @@ export const RealEstateChat = ({ propertyId, propertyName, origin }: RealEstateC
           propertyName,
           pageUrl: window.location.href,
           origin: origin || "Direto",
+          pageProperties: pageProperties?.slice(0, 10),
+          pageContext,
         }),
       });
 

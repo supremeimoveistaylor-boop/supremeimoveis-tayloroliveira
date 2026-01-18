@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
+import { RealEstateChat } from "@/components/RealEstateChat";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -334,6 +335,17 @@ const Rurais = () => {
 
       <Footer />
       <FloatingWhatsApp />
+      <RealEstateChat 
+        pageProperties={properties.map(p => ({
+          id: p.id,
+          title: p.title,
+          price: p.price,
+          location: p.location,
+          property_type: p.property_type
+        }))}
+        pageContext="imóveis rurais"
+        origin="site"
+      />
     </div>
   );
 };
