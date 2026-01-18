@@ -393,8 +393,13 @@ serve(async (req) => {
     }
 
     // =====================================================
-    // CONTEXTO DO ATENDIMENTO
+    // CAMADA DE DECISÃO - ORDEM DE PRIORIDADE
     // =====================================================
+    // PRIORIDADE 1: Imóvel específico → template atual
+    // PRIORIDADE 2: Página de listagem → sugerir até 3 imóveis
+    // PRIORIDADE 3: Sem contexto → template atual
+    // =====================================================
+    
     let propertyContext = "";
     const isFromAd = origin && (origin.toLowerCase().includes("meta") || origin.toLowerCase().includes("instagram") || origin.toLowerCase().includes("facebook") || origin.toLowerCase().includes("ads"));
     
@@ -403,78 +408,136 @@ serve(async (req) => {
       return price.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0, maximumFractionDigits: 0 });
     };
 
-    // CASO 1: Imóvel específico (comportamento original mantido intacto)
-    if (propertyId || propertyName) {
-      propertyContext = `\n\nCONTEXTO DO ATENDIMENTO:
+    // Determinar qual fluxo seguir (apenas UM por resposta)
+    const hasSpecificProperty = !!(propertyId || propertyName);
+    const hasListingContext = !hasSpecificProperty && pageProperties && pageProperties.length > 0;
+    const hasNoContext = !hasSpecificProperty && !hasListingContext;
+
+    // =====================================================
+    // PRIORIDADE 1: IMÓVEL ESPECÍFICO
+    // =====================================================
+    // Se existir contexto de imóvel específico, executar template atual exatamente como está
+    if (hasSpecificProperty) {
+      propertyContext = `\n\n══════════════════════════════════════════════════════════════
+🔒 FLUXO ATIVO: IMÓVEL ESPECÍFICO (PRIORIDADE 1)
+══════════════════════════════════════════════════════════════
 ${isFromAd ? "O visitante veio de um ANÚNCIO PAGO" : "O visitante está navegando no site"}
 Imóvel: "${propertyName || "Imóvel específico"}"
-Este atendimento é EXCLUSIVO para este imóvel.`;
+
+REGRAS DESTE FLUXO:
+- Este atendimento é EXCLUSIVO para este imóvel
+- Responda DIRETAMENTE sobre este imóvel
+- Não mude de assunto
+- Demonstre domínio e segurança
+- Destaque diferenciais reais
+- Conecte o imóvel ao perfil do lead
+- Conduza para agendamento de visita
+
+⚠️ NUNCA misture com outros fluxos ou imóveis
+⚠️ NUNCA mencione lógica interna ou contexto técnico`;
     }
-    // CASO 2: Página de listagem com imóveis disponíveis
-    else if (pageProperties && pageProperties.length > 0) {
-      const propertiesList = pageProperties.slice(0, 10).map((p, i) => 
+    // =====================================================
+    // PRIORIDADE 2: PÁGINA DE LISTAGEM
+    // =====================================================
+    // Se NÃO existir imóvel específico, mas existir contexto de página de listagem
+    else if (hasListingContext) {
+      const propertiesList = pageProperties!.slice(0, 10).map((p, i) => 
         `${i + 1}. ${p.title} - ${formatPrice(p.price)}${p.location ? ` (${p.location})` : ""}`
       ).join("\n");
       
+      // Identificar tipo de imóvel da página
+      const propertyTypeFromContext = pageContext || "imóveis";
+      
       propertyContext = `\n\n══════════════════════════════════════════════════════════════
-CONTEXTO: PÁGINA DE LISTAGEM
+🔒 FLUXO ATIVO: PÁGINA DE LISTAGEM (PRIORIDADE 2)
 ══════════════════════════════════════════════════════════════
-${pageContext ? `Categoria: ${pageContext}` : "O visitante está navegando em uma página de listagem"}
+Categoria identificada: ${propertyTypeFromContext}
 
-IMÓVEIS DISPONÍVEIS NESTA PÁGINA:
+IMÓVEIS DISPONÍVEIS NESTA PÁGINA (fonte única de verdade):
 ${propertiesList}
 
-REGRAS PARA ATENDIMENTO EM LISTAGEM:
-1. Se o visitante fizer uma PERGUNTA GENÉRICA ou EXPLORATÓRIA:
-   - Sugira no MÁXIMO 3 imóveis da lista acima
-   - Mostre apenas: Título + Valor
-   - NÃO invente imóveis
-   - NÃO sugira imóveis fora desta lista
-   - Pergunte qual opção chamou mais atenção
+═══════════════════════════════════════════════════════════════
+📋 REGRAS OBRIGATÓRIAS DESTE FLUXO
+═══════════════════════════════════════════════════════════════
 
-2. Se o visitante ESCOLHER um imóvel específico:
-   - Continue o atendimento focado NESSE imóvel
-   - Destaque diferenciais e benefícios
-   - Conduza para agendamento
+1️⃣ QUANDO A PERGUNTA FOR GENÉRICA OU EXPLORATÓRIA:
+   (ex: "o que vocês têm?", "quero ver opções", "me ajuda a escolher")
+   
+   → Liste NO MÁXIMO 3 imóveis da lista acima
+   → Mostre APENAS: Título + Valor
+   → Formato sugerido:
+     "Temos algumas opções interessantes para você:
+      • [Título 1] – [Valor 1]
+      • [Título 2] – [Valor 2]
+      • [Título 3] – [Valor 3]
+      
+      Alguma dessas opções chamou mais a sua atenção?"
+   
+   ⚠️ NÃO invente imóveis
+   ⚠️ NÃO sugira imóveis fora desta lista
+   ⚠️ NÃO mostre mais de 3 opções por vez
 
-3. NUNCA mencione termos técnicos como "listagem", "página", "sistema"
-4. Use linguagem humana e consultiva
-5. Objetivo: gerar lead qualificado ou agendamento`;
+2️⃣ APÓS O VISITANTE ESCOLHER UM IMÓVEL:
+   → Volte a usar o template padrão de atendimento
+   → Foque 100% no imóvel escolhido
+   → Destaque diferenciais e benefícios
+   → Conduza para agendamento
+
+3️⃣ RESTRIÇÕES ABSOLUTAS:
+   → NUNCA mencione "listagem", "página", "sistema", "contexto"
+   → NUNCA misture imóveis de contextos diferentes
+   → APENAS UM fluxo pode ser executado por resposta
+   → Linguagem humana, consultiva e profissional`;
     }
-    // CASO 3: Sem contexto específico (comportamento original mantido)
-    else {
-      propertyContext = "\n\nCONTEXTO: O visitante acessou o site sem um imóvel específico. Ajude-o a encontrar o imóvel ideal.";
+    // =====================================================
+    // PRIORIDADE 3: SEM CONTEXTO
+    // =====================================================
+    // Se NÃO existir nenhum contexto, executar template atual sem alterações
+    else if (hasNoContext) {
+      propertyContext = `\n\n══════════════════════════════════════════════════════════════
+🔒 FLUXO ATIVO: ATENDIMENTO GERAL (PRIORIDADE 3)
+══════════════════════════════════════════════════════════════
+O visitante acessou o site sem um imóvel específico.
+
+REGRAS DESTE FLUXO:
+- Ajude-o a encontrar o imóvel ideal
+- Faça perguntas para entender o perfil
+- Região desejada, finalidade, prazo, faixa de valor
+- Conduza naturalmente para agendamento
+
+⚠️ NUNCA mencione lógica interna ou contexto técnico
+⚠️ Linguagem humana, consultiva e profissional`;
     }
 
     // =====================================================
-    // MENSAGEM DE ABERTURA
+    // MENSAGEM DE ABERTURA (BASEADA NO FLUXO ATIVO)
     // =====================================================
     let openingInstruction = "";
     if (messages.length === 0) {
-      // Abertura para anúncio com imóvel específico
-      if (propertyName && isFromAd) {
-        openingInstruction = `\n\nPRIMEIRA MENSAGEM - Use exatamente:
+      // PRIORIDADE 1: Abertura para imóvel específico
+      if (hasSpecificProperty) {
+        if (propertyName && isFromAd) {
+          openingInstruction = `\n\nPRIMEIRA MENSAGEM - Use exatamente:
 "Olá 😊 Que bom te ver por aqui!
 Vi que você chegou pelo anúncio do imóvel ${propertyName}.
 Posso te ajudar com alguma informação?"`;
-      } 
-      // Abertura para imóvel específico no site
-      else if (propertyName) {
-        openingInstruction = `\n\nPRIMEIRA MENSAGEM - Use exatamente:
+        } else if (propertyName) {
+          openingInstruction = `\n\nPRIMEIRA MENSAGEM - Use exatamente:
 "Olá 😊 Seja bem-vindo(a)!
 Vi que você está olhando o imóvel ${propertyName}.
 Posso te ajudar com alguma dúvida?"`;
+        }
       }
-      // Abertura para página de listagem
-      else if (pageProperties && pageProperties.length > 0) {
+      // PRIORIDADE 2: Abertura para página de listagem
+      else if (hasListingContext) {
         const contextLabel = pageContext || "imóveis";
         openingInstruction = `\n\nPRIMEIRA MENSAGEM - Use exatamente:
 "Olá 😊 Seja bem-vindo(a)!
 Vi que você está explorando algumas opções de ${contextLabel}.
 Posso te ajudar a encontrar o imóvel ideal para você?"`;
       }
-      // Abertura genérica
-      else {
+      // PRIORIDADE 3: Abertura genérica (sem contexto)
+      else if (hasNoContext) {
         openingInstruction = `\n\nPRIMEIRA MENSAGEM - Use exatamente:
 "Olá 😊 Seja bem-vindo(a)!
 Posso te ajudar a encontrar um imóvel que combine com você?"`;
