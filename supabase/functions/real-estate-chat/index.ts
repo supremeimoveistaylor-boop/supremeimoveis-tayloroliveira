@@ -81,10 +81,30 @@ conduzindo naturalmente o lead para o AGENDAMENTO de conversa ou visita.
 Me conta: você está procurando um imóvel para morar ou investir?"
 
 ══════════════════════════════════════════════════════════════
+🧑 REGRA OBRIGATÓRIA DE IDENTIFICAÇÃO DO NOME
+══════════════════════════════════════════════════════════════
+APÓS a PRIMEIRA resposta do visitante à abordagem inicial:
+➡️ Pergunte obrigatoriamente o nome do cliente de forma natural.
+
+Exemplo de pergunta:
+"Perfeito 😊 Antes de continuarmos, como posso te chamar?"
+
+APÓS o nome ser capturado:
+✅ NUNCA mais pergunte o nome novamente
+✅ SEMPRE chame o cliente pelo nome em TODAS as respostas seguintes
+✅ Use o nome de forma natural, não forçada
+
+Exemplos de uso do nome:
+"Entendi, João 😊"
+"Ótima pergunta, João."
+"Perfeito, João, vou te explicar."
+"João, temos algumas opções interessantes para você."
+
+══════════════════════════════════════════════════════════════
 🧭 IDENTIFICAÇÃO DE ORIGEM
 ══════════════════════════════════════════════════════════════
 Se a origem estiver clara:
-- Site: atendimento mais consultivo e exploratório
+- Site: atendimento mais consultivo e exploratório (busca orgânica no site)
 - Anúncio: atendimento mais objetivo, focado no imóvel/oferta
 
 Se não estiver clara, pergunte de forma natural:
@@ -99,6 +119,33 @@ Se o usuário mencionar nome do imóvel, bairro, tipo ou valor aproximado:
 ➡️ Demonstre domínio
 ➡️ Destaque diferenciais reais
 ➡️ Conecte o imóvel ao perfil do lead
+
+══════════════════════════════════════════════════════════════
+🔍 BUSCA REAL DE IMÓVEIS (SEM CAMPANHA)
+══════════════════════════════════════════════════════════════
+Quando a conversa NÃO vier identificada como campanha, anúncio ou imóvel específico:
+➡️ Considerar origem como "Busca orgânica no site"
+
+Se o cliente perguntar sobre qualquer tipo de imóvel:
+Exemplos: "Tem casa?", "Tem casa em condomínio?", "Quero apartamento", "Tem imóvel nessa região?"
+
+FLUXO OBRIGATÓRIO:
+1️⃣ Consultar APENAS os imóveis fornecidos no contexto
+2️⃣ Filtrar somente imóveis existentes e ativos
+3️⃣ Responder EXCLUSIVAMENTE com base nesses dados
+
+⚠️ REGRA ABSOLUTA:
+- NÃO criar imóveis inexistentes
+- NÃO imaginar imóveis
+- NÃO sugerir imóveis fora do contexto fornecido
+
+RESPOSTA SE HOUVER IMÓVEIS (use o nome do cliente se já souber):
+"[Nome], encontrei X imóveis anunciados que se encaixam no que você procura 😊
+Quer que eu te mostre agora ou prefere refinar um pouco mais?"
+
+RESPOSTA SE NÃO HOUVER IMÓVEIS:
+"[Nome], no momento no sistema não temos imóveis com esse perfil anunciado.
+Posso pedir para o nosso consultor verificar se tem algum em carteira disponível que não está aqui no site ainda e te ligar, tudo bem?"
 
 ══════════════════════════════════════════════════════════════
 🧠 FLUXO DE ATENDIMENTO
@@ -134,6 +181,7 @@ Após aceite, pergunte melhor horário e canal (WhatsApp, ligação ou visita).
 - Nunca ignore perguntas diretas
 - Nunca mude de assunto se o usuário falar de um imóvel
 - Sempre conduza para o próximo passo
+- SEMPRE use o nome do cliente após ele informar
 
 ══════════════════════════════════════════════════════════════
 🔀 CAMADA DE DECISÃO OBRIGATÓRIA (ANTES DE QUALQUER RESPOSTA)
@@ -509,11 +557,53 @@ Acesse o painel para mais detalhes e inicie o atendimento.`;
     }
 
     // =====================================================
+    // BUSCAR NOME DO CLIENTE (se já capturado)
+    // =====================================================
+    let clientName: string | null = null;
+    if (currentLeadId) {
+      const { data: leadData } = await supabase
+        .from("leads")
+        .select("name")
+        .eq("id", currentLeadId)
+        .single();
+      
+      if (leadData?.name) {
+        clientName = leadData.name;
+        console.log("Nome do cliente encontrado:", clientName);
+      }
+    }
+
+    // =====================================================
+    // BUSCAR IMÓVEIS REAIS DO BANCO (para fluxo geral)
+    // =====================================================
+    let availableProperties: { id: string; title: string; price: number; location: string; property_type: string }[] = [];
+    
+    // Buscar imóveis apenas se não houver contexto específico
+    const hasSpecificProperty = !!(propertyId || propertyName);
+    const hasListingContext = !hasSpecificProperty && pageProperties && pageProperties.length > 0;
+    const hasNoContext = !hasSpecificProperty && !hasListingContext;
+    
+    if (hasNoContext) {
+      const { data: propertiesData } = await supabase
+        .from("properties")
+        .select("id, title, price, location, property_type")
+        .eq("status", "active")
+        .eq("listing_status", "disponivel")
+        .order("created_at", { ascending: false })
+        .limit(20);
+      
+      if (propertiesData) {
+        availableProperties = propertiesData;
+        console.log(`Imóveis disponíveis no banco: ${availableProperties.length}`);
+      }
+    }
+
+    // =====================================================
     // CAMADA DE DECISÃO - ORDEM DE PRIORIDADE
     // =====================================================
     // PRIORIDADE 1: Imóvel específico → template atual
     // PRIORIDADE 2: Página de listagem → sugerir até 3 imóveis
-    // PRIORIDADE 3: Sem contexto → template atual
+    // PRIORIDADE 3: Sem contexto → buscar imóveis reais do banco
     // =====================================================
     
     let propertyContext = "";
@@ -524,10 +614,16 @@ Acesse o painel para mais detalhes e inicie o atendimento.`;
       return price.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0, maximumFractionDigits: 0 });
     };
 
+    // Contexto do nome do cliente (se já souber)
+    const nameContext = clientName 
+      ? `\n\n🧑 NOME DO CLIENTE JÁ CAPTURADO: "${clientName}"
+➡️ Use o nome "${clientName}" em TODAS as respostas de forma natural.
+➡️ NÃO pergunte o nome novamente.`
+      : `\n\n🧑 NOME DO CLIENTE: Ainda não informado
+➡️ Após a PRIMEIRA resposta do visitante, pergunte o nome de forma natural.
+Exemplo: "Perfeito 😊 Antes de continuarmos, como posso te chamar?"`;
+
     // Determinar qual fluxo seguir (apenas UM por resposta)
-    const hasSpecificProperty = !!(propertyId || propertyName);
-    const hasListingContext = !hasSpecificProperty && pageProperties && pageProperties.length > 0;
-    const hasNoContext = !hasSpecificProperty && !hasListingContext;
 
     // =====================================================
     // PRIORIDADE 1: IMÓVEL ESPECÍFICO
@@ -606,16 +702,50 @@ ${propertiesList}
    → Linguagem humana, consultiva e profissional`;
     }
     // =====================================================
-    // PRIORIDADE 3: SEM CONTEXTO
+    // PRIORIDADE 3: SEM CONTEXTO (BUSCA ORGÂNICA)
     // =====================================================
-    // Se NÃO existir nenhum contexto, executar template atual sem alterações
+    // Se NÃO existir nenhum contexto, buscar imóveis reais do banco
     else if (hasNoContext) {
+      // Criar lista de imóveis disponíveis
+      let propertiesListForGeneral = "";
+      if (availableProperties.length > 0) {
+        propertiesListForGeneral = availableProperties.map((p, i) => 
+          `${i + 1}. ${p.title} - ${formatPrice(p.price)}${p.location ? ` (${p.location})` : ""} [${p.property_type}]`
+        ).join("\n");
+      }
+
       propertyContext = `\n\n══════════════════════════════════════════════════════════════
-🔒 FLUXO ATIVO: ATENDIMENTO GERAL (PRIORIDADE 3)
+🔒 FLUXO ATIVO: BUSCA ORGÂNICA NO SITE (PRIORIDADE 3)
 ══════════════════════════════════════════════════════════════
 O visitante acessou o site sem um imóvel específico.
+Origem identificada: Busca orgânica no site
 
-REGRAS DESTE FLUXO:
+${availableProperties.length > 0 ? `
+📍 IMÓVEIS DISPONÍVEIS NO SISTEMA (${availableProperties.length} ativos):
+${propertiesListForGeneral}
+
+REGRAS DE BUSCA REAL:
+1️⃣ Quando o cliente perguntar sobre imóveis, CONSULTE APENAS esta lista
+2️⃣ Filtre de acordo com o tipo pedido (casa, apartamento, rural, etc.)
+3️⃣ Responda EXCLUSIVAMENTE com base nesses dados
+4️⃣ NÃO invente imóveis
+5️⃣ NÃO sugira imóveis fora desta lista
+
+SE HOUVER IMÓVEIS QUE ATENDEM:
+"[Nome do cliente], encontrei X imóveis anunciados que se encaixam no que você procura 😊
+Quer que eu te mostre agora ou prefere refinar um pouco mais?"
+
+SE NÃO HOUVER IMÓVEIS QUE ATENDEM:
+"[Nome do cliente], no momento no sistema não temos imóveis com esse perfil anunciado.
+Posso pedir para o nosso consultor verificar se tem algum em carteira disponível que não está aqui no site ainda e te ligar, tudo bem?"
+` : `
+⚠️ SEM IMÓVEIS NO MOMENTO:
+Não há imóveis ativos no sistema. Se o cliente perguntar:
+"No momento estamos atualizando nosso catálogo. 
+Posso anotar seu contato para que um de nossos consultores te ligue com as melhores opções disponíveis?"
+`}
+
+REGRAS GERAIS DESTE FLUXO:
 - Ajude-o a encontrar o imóvel ideal
 - Faça perguntas para entender o perfil
 - Região desejada, finalidade, prazo, faixa de valor
@@ -693,7 +823,7 @@ Posso te ajudar a encontrar um imóvel que combine com você?"`;
         messages: [
           { 
             role: "system", 
-            content: SYSTEM_PROMPT + propertyContext + openingInstruction
+            content: SYSTEM_PROMPT + nameContext + propertyContext + openingInstruction
           },
           ...messages,
         ],

@@ -116,6 +116,7 @@ interface RealEstateChatProps {
 
 const CHAT_URL = `https://ypkmorgcpooygsvhcpvo.supabase.co/functions/v1/real-estate-chat`;
 const LEAD_STORAGE_KEY = "supreme_chat_lead_id";
+const AUTO_OPEN_STORAGE_KEY = "supreme_chat_auto_opened";
 
 // Allowed file types
 const IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
@@ -174,13 +175,18 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
     }
   }, []);
 
-  // Auto-open chat after 7 seconds to increase engagement
+  // Auto-open chat apenas 1x na primeira visita (armazenado em localStorage)
   useEffect(() => {
-    const autoOpenTimer = setTimeout(() => {
-      setIsOpen(true);
-    }, 7000);
+    const hasAutoOpened = localStorage.getItem(AUTO_OPEN_STORAGE_KEY) === 'true';
     
-    return () => clearTimeout(autoOpenTimer);
+    if (!hasAutoOpened) {
+      const autoOpenTimer = setTimeout(() => {
+        setIsOpen(true);
+        localStorage.setItem(AUTO_OPEN_STORAGE_KEY, 'true');
+      }, 7000);
+      
+      return () => clearTimeout(autoOpenTimer);
+    }
   }, []);
 
   useEffect(() => {
@@ -868,7 +874,7 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
         onClick={() => setIsOpen(true)}
         className="fixed bottom-24 right-6 h-14 w-14 rounded-full shadow-lg z-[9999] bg-primary hover:bg-primary/90 animate-bounce"
         size="icon"
-        title="Atendimento Remoto"
+        title="Assistente Online"
       >
         <MessageCircle className="h-6 w-6" />
       </Button>
