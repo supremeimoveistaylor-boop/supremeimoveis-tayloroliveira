@@ -13,6 +13,7 @@
   var ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlwa21vcmdjcG9veWdzdmhjcHZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY5ODY1MjAsImV4cCI6MjA3MjU2MjUyMH0.A8MoJFe_ACtVDl7l0crAyU7ZxxOhdWJ8NShaqSHBxQc";
 
   var LEAD_STORAGE_KEY = "supreme_chat_lead_id";
+  var AUTO_OPEN_STORAGE_KEY = "supreme_chat_auto_opened";
 
   var state = {
     isOpen: false,
@@ -20,6 +21,9 @@
     hasStarted: false,
     messages: [], // { role: 'user'|'assistant', content: string }
     isLoading: false,
+    clientName: null, // Nome do cliente capturado
+    hasAskedName: false, // Se já perguntou o nome
+    userHasResponded: false, // Se o usuário já respondeu à primeira abordagem
   };
 
   function safeText(str) {
@@ -131,7 +135,7 @@
 
     var header = el('div', { class: 'hdr' },
       el('div', { class: 'ttl' },
-        el('strong', { text: CONFIG.title || 'Atendimento Remoto' }),
+        el('strong', { text: CONFIG.title || 'Assistente Online' }),
         el('span', { text: CONFIG.subtitle || 'Supreme Empreendimentos' })
       ),
       closeBtn
@@ -144,7 +148,7 @@
       el('div', { class: 'note', text: 'Ao enviar, você concorda em ser contatado por um especialista.' })
     );
 
-    var fab = el('button', { class: 'btn fab', type: 'button', 'aria-label': 'Abrir chat' },
+    var fab = el('button', { class: 'btn fab', type: 'button', 'aria-label': 'Assistente Online' },
       el('span', { text: '💬', style: 'font-size:22px' })
     );
 
@@ -167,7 +171,7 @@
     function open() {
       state.isOpen = true;
       panel.classList.add('open');
-      fab.setAttribute('aria-label', 'Chat aberto');
+      fab.setAttribute('aria-label', 'Assistente Online aberto');
       input.focus();
       if (!state.hasStarted) {
         startConversation();
@@ -177,7 +181,7 @@
     function close() {
       state.isOpen = false;
       panel.classList.remove('open');
-      fab.setAttribute('aria-label', 'Abrir chat');
+      fab.setAttribute('aria-label', 'Assistente Online');
     }
 
     async function startConversation() {
@@ -346,11 +350,22 @@
     mount.appendChild(fab);
     document.documentElement.appendChild(root);
 
-    // Auto open after 3 seconds (configurable)
-    var autoOpenMs = typeof CONFIG.autoOpenMs === 'number' ? CONFIG.autoOpenMs : 3000;
-    if (autoOpenMs > 0) {
+    // Auto open apenas 1x na primeira visita (armazenado em localStorage)
+    var autoOpenMs = typeof CONFIG.autoOpenMs === 'number' ? CONFIG.autoOpenMs : 7000;
+    var hasAutoOpened = false;
+    try {
+      hasAutoOpened = localStorage.getItem(AUTO_OPEN_STORAGE_KEY) === 'true';
+    } catch (_) {}
+
+    if (autoOpenMs > 0 && !hasAutoOpened) {
       setTimeout(function () {
-        if (!state.isOpen) open();
+        if (!state.isOpen) {
+          open();
+          // Marcar que já abriu automaticamente
+          try {
+            localStorage.setItem(AUTO_OPEN_STORAGE_KEY, 'true');
+          } catch (_) {}
+        }
       }, autoOpenMs);
     }
   }
