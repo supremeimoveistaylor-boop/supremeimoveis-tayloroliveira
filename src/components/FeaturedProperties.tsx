@@ -154,22 +154,47 @@ export const FeaturedProperties = ({ filterPurpose }: { filterPurpose?: 'sale' |
   const handleShare = async (propertyId: string, propertyTitle: string) => {
     const url = `${window.location.origin}/#/property/${propertyId}`;
     
-    // Abrir em nova aba
-    window.open(url, '_blank', 'noopener,noreferrer');
-    
     try {
-      // Também copiar para área de transferência
+      // Copiar para área de transferência primeiro
       await navigator.clipboard.writeText(url);
+      
       toast({
-        title: "Link aberto e copiado!",
-        description: "O imóvel foi aberto em nova aba e o link copiado.",
+        title: "Link copiado!",
+        description: `Link do imóvel "${propertyTitle}" copiado. Cole e envie para seus clientes!`,
       });
+      
+      // Abrir em nova aba usando link clicável (mais confiável)
+      const newWindow = window.open(url, '_blank');
+      if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+        // Pop-up bloqueado - apenas informar que o link foi copiado
+        toast({
+          title: "Link copiado com sucesso!",
+          description: "Cole o link (Ctrl+V) para compartilhar com seus clientes.",
+        });
+      }
     } catch (error) {
       console.error('Error copying link:', error);
-      toast({
-        title: "Link aberto!",
-        description: "O imóvel foi aberto em nova aba.",
-      });
+      // Fallback: criar elemento temporário para copiar
+      const textArea = document.createElement('textarea');
+      textArea.value = url;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        toast({
+          title: "Link copiado!",
+          description: `Cole o link para compartilhar: ${url}`,
+        });
+      } catch (e) {
+        toast({
+          title: "Link do imóvel",
+          description: url,
+          duration: 10000,
+        });
+      }
+      document.body.removeChild(textArea);
     }
   };
 
