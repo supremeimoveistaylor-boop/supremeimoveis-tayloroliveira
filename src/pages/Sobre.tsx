@@ -4,6 +4,7 @@ import { Footer } from "@/components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Shield, Users, Award, TrendingUp } from "lucide-react";
+import taylorPhoto from "@/assets/taylor-photo.png";
 
 const Sobre = () => {
   const features = [
@@ -40,6 +41,22 @@ const Sobre = () => {
             <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
               {/* Content */}
               <div className="text-center lg:text-left">
+                {/* Foto do Taylor - Mobile */}
+                <div className="lg:hidden flex justify-center mb-6">
+                  <div className="relative">
+                    <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-accent/30 shadow-xl">
+                      <img 
+                        src={taylorPhoto} 
+                        alt="Taylor Oliveira" 
+                        className="w-full h-full object-cover object-top"
+                      />
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-accent rounded-full flex items-center justify-center">
+                      <Award className="w-4 h-4 text-accent-foreground" />
+                    </div>
+                  </div>
+                </div>
+
                 <h1 className="text-3xl md:text-4xl font-bold text-white-soft mb-6">
                   Conheça <span className="text-accent">Taylor Oliveira</span>
                 </h1>
@@ -75,8 +92,26 @@ const Sobre = () => {
                 </Button>
               </div>
 
-              {/* Features Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-8 lg:mt-0">
+              {/* Right Column - Photo + Features */}
+              <div className="space-y-8 mt-8 lg:mt-0">
+                {/* Foto do Taylor - Desktop */}
+                <div className="hidden lg:flex justify-center">
+                  <div className="relative">
+                    <div className="w-48 h-48 rounded-full overflow-hidden border-4 border-accent/30 shadow-2xl">
+                      <img 
+                        src={taylorPhoto} 
+                        alt="Taylor Oliveira" 
+                        className="w-full h-full object-cover object-top"
+                      />
+                    </div>
+                    <div className="absolute -bottom-2 -right-2 w-12 h-12 bg-accent rounded-full flex items-center justify-center shadow-lg">
+                      <Award className="w-6 h-6 text-accent-foreground" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Features Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {features.map((feature, index) => (
                   <Card key={index} className="bg-white-soft/10 backdrop-blur-sm border-white-soft/20 hover:bg-white-soft/20 transition-all duration-300">
                     <CardContent className="p-6 text-center">
@@ -91,7 +126,8 @@ const Sobre = () => {
                       </p>
                     </CardContent>
                   </Card>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           </div>
