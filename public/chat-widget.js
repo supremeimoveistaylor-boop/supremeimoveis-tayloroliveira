@@ -136,8 +136,8 @@
     var header = el('div', { class: 'hdr' },
       el('div', { class: 'ttl' },
         el('div', { style: 'display:flex;align-items:center;gap:8px' },
-          el('div', { style: 'position:relative;width:32px;height:32px;background:rgba(255,255,255,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center' },
-            el('span', { text: 'S', style: 'font-size:14px;font-weight:bold' }),
+          el('div', { style: 'position:relative;width:32px;height:32px;background:#0f172a;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center' },
+            el('img', { src: '/images/chat-avatar.png', alt: 'Supreme', style: 'width:100%;height:100%;object-fit:contain' }),
             el('span', { style: 'position:absolute;bottom:-2px;right:-2px;width:10px;height:10px;background:#22c55e;border-radius:50%;border:2px solid ' + primary })
           ),
           el('div', {},
