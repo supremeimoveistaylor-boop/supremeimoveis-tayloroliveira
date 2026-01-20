@@ -903,13 +903,16 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
       {/* Header */}
       <div className="bg-primary text-primary-foreground p-4 rounded-t-2xl flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-primary-foreground/20 flex items-center justify-center">
+          <div className="relative w-10 h-10 rounded-full bg-primary-foreground/20 flex items-center justify-center">
             <span className="text-sm font-bold">S</span>
+            {/* Indicador Online Verde */}
+            <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-primary animate-pulse" />
           </div>
           <div>
-            <h3 className="font-semibold text-sm">Supreme Imóveis</h3>
-            <p className="text-xs opacity-80">
-              {isLoading ? "Digitando..." : isLoadingHistory ? "Carregando..." : hasHistory ? "Conversa retomada" : "Online"}
+            <h3 className="font-semibold text-sm">Assistente Online</h3>
+            <p className="text-xs opacity-80 flex items-center gap-1.5">
+              <span className="w-2 h-2 bg-green-400 rounded-full" />
+              {isLoading ? "Digitando..." : isLoadingHistory ? "Carregando..." : hasHistory ? "Conversa retomada" : "Online agora"}
             </p>
           </div>
         </div>
