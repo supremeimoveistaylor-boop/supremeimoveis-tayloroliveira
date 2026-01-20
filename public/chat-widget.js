@@ -135,8 +135,19 @@
 
     var header = el('div', { class: 'hdr' },
       el('div', { class: 'ttl' },
-        el('strong', { text: CONFIG.title || 'Assistente Online' }),
-        el('span', { text: CONFIG.subtitle || 'Supreme Empreendimentos' })
+        el('div', { style: 'display:flex;align-items:center;gap:8px' },
+          el('div', { style: 'position:relative;width:32px;height:32px;background:rgba(255,255,255,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center' },
+            el('span', { text: 'S', style: 'font-size:14px;font-weight:bold' }),
+            el('span', { style: 'position:absolute;bottom:-2px;right:-2px;width:10px;height:10px;background:#22c55e;border-radius:50%;border:2px solid ' + primary })
+          ),
+          el('div', {},
+            el('strong', { text: CONFIG.title || 'Assistente Online' }),
+            el('div', { style: 'display:flex;align-items:center;gap:4px;font-size:11px;opacity:0.8' },
+              el('span', { style: 'width:6px;height:6px;background:#4ade80;border-radius:50%' }),
+              el('span', { text: 'Online agora' })
+            )
+          )
+        )
       ),
       closeBtn
     );
