@@ -255,9 +255,11 @@ serve(async (req) => {
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
     // =====================================================
-    // GESTÃO DE LEAD
+    // GESTÃO DE LEAD - FONTE ÚNICA: leads_imobiliarios
     // =====================================================
     let currentLeadId = leadId;
+    let leadImobiliarioId: string | null = null;
+    
     if (!currentLeadId) {
       if (checkLeadCreationLimit(clientIp)) {
         console.warn(`Lead creation limit exceeded for IP: ${clientIp}`);
@@ -267,6 +269,17 @@ serve(async (req) => {
         );
       }
 
+      // Buscar atendente ativo para atribuição automática
+      const { data: activeAttendant } = await supabase
+        .from("chat_attendants")
+        .select("id, name, phone")
+        .eq("active", true)
+        .limit(1)
+        .single();
+      
+      console.log("Atendente ativo encontrado:", activeAttendant?.name || "Nenhum");
+
+      // 1. Criar lead na tabela leads (para compatibilidade com funções existentes)
       const { data: newLead, error: leadError } = await supabase
         .from("leads")
         .insert({
@@ -279,45 +292,60 @@ serve(async (req) => {
         .single();
 
       if (leadError) {
-        console.error("Erro ao criar lead:", leadError);
+        console.error("Erro ao criar lead (tabela leads):", leadError);
       } else {
         currentLeadId = newLead.id;
-        console.log("Lead criado:", currentLeadId);
+        console.log("Lead criado (tabela leads):", currentLeadId);
+      }
 
-        // Atribuir corretor
-        let assignedBrokerId: string | null = null;
+      // 2. CRIAR LEAD NA FONTE ÚNICA: leads_imobiliarios (OBRIGATÓRIO)
+      const { data: newLeadImobiliario, error: leadImobError } = await supabase
+        .from("leads_imobiliarios")
+        .insert({
+          nome: "Visitante do Chat",
+          telefone: "A definir",
+          origem: origin || "site",
+          pagina_origem: pageUrl || null,
+          status: "novo",
+          descricao: `Lead criado automaticamente via chat. Página: ${pageUrl || "Homepage"}`
+        })
+        .select()
+        .single();
+
+      if (leadImobError) {
+        console.error("Erro ao criar lead_imobiliario:", leadImobError);
+      } else {
+        leadImobiliarioId = newLeadImobiliario.id;
+        console.log("✅ Lead criado em leads_imobiliarios:", leadImobiliarioId);
+      }
+
+      // 3. Atribuir corretor usando RPC (mantém compatibilidade)
+      if (currentLeadId) {
         const { data: brokerId } = await supabase.rpc("assign_lead_to_broker", {
           p_lead_id: currentLeadId,
           p_property_id: propertyId || null
         });
-        assignedBrokerId = brokerId;
-        console.log("Corretor atribuído:", brokerId);
+        console.log("Corretor atribuído via RPC:", brokerId);
+      }
 
-        // Enviar WhatsApp ao corretor
-        if (assignedBrokerId) {
-          try {
-            const { data: broker } = await supabase
-              .from("brokers")
-              .select("id, name, whatsapp, phone")
-              .eq("id", assignedBrokerId)
+      // 4. Enviar WhatsApp ao atendente ativo
+      if (activeAttendant?.phone) {
+        try {
+          let propertyTitle = "Não especificado";
+          if (propertyId) {
+            const { data: property } = await supabase
+              .from("properties")
+              .select("title, location")
+              .eq("id", propertyId)
               .single();
+            if (property) {
+              propertyTitle = `${property.title}${property.location ? ` - ${property.location}` : ""}`;
+            }
+          }
 
-            if (broker?.whatsapp) {
-              let propertyTitle = "Não especificado";
-              if (propertyId) {
-                const { data: property } = await supabase
-                  .from("properties")
-                  .select("title, location")
-                  .eq("id", propertyId)
-                  .single();
-                if (property) {
-                  propertyTitle = `${property.title}${property.location ? ` - ${property.location}` : ""}`;
-                }
-              }
+          const whatsappMessage = `🏠 *Novo Lead - Supreme Empreendimentos*
 
-              const whatsappMessage = `🏠 *Novo Lead - Supreme Empreendimentos*
-
-Olá ${broker.name}! Você recebeu um novo lead.
+Olá ${activeAttendant.name}! Você recebeu um novo lead no chat.
 
 📍 *Imóvel:* ${propertyTitle}
 🌐 *Origem:* ${origin || "site"}
@@ -325,40 +353,31 @@ Olá ${broker.name}! Você recebeu um novo lead.
 
 Acesse o painel para mais detalhes.`;
 
-              const sendWhatsappUrl = `${SUPABASE_URL}/functions/v1/send-whatsapp`;
-              
-              const whatsappResponse = await fetch(sendWhatsappUrl, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  to: broker.whatsapp,
-                  message: whatsappMessage
-                })
-              });
+          const sendWhatsappUrl = `${SUPABASE_URL}/functions/v1/send-whatsapp`;
+          
+          const whatsappResponse = await fetch(sendWhatsappUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              to: activeAttendant.phone,
+              message: whatsappMessage
+            })
+          });
 
-              if (whatsappResponse.ok) {
-                console.log(`WhatsApp enviado para corretor ${broker.name}`);
-                await supabase
-                  .from("leads")
-                  .update({ 
-                    whatsapp_sent: true, 
-                    whatsapp_sent_at: new Date().toISOString() 
-                  })
-                  .eq("id", currentLeadId);
-              } else {
-                const errorData = await whatsappResponse.json();
-                console.error("Erro ao enviar WhatsApp:", errorData);
-              }
-            }
-          } catch (whatsappError) {
-            console.error("Erro ao processar envio de WhatsApp:", whatsappError);
+          if (whatsappResponse.ok) {
+            console.log(`✅ WhatsApp enviado para atendente ${activeAttendant.name}`);
+          } else {
+            const errorData = await whatsappResponse.json();
+            console.error("Erro ao enviar WhatsApp:", errorData);
           }
+        } catch (whatsappError) {
+          console.error("Erro ao processar envio de WhatsApp:", whatsappError);
         }
       }
     }
 
     // =====================================================
-    // SALVAR MENSAGEM E EXTRAIR DADOS
+    // SALVAR MENSAGEM E EXTRAIR DADOS - SINCRONIZAR leads_imobiliarios
     // =====================================================
     if (currentLeadId && messages.length > 0) {
       const lastUserMessage = messages[messages.length - 1];
@@ -380,6 +399,7 @@ Acesse o painel para mais detalhes.`;
         // Extrair informações do usuário
         const content = textContent.toLowerCase();
         const updates: Record<string, unknown> = {};
+        const imobUpdates: Record<string, unknown> = {}; // Para leads_imobiliarios
 
         // Extrair nome
         const namePatterns = [
@@ -392,7 +412,9 @@ Acesse o painel para mais detalhes.`;
         for (const pattern of namePatterns) {
           const match = textContent.match(pattern);
           if (match) {
-            updates.name = match[1].trim().substring(0, 100);
+            const extractedName = match[1].trim().substring(0, 100);
+            updates.name = extractedName;
+            imobUpdates.nome = extractedName;
             break;
           }
         }
@@ -401,14 +423,31 @@ Acesse o painel para mais detalhes.`;
         const phonePattern = /(\d{2}[\s.-]?\d{4,5}[\s.-]?\d{4})/;
         const phoneMatch = textContent.match(phonePattern);
         if (phoneMatch) {
-          updates.phone = phoneMatch[1].replace(/[\s.-]/g, "").substring(0, 20);
+          const extractedPhone = phoneMatch[1].replace(/[\s.-]/g, "").substring(0, 20);
+          updates.phone = extractedPhone;
+          imobUpdates.telefone = extractedPhone;
         }
 
-        // Extrair intenção
+        // Extrair intenção / finalidade
         if (content.includes("comprar") || content.includes("compra")) {
           updates.intent = "comprar";
+          imobUpdates.finalidade = "comprar";
         } else if (content.includes("alugar") || content.includes("aluguel") || content.includes("locação")) {
           updates.intent = "alugar";
+          imobUpdates.finalidade = "alugar";
+        }
+
+        // Extrair tipo de imóvel
+        if (content.includes("casa") || content.includes("casas")) {
+          imobUpdates.tipo_imovel = "casa";
+        } else if (content.includes("apartamento") || content.includes("apartamentos") || content.includes("apto")) {
+          imobUpdates.tipo_imovel = "apartamento";
+        } else if (content.includes("terreno") || content.includes("lote")) {
+          imobUpdates.tipo_imovel = "terreno";
+        } else if (content.includes("fazenda") || content.includes("chácara") || content.includes("sítio") || content.includes("rural")) {
+          imobUpdates.tipo_imovel = "rural";
+        } else if (content.includes("comercial") || content.includes("loja") || content.includes("sala")) {
+          imobUpdates.tipo_imovel = "comercial";
         }
 
         // Registrar conversões
@@ -423,10 +462,12 @@ Acesse o painel para mais detalhes.`;
           conversions.push({ type: "agendamento_solicitado" });
           updates.visit_requested = true;
           updates.status = "visita_solicitada";
+          imobUpdates.status = "visita_agendada";
         }
 
         if (phoneMatch) {
           conversions.push({ type: "telefone_coletado", metadata: { phone: updates.phone } });
+          imobUpdates.status = "em_atendimento";
         }
 
         if (updates.name) {
@@ -456,36 +497,63 @@ Acesse o painel para mais detalhes.`;
           }
         }
 
+        // Atualizar tabela leads (compatibilidade)
         if (Object.keys(updates).length > 0) {
           await supabase.from("leads").update(updates).eq("id", currentLeadId);
+        }
+
+        // =====================================================
+        // SINCRONIZAR leads_imobiliarios (FONTE ÚNICA)
+        // =====================================================
+        if (Object.keys(imobUpdates).length > 0) {
+          // Buscar lead_imobiliario mais recente com base na origem/página
+          const { data: recentImobLead } = await supabase
+            .from("leads_imobiliarios")
+            .select("id")
+            .eq("pagina_origem", pageUrl || "")
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .single();
           
-          // Enviar WhatsApp com dados atualizados do lead se capturou telefone
-          if (updates.phone || updates.name) {
+          if (recentImobLead) {
+            await supabase
+              .from("leads_imobiliarios")
+              .update(imobUpdates)
+              .eq("id", recentImobLead.id);
+            console.log(`✅ Lead imobiliário atualizado: ${recentImobLead.id}`, imobUpdates);
+          }
+          
+          // Enviar WhatsApp com dados completos se capturou nome E telefone
+          if (imobUpdates.nome && imobUpdates.telefone) {
             try {
-              const { data: lead } = await supabase
-                .from("leads")
-                .select("*, brokers(name, whatsapp)")
-                .eq("id", currentLeadId)
+              const { data: activeAttendant } = await supabase
+                .from("chat_attendants")
+                .select("id, name, phone")
+                .eq("active", true)
+                .limit(1)
                 .single();
               
-              if (lead?.brokers?.whatsapp) {
-                const leadMessage = `📱 *Atualização de Lead*
+              if (activeAttendant?.phone) {
+                const leadMessage = `📱 *Lead Qualificado - Chat*
 
-👤 *Nome:* ${lead.name || "Não informado"}
-📞 *Telefone:* ${lead.phone || "Não informado"}
-🎯 *Interesse:* ${lead.intent || "Não informado"}
+👤 *Nome:* ${imobUpdates.nome}
+📞 *Telefone:* ${imobUpdates.telefone}
+🏡 *Interesse:* ${imobUpdates.tipo_imovel || "Não especificado"}
+🎯 *Finalidade:* ${imobUpdates.finalidade || "Não informada"}
 
-Lead está interagindo no chat agora!`;
+Lead coletado agora via chat!
+Entre em contato o quanto antes.`;
 
                 const sendWhatsappUrl = `${SUPABASE_URL}/functions/v1/send-whatsapp`;
                 await fetch(sendWhatsappUrl, {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({
-                    to: lead.brokers.whatsapp,
+                    to: activeAttendant.phone,
                     message: leadMessage
                   })
                 });
+                console.log(`✅ WhatsApp com lead qualificado enviado para ${activeAttendant.name}`);
               }
             } catch (err) {
               console.error("Erro ao enviar atualização WhatsApp:", err);
