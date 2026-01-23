@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { 
   Bed, Bath, Car, MapPin, ArrowLeft, MessageCircle, 
-  Play, Share2, Home, Maximize, CheckCircle 
+  Play, Share2, Home, Maximize, CheckCircle, ExternalLink
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Header } from "@/components/Header";
@@ -36,6 +36,28 @@ interface Property {
   longitude?: number;
 }
 
+// Gera URL canônica pública para o imóvel
+const getCanonicalUrl = (propertyId: string): string => {
+  // URL pública sem hash para SEO e compartilhamento
+  const baseUrl = window.location.origin.replace('lovable.app', 'supremeempreendimentos.com');
+  return `${baseUrl}/imovel/${propertyId}`;
+};
+
+// Detecta se está em WebView/PWA
+const isWebView = (): boolean => {
+  const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
+  // iOS WebView
+  if (/iPhone|iPad|iPod/.test(userAgent) && !(window as any).MSStream) {
+    if (/(WebKit).*(?!.*Safari)/i.test(userAgent)) return true;
+  }
+  // Android WebView
+  if (/Android/.test(userAgent) && /wv|\.0\.0\.0/.test(userAgent)) return true;
+  // PWA standalone
+  if ((window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+      (window.navigator as any).standalone === true) return true;
+  return false;
+};
+
 const PropertyDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -43,6 +65,54 @@ const PropertyDetails = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+
+  // Atualizar URL na barra de endereços para ser compartilhável
+  useEffect(() => {
+    if (id && property) {
+      const canonicalUrl = getCanonicalUrl(id);
+      
+      // Atualizar meta tags dinâmicas para SEO
+      document.title = `${property.title} - Supreme Negócios Imobiliários`;
+      
+      // Canonical link
+      let canonicalLink = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;
+      if (!canonicalLink) {
+        canonicalLink = document.createElement('link');
+        canonicalLink.rel = 'canonical';
+        document.head.appendChild(canonicalLink);
+      }
+      canonicalLink.href = canonicalUrl;
+      
+      // Open Graph meta tags
+      const updateMetaTag = (property: string, content: string) => {
+        let meta = document.querySelector(`meta[property="${property}"]`) as HTMLMetaElement;
+        if (!meta) {
+          meta = document.createElement('meta');
+          meta.setAttribute('property', property);
+          document.head.appendChild(meta);
+        }
+        meta.content = content;
+      };
+      
+      updateMetaTag('og:title', property.title);
+      updateMetaTag('og:description', property.description || `Imóvel em ${property.location}`);
+      updateMetaTag('og:url', canonicalUrl);
+      if (property.images && property.images.length > 0) {
+        updateMetaTag('og:image', property.images[0]);
+      }
+      
+      // Atualizar URL visível sem recarregar (para PWA/WebView)
+      if (window.history && window.history.replaceState) {
+        const visibleUrl = `${window.location.origin}/#/property/${id}`;
+        window.history.replaceState({ propertyId: id }, property.title, visibleUrl);
+      }
+    }
+    
+    return () => {
+      // Restaurar título padrão ao sair
+      document.title = 'Supreme Negócios Imobiliários - Imóveis de Luxo e Alto Padrão em Goiânia';
+    };
+  }, [id, property]);
 
   useEffect(() => {
     if (id) {
@@ -150,28 +220,76 @@ const PropertyDetails = () => {
     return purpose === 'sale' ? 'Venda' : 'Aluguel';
   };
 
-  const handleShare = async () => {
+  // Compartilhamento nativo com Web Share API + fallback
+  const handleShare = useCallback(async () => {
     if (!property?.id) return;
-    const url = `${window.location.origin}/#/property/${property.id}`;
     
-    // Abrir em nova aba
-    window.open(url, '_blank', 'noopener,noreferrer');
+    const canonicalUrl = getCanonicalUrl(property.id);
+    const shareData = {
+      title: property.title,
+      text: `${property.title} - ${property.location}`,
+      url: canonicalUrl
+    };
     
-    try {
-      // Também copiar para área de transferência
-      await navigator.clipboard.writeText(url);
+    // Tenta usar Web Share API nativa (exibe a barra de compartilhamento do sistema)
+    if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+      try {
+        await navigator.share(shareData);
+        toast({
+          title: "Compartilhado!",
+          description: "Link do imóvel compartilhado com sucesso.",
+        });
+        return;
+      } catch (error: any) {
+        // Usuário cancelou ou erro - continua para fallback
+        if (error.name !== 'AbortError') {
+          console.warn('Web Share falhou:', error);
+        }
+      }
+    }
+    
+    // Fallback: Se está em WebView sem suporte a share, abre no navegador padrão
+    if (isWebView()) {
+      // Tenta abrir no navegador padrão do dispositivo
+      const intentUrl = `intent://${canonicalUrl.replace(/^https?:\/\//, '')}#Intent;scheme=https;end`;
+      const iosUrl = canonicalUrl;
+      
+      // iOS: usa window.open que geralmente abre no Safari
+      // Android: tenta intent URL
+      if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+        window.open(iosUrl, '_system');
+      } else {
+        // Tenta intent, se falhar usa window.open
+        try {
+          window.location.href = intentUrl;
+        } catch {
+          window.open(canonicalUrl, '_blank');
+        }
+      }
+      
       toast({
-        title: "Link aberto e copiado!",
-        description: "O imóvel foi aberto em nova aba e o link copiado.",
+        title: "Abrindo no navegador",
+        description: "O link será aberto no navegador para compartilhamento.",
+      });
+      return;
+    }
+    
+    // Fallback final: copiar para área de transferência
+    try {
+      await navigator.clipboard.writeText(canonicalUrl);
+      toast({
+        title: "Link copiado!",
+        description: "Cole o link para compartilhar: " + canonicalUrl.substring(0, 40) + "...",
       });
     } catch (error) {
-      console.error('Error copying link:', error);
+      // Último fallback: mostra o link para copiar manualmente
       toast({
-        title: "Link aberto!",
-        description: "O imóvel foi aberto em nova aba.",
+        title: "Copie o link:",
+        description: canonicalUrl,
+        duration: 10000,
       });
     }
-  };
+  }, [property]);
 
   if (isLoading) {
     return (
@@ -497,27 +615,28 @@ const PropertyDetails = () => {
                     )}
 
                     <Button 
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => {
-                        const url = `${window.location.origin}/#/property/${property.id}`;
-                        window.open(url, '_blank', 'noopener,noreferrer');
-                        navigator.clipboard.writeText(url).then(() => {
-                          toast({
-                            title: "Link copiado!",
-                            description: "O link foi aberto em nova aba e copiado.",
-                          });
-                        }).catch(() => {
-                          toast({
-                            title: "Link aberto!",
-                            description: "O link foi aberto em nova aba.",
-                          });
-                        });
-                      }}
+                      variant="default"
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                      onClick={handleShare}
                     >
                       <Share2 className="mr-2 h-4 w-4" />
                       Compartilhar
                     </Button>
+                    
+                    {/* Botão para abrir no navegador (útil em WebView) */}
+                    {isWebView() && (
+                      <Button 
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => {
+                          const canonicalUrl = getCanonicalUrl(property.id);
+                          window.open(canonicalUrl, '_system');
+                        }}
+                      >
+                        <ExternalLink className="mr-2 h-4 w-4" />
+                        Abrir no Navegador
+                      </Button>
+                    )}
                   </div>
 
                   <div className="mt-6 pt-6 border-t">
