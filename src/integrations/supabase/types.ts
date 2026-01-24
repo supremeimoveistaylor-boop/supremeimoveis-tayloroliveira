@@ -50,6 +50,88 @@ export type Database = {
         }
         Relationships: []
       }
+      channel_messages: {
+        Row: {
+          connection_id: string
+          contact_instagram_id: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          content: string | null
+          created_at: string
+          direction: string
+          error_message: string | null
+          id: string
+          lead_id: string | null
+          media_url: string | null
+          message_type: string | null
+          meta_conversation_id: string | null
+          meta_message_id: string | null
+          status: string | null
+          template_id: string | null
+          user_id: string
+        }
+        Insert: {
+          connection_id: string
+          contact_instagram_id?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          content?: string | null
+          created_at?: string
+          direction: string
+          error_message?: string | null
+          id?: string
+          lead_id?: string | null
+          media_url?: string | null
+          message_type?: string | null
+          meta_conversation_id?: string | null
+          meta_message_id?: string | null
+          status?: string | null
+          template_id?: string | null
+          user_id: string
+        }
+        Update: {
+          connection_id?: string
+          contact_instagram_id?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          content?: string | null
+          created_at?: string
+          direction?: string
+          error_message?: string | null
+          id?: string
+          lead_id?: string | null
+          media_url?: string | null
+          message_type?: string | null
+          meta_conversation_id?: string | null
+          meta_message_id?: string | null
+          status?: string | null
+          template_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "channel_messages_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "meta_channel_connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "channel_messages_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "channel_messages_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "message_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_attendants: {
         Row: {
           active: boolean
@@ -492,6 +574,131 @@ export type Database = {
         }
         Relationships: []
       }
+      message_templates: {
+        Row: {
+          body_text: string
+          category: string | null
+          channel_type: string
+          connection_id: string | null
+          created_at: string
+          footer_text: string | null
+          header_content: string | null
+          header_type: string | null
+          id: string
+          language: string | null
+          meta_status: string | null
+          meta_template_id: string | null
+          name: string
+          updated_at: string
+          user_id: string
+          variables: Json | null
+        }
+        Insert: {
+          body_text: string
+          category?: string | null
+          channel_type: string
+          connection_id?: string | null
+          created_at?: string
+          footer_text?: string | null
+          header_content?: string | null
+          header_type?: string | null
+          id?: string
+          language?: string | null
+          meta_status?: string | null
+          meta_template_id?: string | null
+          name: string
+          updated_at?: string
+          user_id: string
+          variables?: Json | null
+        }
+        Update: {
+          body_text?: string
+          category?: string | null
+          channel_type?: string
+          connection_id?: string | null
+          created_at?: string
+          footer_text?: string | null
+          header_content?: string | null
+          header_type?: string | null
+          id?: string
+          language?: string | null
+          meta_status?: string | null
+          meta_template_id?: string | null
+          name?: string
+          updated_at?: string
+          user_id?: string
+          variables?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_templates_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "meta_channel_connections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meta_channel_connections: {
+        Row: {
+          access_token_encrypted: string
+          account_name: string | null
+          channel_type: string
+          created_at: string
+          error_message: string | null
+          id: string
+          instagram_id: string | null
+          last_activity_at: string | null
+          meta_business_id: string | null
+          page_id: string | null
+          phone_number_id: string | null
+          status: string
+          token_expires_at: string | null
+          updated_at: string
+          user_id: string
+          webhook_registered: boolean | null
+          webhook_verify_token: string
+        }
+        Insert: {
+          access_token_encrypted: string
+          account_name?: string | null
+          channel_type: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          instagram_id?: string | null
+          last_activity_at?: string | null
+          meta_business_id?: string | null
+          page_id?: string | null
+          phone_number_id?: string | null
+          status?: string
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id: string
+          webhook_registered?: boolean | null
+          webhook_verify_token?: string
+        }
+        Update: {
+          access_token_encrypted?: string
+          account_name?: string | null
+          channel_type?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          instagram_id?: string | null
+          last_activity_at?: string | null
+          meta_business_id?: string | null
+          page_id?: string | null
+          phone_number_id?: string | null
+          status?: string
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id?: string
+          webhook_registered?: boolean | null
+          webhook_verify_token?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -644,6 +851,45 @@ export type Database = {
         }
         Relationships: []
       }
+      super_admin_logs: {
+        Row: {
+          action: string
+          admin_user_id: string
+          created_at: string
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          target_record_id: string | null
+          target_table: string | null
+          target_user_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          admin_user_id: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          target_record_id?: string | null
+          target_table?: string | null
+          target_user_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          admin_user_id?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          target_record_id?: string | null
+          target_table?: string | null
+          target_user_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           assigned_at: string
@@ -779,6 +1025,7 @@ export type Database = {
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_current_user_whitelisted: { Args: never; Returns: boolean }
       is_email_whitelisted: { Args: { user_email: string }; Returns: boolean }
+      is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       log_security_event: {
         Args: { event_details?: Json; event_type: string }
         Returns: undefined

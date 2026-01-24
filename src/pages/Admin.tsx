@@ -38,7 +38,7 @@ interface Profile {
   id: string;
   user_id: string;
   full_name: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'user' | 'super_admin';
   phone: string;
   created_at: string;
 }
@@ -106,7 +106,7 @@ const Admin = () => {
       const rolesMap = new Map(rolesData?.map(r => [r.user_id, r.role]) || []);
       const profilesWithRoles = (profilesData || []).map(profile => ({
         ...profile,
-        role: rolesMap.get(profile.user_id) || 'user' as 'admin' | 'user'
+        role: rolesMap.get(profile.user_id) || 'user' as 'admin' | 'user' | 'super_admin'
       }));
 
       setProfiles(profilesWithRoles);

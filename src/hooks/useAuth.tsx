@@ -11,6 +11,7 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   isAdmin: boolean;
+  isSuperAdmin: boolean;
   userRole: string | null;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
@@ -26,6 +27,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   useEffect(() => {
     // Set up auth state listener FIRST (no async in callback)
@@ -48,6 +50,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } else {
         setUserRole(null);
         setIsAdmin(false);
+        setIsSuperAdmin(false);
       }
 
       setLoading(false);
@@ -85,11 +88,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       // Default role is 'user' if not found (trigger should create it automatically)
       setUserRole(role || 'user');
-      setIsAdmin(role === 'admin');
+      setIsAdmin(role === 'admin' || role === 'super_admin');
+      setIsSuperAdmin(role === 'super_admin');
     } catch (error) {
       console.error('Error fetching user role:', error);
       setUserRole('user');
       setIsAdmin(false);
+      setIsSuperAdmin(false);
     }
   };
 
@@ -171,6 +176,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(null);
       setUserRole(null);
       setIsAdmin(false);
+      setIsSuperAdmin(false);
       
       toast({
         title: "Logout realizado",
@@ -207,6 +213,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     session,
     loading,
     isAdmin,
+    isSuperAdmin,
     userRole,
     signIn,
     signUp,

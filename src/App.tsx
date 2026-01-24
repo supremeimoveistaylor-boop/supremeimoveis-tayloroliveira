@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { HashRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Comprar from "./pages/Comprar";
@@ -20,6 +20,8 @@ import Admin from "./pages/Admin";
 import PropertyDetails from "./pages/PropertyDetails";
 import LeadsManagement from "./pages/LeadsManagement";
 import SearchResults from "./pages/SearchResults";
+import SuperAdminLogin from "./pages/SuperAdminLogin";
+import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import NotFound from "./pages/NotFound";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ExitPopup } from "@/components/ExitPopup";
@@ -54,6 +56,11 @@ const App = () => (
                 <Route path="/admin" element={<Admin />} />
                 <Route path="/leads" element={<LeadsManagement />} />
                 <Route path="/property/:id" element={<PropertyDetails />} />
+                {/* SEO-friendly route for properties */}
+                <Route path="/imovel/:id" element={<PropertyDetails />} />
+                {/* Super Admin routes */}
+                <Route path="/admin-master-login" element={<SuperAdminLogin />} />
+                <Route path="/super-admin" element={<SuperAdminDashboard />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
