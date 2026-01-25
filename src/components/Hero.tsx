@@ -46,7 +46,10 @@ export const Hero = () => {
   };
 
   const handlePropertyTypeClick = (type: string) => {
-    setPropertyType(propertyType === type ? "" : type);
+    // Navigate directly to search with the selected type
+    const params = new URLSearchParams();
+    params.set("tipo", type);
+    goToSearch(params);
   };
 
   return (
