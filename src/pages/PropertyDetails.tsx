@@ -66,13 +66,36 @@ const PropertyDetails = () => {
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
-  // Atualizar URL na barra de endereços para ser compartilhável
+  // Atualizar meta tags dinâmicas para SEO completo
   useEffect(() => {
     if (id && property) {
       const canonicalUrl = getCanonicalUrl(id);
+      const priceFormatted = formatPrice(property.price, property.purpose);
+      const propertyTypeTranslated = translatePropertyType(property.property_type);
+      const purposeTranslated = translatePurpose(property.purpose);
       
-      // Atualizar meta tags dinâmicas para SEO
-      document.title = `${property.title} - Supreme Negócios Imobiliários`;
+      // Título otimizado para SEO
+      const seoTitle = `${property.title} | ${propertyTypeTranslated} para ${purposeTranslated} em ${property.location} - Supreme`;
+      document.title = seoTitle.length > 60 ? `${property.title} - Supreme Negócios Imobiliários` : seoTitle;
+      
+      // Descrição otimizada para SEO (máx 160 chars)
+      const seoDescription = property.description 
+        ? property.description.substring(0, 150) + (property.description.length > 150 ? '...' : '')
+        : `${propertyTypeTranslated} para ${purposeTranslated.toLowerCase()} em ${property.location}. ${property.bedrooms || 0} quartos, ${property.bathrooms || 0} banheiros, ${property.area || 0}m². ${priceFormatted}. Entre em contato!`;
+      
+      // Helper para atualizar/criar meta tags
+      const updateMetaTag = (attr: 'property' | 'name', key: string, content: string) => {
+        let meta = document.querySelector(`meta[${attr}="${key}"]`) as HTMLMetaElement;
+        if (!meta) {
+          meta = document.createElement('meta');
+          meta.setAttribute(attr, key);
+          document.head.appendChild(meta);
+        }
+        meta.content = content;
+      };
+      
+      // Meta description
+      updateMetaTag('name', 'description', seoDescription);
       
       // Canonical link
       let canonicalLink = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;
@@ -84,26 +107,88 @@ const PropertyDetails = () => {
       canonicalLink.href = canonicalUrl;
       
       // Open Graph meta tags
-      const updateMetaTag = (property: string, content: string) => {
-        let meta = document.querySelector(`meta[property="${property}"]`) as HTMLMetaElement;
-        if (!meta) {
-          meta = document.createElement('meta');
-          meta.setAttribute('property', property);
-          document.head.appendChild(meta);
+      updateMetaTag('property', 'og:title', property.title);
+      updateMetaTag('property', 'og:description', seoDescription);
+      updateMetaTag('property', 'og:url', canonicalUrl);
+      updateMetaTag('property', 'og:type', 'website');
+      updateMetaTag('property', 'og:site_name', 'Supreme Negócios Imobiliários');
+      updateMetaTag('property', 'og:locale', 'pt_BR');
+      
+      if (property.images && property.images.length > 0) {
+        updateMetaTag('property', 'og:image', property.images[0]);
+        updateMetaTag('property', 'og:image:alt', property.title);
+        updateMetaTag('property', 'og:image:width', '1200');
+        updateMetaTag('property', 'og:image:height', '630');
+      }
+      
+      // Twitter Card meta tags
+      updateMetaTag('name', 'twitter:card', 'summary_large_image');
+      updateMetaTag('name', 'twitter:title', property.title);
+      updateMetaTag('name', 'twitter:description', seoDescription);
+      if (property.images && property.images.length > 0) {
+        updateMetaTag('name', 'twitter:image', property.images[0]);
+      }
+      
+      // JSON-LD Schema para RealEstateListing (SEO estruturado)
+      let jsonLdScript = document.querySelector('script[data-schema="property"]') as HTMLScriptElement;
+      if (!jsonLdScript) {
+        jsonLdScript = document.createElement('script');
+        jsonLdScript.type = 'application/ld+json';
+        jsonLdScript.setAttribute('data-schema', 'property');
+        document.head.appendChild(jsonLdScript);
+      }
+      
+      const schemaData = {
+        "@context": "https://schema.org",
+        "@type": "RealEstateListing",
+        "name": property.title,
+        "description": property.description || seoDescription,
+        "url": canonicalUrl,
+        "image": property.images && property.images.length > 0 ? property.images : undefined,
+        "offers": {
+          "@type": "Offer",
+          "price": property.price,
+          "priceCurrency": "BRL",
+          "availability": property.listing_status === 'sold' || property.listing_status === 'rented' 
+            ? "https://schema.org/SoldOut" 
+            : "https://schema.org/InStock"
+        },
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": property.location,
+          "addressRegion": "GO",
+          "addressCountry": "BR"
+        },
+        ...(property.latitude && property.longitude ? {
+          "geo": {
+            "@type": "GeoCoordinates",
+            "latitude": property.latitude,
+            "longitude": property.longitude
+          }
+        } : {}),
+        "numberOfRooms": property.bedrooms || undefined,
+        "numberOfBathroomsTotal": property.bathrooms || undefined,
+        "floorSize": property.area ? {
+          "@type": "QuantitativeValue",
+          "value": property.area,
+          "unitCode": "MTK"
+        } : undefined,
+        "amenityFeature": property.amenities?.map(amenity => ({
+          "@type": "LocationFeatureSpecification",
+          "name": amenity
+        })),
+        "seller": {
+          "@type": "RealEstateAgent",
+          "name": "Supreme Negócios Imobiliários",
+          "url": "https://supremeempreendimentos.com"
         }
-        meta.content = content;
       };
       
-      updateMetaTag('og:title', property.title);
-      updateMetaTag('og:description', property.description || `Imóvel em ${property.location}`);
-      updateMetaTag('og:url', canonicalUrl);
-      if (property.images && property.images.length > 0) {
-        updateMetaTag('og:image', property.images[0]);
-      }
+      jsonLdScript.textContent = JSON.stringify(schemaData);
       
       // Atualizar URL visível sem recarregar (para PWA/WebView)
       if (window.history && window.history.replaceState) {
-        const visibleUrl = `${window.location.origin}/#/property/${id}`;
+        const visibleUrl = `${window.location.origin}/#/imovel/${id}`;
         window.history.replaceState({ propertyId: id }, property.title, visibleUrl);
       }
     }
@@ -111,6 +196,12 @@ const PropertyDetails = () => {
     return () => {
       // Restaurar título padrão ao sair
       document.title = 'Supreme Negócios Imobiliários - Imóveis de Luxo e Alto Padrão em Goiânia';
+      
+      // Remover JSON-LD schema ao sair
+      const jsonLdScript = document.querySelector('script[data-schema="property"]');
+      if (jsonLdScript) {
+        jsonLdScript.remove();
+      }
     };
   }, [id, property]);
 
