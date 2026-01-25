@@ -12,6 +12,7 @@ import { toast } from "@/hooks/use-toast";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { ImageModal } from "@/components/ImageModal";
+import { Breadcrumbs, BreadcrumbItem } from "@/components/Breadcrumbs";
 
 interface Property {
   id: string;
@@ -415,20 +416,54 @@ const PropertyDetails = () => {
     );
   }
 
+  // Generate breadcrumb items based on property data
+  const getBreadcrumbItems = (): BreadcrumbItem[] => {
+    const items: BreadcrumbItem[] = [];
+    
+    // Add category based on purpose
+    if (property.purpose === 'sale') {
+      items.push({ label: 'Comprar', href: '/comprar' });
+    } else if (property.purpose === 'rent') {
+      items.push({ label: 'Alugar', href: '/alugar' });
+    }
+    
+    // Add property type if applicable
+    const propertyTypeLabel = translatePropertyType(property.property_type);
+    if (property.property_type === 'land' || property.property_type === 'rural') {
+      items.push({ label: 'Rurais', href: '/rurais' });
+    } else {
+      items.push({ label: propertyTypeLabel });
+    }
+    
+    // Add location
+    if (property.location) {
+      items.push({ label: property.location });
+    }
+    
+    // Current page (no link)
+    items.push({ label: property.title });
+    
+    return items;
+  };
+
   return (
     <>
       <Header />
       <main className="min-h-screen bg-white-soft py-8">
         <div className="container mx-auto px-4">
-          {/* Back Button */}
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate('/')}
-            className="mb-6"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Voltar
-          </Button>
+          {/* Breadcrumbs Navigation */}
+          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <Breadcrumbs items={getBreadcrumbItems()} />
+            <Button 
+              variant="ghost" 
+              onClick={() => navigate(-1)}
+              className="self-start sm:self-auto"
+              size="sm"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Voltar
+            </Button>
+          </div>
 
           {/* Images Gallery */}
           <div className="mb-8">
