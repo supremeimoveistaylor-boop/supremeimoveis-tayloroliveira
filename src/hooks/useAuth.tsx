@@ -73,23 +73,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserRole = async (userId: string) => {
     try {
-      // Query the new user_roles table instead of profiles
+      // A user may have multiple roles (e.g. admin + super_admin). Fetch all and compute highest.
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', userId)
-        .maybeSingle();
+        .eq('user_id', userId);
 
       if (error) {
         console.warn('Error fetching user role:', error.message);
       }
 
-      const role = data?.role as string | null;
+      const roles = (data ?? []).map((r) => String((r as any).role));
+      const isSuper = roles.includes('super_admin');
+      const isAdm = isSuper || roles.includes('admin');
+      const effectiveRole = isSuper ? 'super_admin' : isAdm ? 'admin' : 'user';
 
       // Default role is 'user' if not found (trigger should create it automatically)
-      setUserRole(role || 'user');
-      setIsAdmin(role === 'admin' || role === 'super_admin');
-      setIsSuperAdmin(role === 'super_admin');
+      setUserRole(effectiveRole);
+      setIsAdmin(isAdm);
+      setIsSuperAdmin(isSuper);
     } catch (error) {
       console.error('Error fetching user role:', error);
       setUserRole('user');
