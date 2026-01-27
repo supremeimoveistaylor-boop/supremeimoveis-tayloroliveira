@@ -23,15 +23,18 @@ const SuperAdminLogin = () => {
     const checkExistingSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user?.email?.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase()) {
-        const { data: roleData } = await supabase
+        const { data: rolesData, error: rolesError } = await supabase
           .from("user_roles")
           .select("role")
-          .eq("user_id", session.user.id)
-          .maybeSingle();
-        
-        if (roleData?.role === "super_admin") {
-          navigate("/super-admin");
+          .eq("user_id", session.user.id);
+
+        if (rolesError) {
+          console.error("Error checking roles:", rolesError);
+          return;
         }
+
+        const roles = (rolesData ?? []).map((r) => r.role);
+        if (roles.includes("super_admin")) navigate("/super-admin");
       }
     };
     checkExistingSession();
@@ -69,11 +72,10 @@ const SuperAdminLogin = () => {
       }
 
       // Check if user has super_admin role
-      const { data: roleData, error: roleError } = await supabase
+      const { data: rolesData, error: roleError } = await supabase
         .from("user_roles")
         .select("role")
-        .eq("user_id", authData.user.id)
-        .maybeSingle();
+        .eq("user_id", authData.user.id);
 
       if (roleError) {
         console.error("Error checking role:", roleError);
@@ -87,7 +89,8 @@ const SuperAdminLogin = () => {
         return;
       }
 
-      if (roleData?.role !== "super_admin") {
+      const roles = (rolesData ?? []).map((r) => r.role);
+      if (!roles.includes("super_admin")) {
         await supabase.auth.signOut();
         toast({
           title: "Acesso Negado",
