@@ -8,8 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Shield, Eye, EyeOff, AlertTriangle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
-// Email autorizado para Super Admin
-const SUPER_ADMIN_EMAIL = "supremeimoveis.taylor@gmail.com";
+// Access is granted by role (super_admin) stored in user_roles.
 
 const SuperAdminLogin = () => {
   const navigate = useNavigate();
@@ -22,20 +21,20 @@ const SuperAdminLogin = () => {
   useEffect(() => {
     const checkExistingSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user?.email?.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase()) {
-        const { data: rolesData, error: rolesError } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", session.user.id);
+      if (!session?.user) return;
 
-        if (rolesError) {
-          console.error("Error checking roles:", rolesError);
-          return;
-        }
+      const { data: rolesData, error: rolesError } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", session.user.id);
 
-        const roles = (rolesData ?? []).map((r) => r.role);
-        if (roles.includes("super_admin")) navigate("/super-admin");
+      if (rolesError) {
+        console.error("Error checking roles:", rolesError);
+        return;
       }
+
+      const roles = (rolesData ?? []).map((r) => r.role);
+      if (roles.includes("super_admin")) navigate("/super-admin");
     };
     checkExistingSession();
   }, [navigate]);
@@ -189,6 +188,16 @@ const SuperAdminLogin = () => {
             >
               {isLoading ? "Verificando..." : "Acessar Painel Master"}
             </Button>
+
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => navigate("/auth")}
+                className="text-sm text-slate-300 hover:text-white underline underline-offset-4"
+              >
+                Esqueci minha senha / Recuperar acesso
+              </button>
+            </div>
           </form>
         </CardContent>
       </Card>
