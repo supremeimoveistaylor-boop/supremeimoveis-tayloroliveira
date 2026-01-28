@@ -56,22 +56,65 @@ const SuperAdminDashboard = () => {
   const [connections, setConnections] = useState<ChannelConnection[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
+  const [serverValidated, setServerValidated] = useState(false);
+  const [validationFailed, setValidationFailed] = useState(false);
 
+  // Server-side validation via RPC before rendering
   useEffect(() => {
-    if (!loading && (!user || userRole !== "super_admin")) {
-      toast({
-        title: "Acesso Negado",
-        description: "Você não tem permissão para acessar este painel.",
-        variant: "destructive",
-      });
-      navigate("/admin-master-login");
-      return;
-    }
+    const validateServerSide = async () => {
+      if (loading) return;
+      
+      if (!user) {
+        navigate("/admin-master-login");
+        return;
+      }
 
-    if (user && userRole === "super_admin") {
-      fetchDashboardData();
-    }
-  }, [user, userRole, loading, navigate]);
+      try {
+        // Call server-side RPC to validate super_admin role
+        const { data: isSuperAdmin, error } = await supabase.rpc('is_super_admin', {
+          _user_id: user.id
+        });
+
+        if (error) {
+          console.error("Server validation error:", error);
+          throw error;
+        }
+
+        if (!isSuperAdmin) {
+          toast({
+            title: "Acesso Negado",
+            description: "Validação server-side falhou. Você não tem permissão.",
+            variant: "destructive",
+          });
+          setValidationFailed(true);
+          
+          // Log unauthorized access attempt
+          await supabase.from("super_admin_logs").insert({
+            admin_user_id: user.id,
+            action: "UNAUTHORIZED_ACCESS_ATTEMPT",
+            metadata: { email: user.email, client_role: userRole },
+          });
+          
+          navigate("/admin-master-login");
+          return;
+        }
+
+        setServerValidated(true);
+        fetchDashboardData();
+      } catch (error) {
+        console.error("Validation error:", error);
+        toast({
+          title: "Erro de Validação",
+          description: "Não foi possível validar suas permissões.",
+          variant: "destructive",
+        });
+        setValidationFailed(true);
+        navigate("/admin-master-login");
+      }
+    };
+
+    validateServerSide();
+  }, [user, loading, navigate]);
 
   const fetchDashboardData = async () => {
     setIsLoading(true);
@@ -160,10 +203,16 @@ const SuperAdminDashboard = () => {
     }
   };
 
-  if (loading || isLoading) {
+  // Block rendering until server-side validation completes
+  if (loading || !serverValidated || validationFailed) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-        <RefreshCw className="w-8 h-8 text-amber-500 animate-spin" />
+        <div className="text-center">
+          <RefreshCw className="w-8 h-8 text-amber-500 animate-spin mx-auto mb-4" />
+          <p className="text-slate-400 text-sm">
+            {validationFailed ? "Acesso negado..." : "Validando permissões..."}
+          </p>
+        </div>
       </div>
     );
   }
