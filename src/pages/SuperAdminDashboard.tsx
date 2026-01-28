@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SuperAdminUsersPanel } from "@/components/admin/SuperAdminUsersPanel";
 import { 
   Shield, 
   Users, 
@@ -380,63 +381,7 @@ const SuperAdminDashboard = () => {
 
           {/* Users Tab */}
           <TabsContent value="users" className="space-y-4">
-            <Card className="bg-slate-800/50 border-slate-700">
-              <CardHeader>
-                <CardTitle className="text-white">Gerenciamento de Roles</CardTitle>
-                <CardDescription className="text-slate-400">
-                  Visualize e gerencie roles de usuários
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-slate-700">
-                      <TableHead className="text-slate-300">User ID</TableHead>
-                      <TableHead className="text-slate-300">Role</TableHead>
-                      <TableHead className="text-slate-300">Atribuído em</TableHead>
-                      <TableHead className="text-slate-300">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {userRoles.map((role) => (
-                      <TableRow key={role.id} className="border-slate-700">
-                        <TableCell className="text-slate-300 font-mono text-xs">
-                          {role.user_id.slice(0, 8)}...
-                        </TableCell>
-                        <TableCell>
-                          <Badge 
-                            className={
-                              role.role === "super_admin" 
-                                ? "bg-amber-500/20 text-amber-400 border-amber-500/50" 
-                                : role.role === "admin"
-                                ? "bg-blue-500/20 text-blue-400 border-blue-500/50"
-                                : "bg-slate-500/20 text-slate-400 border-slate-500/50"
-                            }
-                          >
-                            {role.role}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-slate-300">
-                          {new Date(role.assigned_at).toLocaleString("pt-BR")}
-                        </TableCell>
-                        <TableCell>
-                          {role.role !== "super_admin" && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handlePromoteToSuperAdmin(role.user_id)}
-                              className="border-amber-500/50 text-amber-400 hover:bg-amber-500/20"
-                            >
-                              Promover
-                            </Button>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+            <SuperAdminUsersPanel currentUserId={user!.id} />
           </TabsContent>
 
           {/* Connections Tab */}
