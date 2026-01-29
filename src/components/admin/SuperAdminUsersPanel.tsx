@@ -77,6 +77,10 @@ export const SuperAdminUsersPanel = ({ currentUserId }: SuperAdminUsersPanelProp
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   
+  // Filter states
+  const [roleFilter, setRoleFilter] = useState<"all" | "user" | "admin" | "super_admin" | "no_roles">("all");
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
+  
   // Dialog states
   const [showAddRoleDialog, setShowAddRoleDialog] = useState(false);
   const [showRemoveRoleDialog, setShowRemoveRoleDialog] = useState(false);
