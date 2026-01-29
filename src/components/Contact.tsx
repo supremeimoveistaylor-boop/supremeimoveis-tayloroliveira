@@ -280,44 +280,7 @@ export const Contact = () => {
               </Card>
             )}
 
-            {/* Advertise Property Form */}
-            <Card className="shadow-lg border-0 bg-accent/5">
-              <CardHeader>
-                <CardTitle className="text-primary">Quero Anunciar meu Imóvel</CardTitle>
-                <p className="text-muted-foreground">
-                  Avaliação gratuita e publicidade profissional
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <Input placeholder="Seu nome completo" />
-                  <Input placeholder="Seu telefone" />
-                </div>
-                <Input placeholder="Seu e-mail" />
-                
-                <div className="grid md:grid-cols-2 gap-4">
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Tipo do imóvel" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="casa">Casa</SelectItem>
-                      <SelectItem value="apartamento">Apartamento</SelectItem>
-                      <SelectItem value="rural">Propriedade Rural</SelectItem>
-                      <SelectItem value="terreno">Terreno</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  
-                  <Input placeholder="Localização do imóvel" />
-                </div>
-
-                <Textarea placeholder="Descreva seu imóvel (características, valor desejado, motivo da venda...)" rows={4} />
-                
-                <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90 font-semibold">
-                  Solicitar Avaliação Gratuita
-                </Button>
-              </CardContent>
-            </Card>
+            {/* Removed: Quero Anunciar meu Imóvel - Replaced by Financing Simulator */}
           </div>
         </div>
       </div>
