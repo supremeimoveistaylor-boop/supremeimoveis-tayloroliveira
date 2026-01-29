@@ -30,7 +30,11 @@ import {
   Plus, 
   Trash2, 
   Search,
-  RefreshCw
+  RefreshCw,
+  Filter,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
@@ -279,14 +283,29 @@ export const SuperAdminUsersPanel = ({ currentUserId }: SuperAdminUsersPanelProp
     setShowRemoveRoleDialog(true);
   };
 
-  const filteredUsers = users.filter((user) => {
-    const search = searchTerm.toLowerCase();
-    return (
-      user.user_id.toLowerCase().includes(search) ||
-      user.full_name?.toLowerCase().includes(search) ||
-      user.roles.some((r) => r.toLowerCase().includes(search))
-    );
-  });
+  const filteredUsers = users
+    .filter((user) => {
+      const search = searchTerm.toLowerCase();
+      const matchesSearch = 
+        user.user_id.toLowerCase().includes(search) ||
+        user.full_name?.toLowerCase().includes(search) ||
+        user.roles.some((r) => r.toLowerCase().includes(search));
+      
+      // Filter by role
+      let matchesRole = true;
+      if (roleFilter === "no_roles") {
+        matchesRole = user.roles.length === 0;
+      } else if (roleFilter !== "all") {
+        matchesRole = user.roles.includes(roleFilter);
+      }
+      
+      return matchesSearch && matchesRole;
+    })
+    .sort((a, b) => {
+      const dateA = new Date(a.created_at).getTime();
+      const dateB = new Date(b.created_at).getTime();
+      return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
+    });
 
   const getAvailableRoles = (user: UserWithRoles): ("user" | "admin" | "super_admin")[] => {
     const allRoles: ("user" | "admin" | "super_admin")[] = ["user", "admin", "super_admin"];
@@ -327,15 +346,71 @@ export const SuperAdminUsersPanel = ({ currentUserId }: SuperAdminUsersPanelProp
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <Input
-              placeholder="Buscar por ID, nome ou role..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400"
-            />
+          {/* Search and Filters */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Input
+                placeholder="Buscar por ID, nome ou role..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400"
+              />
+            </div>
+            
+            {/* Role Filter */}
+            <Select value={roleFilter} onValueChange={(val) => setRoleFilter(val as typeof roleFilter)}>
+              <SelectTrigger className="w-full sm:w-[180px] bg-slate-700/50 border-slate-600 text-white">
+                <Filter className="w-4 h-4 mr-2 text-slate-400" />
+                <SelectValue placeholder="Filtrar por role" />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-700 border-slate-600">
+                <SelectItem value="all" className="text-white focus:bg-slate-600">
+                  <span className="flex items-center gap-2">Todas as roles</span>
+                </SelectItem>
+                <SelectItem value="super_admin" className="text-white focus:bg-slate-600">
+                  <span className="flex items-center gap-2">
+                    <ShieldCheck className="w-3 h-3 text-amber-400" />
+                    Super Admin
+                  </span>
+                </SelectItem>
+                <SelectItem value="admin" className="text-white focus:bg-slate-600">
+                  <span className="flex items-center gap-2">
+                    <Shield className="w-3 h-3 text-blue-400" />
+                    Admin
+                  </span>
+                </SelectItem>
+                <SelectItem value="user" className="text-white focus:bg-slate-600">
+                  <span className="flex items-center gap-2">
+                    <User className="w-3 h-3 text-slate-400" />
+                    Usuário
+                  </span>
+                </SelectItem>
+                <SelectItem value="no_roles" className="text-white focus:bg-slate-600">
+                  <span className="text-slate-400">Sem roles</span>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            
+            {/* Sort Order */}
+            <Button
+              variant="outline"
+              size="default"
+              onClick={() => setSortOrder(sortOrder === "newest" ? "oldest" : "newest")}
+              className="border-slate-600 text-slate-300 hover:bg-slate-700 w-full sm:w-auto"
+            >
+              {sortOrder === "newest" ? (
+                <>
+                  <ArrowDown className="w-4 h-4 mr-2" />
+                  Mais recentes
+                </>
+              ) : (
+                <>
+                  <ArrowUp className="w-4 h-4 mr-2" />
+                  Mais antigos
+                </>
+              )}
+            </Button>
           </div>
 
           {/* Stats */}
