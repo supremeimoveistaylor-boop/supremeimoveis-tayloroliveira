@@ -5,6 +5,7 @@ import { PropertyMap } from "@/components/PropertyMap";
 import { About } from "@/components/About";
 import { Contact } from "@/components/Contact";
 import { Footer } from "@/components/Footer";
+import { FinancingSection } from "@/components/financing";
 
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -97,6 +98,9 @@ const Index = () => {
           </div>
         </section>
       )}
+      
+      {/* Financing Simulator Section */}
+      <FinancingSection />
       
       <About />
       <Contact />

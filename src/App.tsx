@@ -22,6 +22,7 @@ import LeadsManagement from "./pages/LeadsManagement";
 import SearchResults from "./pages/SearchResults";
 import SuperAdminLogin from "./pages/SuperAdminLogin";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
+import FinancingAdmin from "./pages/FinancingAdmin";
 import NotFound from "./pages/NotFound";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ExitPopup } from "@/components/ExitPopup";
@@ -61,6 +62,8 @@ const App = () => (
                 {/* Super Admin routes */}
                 <Route path="/admin-master-login" element={<SuperAdminLogin />} />
                 <Route path="/super-admin" element={<SuperAdminDashboard />} />
+                {/* Financing Admin */}
+                <Route path="/financing-admin" element={<FinancingAdmin />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
