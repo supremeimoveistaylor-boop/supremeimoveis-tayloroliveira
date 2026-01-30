@@ -104,6 +104,7 @@ export const FinancingSection = () => {
         <FinancingUserModal 
           open={showModal} 
           onSuccess={handleUserSuccess}
+          onClose={() => setShowModal(false)}
         />
       </div>
     </section>

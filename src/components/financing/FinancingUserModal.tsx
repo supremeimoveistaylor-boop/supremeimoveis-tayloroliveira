@@ -16,6 +16,7 @@ import { toast } from "@/hooks/use-toast";
 interface FinancingUserModalProps {
   open: boolean;
   onSuccess: (userId: string, userData: UserData) => void;
+  onClose?: () => void;
 }
 
 export interface UserData {
@@ -28,7 +29,7 @@ export interface UserData {
 
 const API_BASE_URL = "https://SEUDOMINIO.com/api";
 
-export const FinancingUserModal = ({ open, onSuccess }: FinancingUserModalProps) => {
+export const FinancingUserModal = ({ open, onSuccess, onClose }: FinancingUserModalProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     nome: "",
@@ -100,9 +101,15 @@ export const FinancingUserModal = ({ open, onSuccess }: FinancingUserModalProps)
     }
   };
 
+  const handleOpenChange = (isOpen: boolean) => {
+    if (!isOpen && onClose) {
+      onClose();
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent className="sm:max-w-md bg-card border-border" onPointerDownOutside={(e) => e.preventDefault()}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="sm:max-w-md bg-card border-border">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-center flex items-center justify-center gap-2">
             <Building2 className="h-6 w-6 text-accent" />
