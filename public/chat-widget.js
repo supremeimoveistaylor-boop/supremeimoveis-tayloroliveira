@@ -9,28 +9,39 @@
 (function () {
   var CONFIG = (window.chatConfig && typeof window.chatConfig === 'object') ? window.chatConfig : {};
 
-  var CHAT_URL = "https://ypkmorgcpooygsvhcpvo.supabase.co/functions/v1/real-estate-chat";
+  var SUPABASE_URL = "https://ypkmorgcpooygsvhcpvo.supabase.co";
+  var CHAT_URL = SUPABASE_URL + "/functions/v1/real-estate-chat";
   var ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlwa21vcmdjcG9veWdzdmhjcHZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY5ODY1MjAsImV4cCI6MjA3MjU2MjUyMH0.A8MoJFe_ACtVDl7l0crAyU7ZxxOhdWJ8NShaqSHBxQc";
 
   var LEAD_STORAGE_KEY = "supreme_chat_lead_id";
   var AUTO_OPEN_STORAGE_KEY = "supreme_chat_auto_opened";
+  var USER_DATA_STORAGE_KEY = "supreme_chat_user_data";
+  var SESSION_STORAGE_KEY = "supreme_chat_session_id";
 
   var state = {
     isOpen: false,
     leadId: null,
+    sessionId: null,
     hasStarted: false,
-    messages: [], // { role: 'user'|'assistant', content: string }
+    messages: [],
     isLoading: false,
-    clientName: null, // Nome do cliente capturado
-    hasAskedName: false, // Se já perguntou o nome
-    userHasResponded: false, // Se o usuário já respondeu à primeira abordagem
+    clientName: null,
+    showPreChat: false,
+    preChatCompleted: false,
   };
 
   function safeText(str) {
     return String(str || "");
   }
 
-  // Notification sound using Web Audio API
+  // Máscara de telefone brasileiro
+  function formatPhone(value) {
+    var digits = value.replace(/\D/g, "").slice(0, 11);
+    if (digits.length <= 2) return digits.length ? "(" + digits : "";
+    if (digits.length <= 7) return "(" + digits.slice(0, 2) + ") " + digits.slice(2);
+    return "(" + digits.slice(0, 2) + ") " + digits.slice(2, 7) + "-" + digits.slice(7);
+  }
+
   function playNotificationSound() {
     try {
       var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -40,17 +51,15 @@
       oscillator.connect(gainNode);
       gainNode.connect(audioCtx.destination);
       
-      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 note
-      oscillator.frequency.setValueAtTime(1108.73, audioCtx.currentTime + 0.1); // C#6 note
+      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+      oscillator.frequency.setValueAtTime(1108.73, audioCtx.currentTime + 0.1);
       
       gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
       gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
       
       oscillator.start(audioCtx.currentTime);
       oscillator.stop(audioCtx.currentTime + 0.3);
-    } catch (e) {
-      // Audio not supported or blocked
-    }
+    } catch (e) {}
   }
 
   function el(tag, attrs) {
@@ -81,12 +90,18 @@
   }
 
   function inject() {
-    // Avoid double-inject
     if (document.getElementById('supreme-chat-widget-root')) return;
 
-    // Load leadId from storage
+    // Load stored data
     try {
       state.leadId = localStorage.getItem(LEAD_STORAGE_KEY);
+      state.sessionId = localStorage.getItem(SESSION_STORAGE_KEY);
+      var userData = localStorage.getItem(USER_DATA_STORAGE_KEY);
+      if (userData) {
+        var parsed = JSON.parse(userData);
+        state.clientName = parsed.name;
+        state.preChatCompleted = true;
+      }
     } catch (_) {}
 
     var root = el('div', { id: 'supreme-chat-widget-root' });
@@ -104,6 +119,7 @@
       "*{box-sizing:border-box;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial}\n" +
       ".btn{border:0;cursor:pointer}\n" +
       "@keyframes bounce{0%,20%,50%,80%,100%{transform:translateY(0)}40%{transform:translateY(-12px)}60%{transform:translateY(-6px)}}\n" +
+      "@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(74,222,128,0.7)}70%{box-shadow:0 0 0 8px rgba(74,222,128,0)}}\n" +
       ".fab{position:fixed;right:24px;bottom:24px;z-index:2147483646;width:56px;height:56px;border-radius:999px;background:" + primary + ";color:#111;display:flex;align-items:center;justify-content:center;box-shadow:0 14px 40px rgba(0,0,0,0.35);animation:bounce 2s ease-in-out infinite}\n" +
       ".fab.no-bounce{animation:none}\n" +
       ".fab:focus{outline:2px solid rgba(212,175,55,0.5);outline-offset:2px}\n" +
@@ -124,6 +140,19 @@
       ".send{border-radius:12px;padding:0 14px;background:" + primary + ";color:#111;font-weight:700}\n" +
       ".send[disabled]{opacity:0.6;cursor:not-allowed}\n" +
       ".note{padding:10px 12px;font-size:12px;color:" + muted + "}\n" +
+      // Pre-chat form styles
+      ".prechat{padding:24px;display:flex;flex-direction:column;gap:16px;background:" + bg + ";flex:1}\n" +
+      ".prechat-title{font-size:18px;font-weight:700;text-align:center;color:" + text + "}\n" +
+      ".prechat-desc{font-size:13px;text-align:center;color:" + muted + ";margin-bottom:8px}\n" +
+      ".prechat-field{display:flex;flex-direction:column;gap:6px}\n" +
+      ".prechat-label{font-size:12px;font-weight:600;color:" + text + "}\n" +
+      ".prechat-input{border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:rgba(0,0,0,0.30);color:" + text + ";padding:12px 14px;font-size:14px}\n" +
+      ".prechat-input:focus{outline:none;border-color:" + primary + "}\n" +
+      ".prechat-input::placeholder{color:" + muted + "}\n" +
+      ".prechat-btn{border-radius:12px;padding:14px;background:" + primary + ";color:#111;font-weight:700;font-size:14px;margin-top:8px}\n" +
+      ".prechat-btn:disabled{opacity:0.6;cursor:not-allowed}\n" +
+      ".prechat-error{color:#f87171;font-size:12px;text-align:center}\n" +
+      ".online-dot{width:8px;height:8px;background:#4ade80;border-radius:50%;animation:pulse 2s infinite}\n" +
       "" });
 
     var msgList = el('div', { class: 'msgs', role: 'log', 'aria-live': 'polite' });
@@ -132,6 +161,32 @@
     var closeBtn = el('button', { class: 'btn iconBtn', type: 'button', title: 'Fechar', 'aria-label': 'Fechar chat' },
       el('span', { text: '×', style: 'font-size:18px;line-height:1' })
     );
+
+    // Pre-chat form elements
+    var preChatNameInput = el('input', { class: 'prechat-input', placeholder: 'Seu nome', type: 'text', maxlength: '100' });
+    var preChatPhoneInput = el('input', { class: 'prechat-input', placeholder: '(00) 00000-0000', type: 'tel', inputmode: 'numeric', maxlength: '16' });
+    var preChatError = el('div', { class: 'prechat-error', style: 'display:none' });
+    var preChatSubmitBtn = el('button', { class: 'btn prechat-btn', type: 'button', text: 'Iniciar Conversa' });
+
+    var preChatForm = el('div', { class: 'prechat', style: 'display:none' },
+      el('div', { class: 'prechat-title', text: '👋 Olá! Como posso ajudar?' }),
+      el('div', { class: 'prechat-desc', text: 'Para iniciar a conversa, informe seus dados abaixo.' }),
+      el('div', { class: 'prechat-field' },
+        el('label', { class: 'prechat-label', text: 'Nome *' }),
+        preChatNameInput
+      ),
+      el('div', { class: 'prechat-field' },
+        el('label', { class: 'prechat-label', text: 'WhatsApp *' }),
+        preChatPhoneInput
+      ),
+      preChatError,
+      preChatSubmitBtn
+    );
+
+    // Phone mask on pre-chat input
+    preChatPhoneInput.addEventListener('input', function () {
+      preChatPhoneInput.value = formatPhone(preChatPhoneInput.value);
+    });
 
     var header = el('div', { class: 'hdr' },
       el('div', { class: 'ttl' },
@@ -143,7 +198,7 @@
           el('div', {},
             el('strong', { text: CONFIG.title || 'Assistente Online' }),
             el('div', { style: 'display:flex;align-items:center;gap:4px;font-size:11px;opacity:0.8' },
-              el('span', { style: 'width:6px;height:6px;background:#4ade80;border-radius:50%' }),
+              el('span', { class: 'online-dot' }),
               el('span', { text: 'Online agora' })
             )
           )
@@ -152,16 +207,33 @@
       closeBtn
     );
 
-    var panel = el('div', { class: 'panel', role: 'dialog', 'aria-label': 'Chat de atendimento' },
-      header,
+    var chatContent = el('div', { style: 'display:flex;flex-direction:column;flex:1;overflow:hidden' },
       msgList,
       el('div', { class: 'foot' }, input, sendBtn),
       el('div', { class: 'note', text: 'Ao enviar, você concorda em ser contatado por um especialista.' })
     );
 
+    var panel = el('div', { class: 'panel', role: 'dialog', 'aria-label': 'Chat de atendimento' },
+      header,
+      preChatForm,
+      chatContent
+    );
+
     var fab = el('button', { class: 'btn fab', type: 'button', 'aria-label': 'Assistente Online' },
       el('span', { text: '💬', style: 'font-size:22px' })
     );
+
+    function showPreChatForm() {
+      preChatForm.style.display = 'flex';
+      chatContent.style.display = 'none';
+      preChatNameInput.focus();
+    }
+
+    function showChatContent() {
+      preChatForm.style.display = 'none';
+      chatContent.style.display = 'flex';
+      input.focus();
+    }
 
     function renderMessages() {
       msgList.innerHTML = '';
@@ -169,7 +241,6 @@
         var cls = m.role === 'user' ? 'msg user' : 'msg ai';
         msgList.appendChild(el('div', { class: cls, text: safeText(m.content) }));
       });
-      // scroll
       msgList.scrollTop = msgList.scrollHeight;
     }
 
@@ -179,13 +250,24 @@
       sendBtn.textContent = state.isLoading ? 'Enviando…' : 'Enviar';
     }
 
+    function setPreChatLoading(loading) {
+      preChatSubmitBtn.disabled = !!loading;
+      preChatSubmitBtn.textContent = loading ? 'Aguarde...' : 'Iniciar Conversa';
+    }
+
     function open() {
       state.isOpen = true;
       panel.classList.add('open');
       fab.setAttribute('aria-label', 'Assistente Online aberto');
-      input.focus();
-      if (!state.hasStarted) {
-        startConversation();
+
+      // Check if pre-chat is needed
+      if (!state.preChatCompleted) {
+        showPreChatForm();
+      } else {
+        showChatContent();
+        if (!state.hasStarted) {
+          startConversation();
+        }
       }
     }
 
@@ -194,6 +276,143 @@
       panel.classList.remove('open');
       fab.setAttribute('aria-label', 'Assistente Online');
     }
+
+    // Submit pre-chat form - create/update lead and session
+    async function submitPreChat() {
+      var name = preChatNameInput.value.trim();
+      var phone = preChatPhoneInput.value.replace(/\D/g, '');
+
+      preChatError.style.display = 'none';
+
+      if (!name) {
+        preChatError.textContent = 'Por favor, informe seu nome.';
+        preChatError.style.display = 'block';
+        return;
+      }
+
+      if (phone.length < 10) {
+        preChatError.textContent = 'Por favor, informe um WhatsApp válido com DDD.';
+        preChatError.style.display = 'block';
+        return;
+      }
+
+      setPreChatLoading(true);
+
+      try {
+        // Create or update lead via Supabase REST API
+        var leadPayload = {
+          name: name,
+          phone: preChatPhoneInput.value,
+          origin: CONFIG.origin || 'Site',
+          page_url: window.location.href,
+          status: 'new'
+        };
+
+        // If we have an existing leadId, update it
+        var leadResponse;
+        if (state.leadId) {
+          leadResponse = await fetch(SUPABASE_URL + '/rest/v1/leads?id=eq.' + state.leadId, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + ANON_KEY,
+              'apikey': ANON_KEY,
+              'Prefer': 'return=representation'
+            },
+            body: JSON.stringify({ name: name, phone: preChatPhoneInput.value })
+          });
+        } else {
+          leadResponse = await fetch(SUPABASE_URL + '/rest/v1/leads', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + ANON_KEY,
+              'apikey': ANON_KEY,
+              'Prefer': 'return=representation'
+            },
+            body: JSON.stringify(leadPayload)
+          });
+        }
+
+        if (leadResponse.ok) {
+          var leadData = await leadResponse.json();
+          if (leadData && leadData.length > 0) {
+            state.leadId = leadData[0].id;
+            try { localStorage.setItem(LEAD_STORAGE_KEY, state.leadId); } catch (_) {}
+          }
+        }
+
+        // Create chat session linked to lead
+        if (state.leadId) {
+          var sessionResponse = await fetch(SUPABASE_URL + '/rest/v1/chat_sessions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + ANON_KEY,
+              'apikey': ANON_KEY,
+              'Prefer': 'return=representation'
+            },
+            body: JSON.stringify({
+              lead_id: state.leadId,
+              status: 'active',
+              started_at: new Date().toISOString()
+            })
+          });
+
+          if (sessionResponse.ok) {
+            var sessionData = await sessionResponse.json();
+            if (sessionData && sessionData.length > 0) {
+              state.sessionId = sessionData[0].id;
+              try { localStorage.setItem(SESSION_STORAGE_KEY, state.sessionId); } catch (_) {}
+            }
+          }
+        }
+
+        // Save user data to localStorage
+        state.clientName = name;
+        state.preChatCompleted = true;
+        try {
+          localStorage.setItem(USER_DATA_STORAGE_KEY, JSON.stringify({
+            name: name,
+            phone: preChatPhoneInput.value
+          }));
+        } catch (_) {}
+
+        // Show chat and start conversation
+        showChatContent();
+        startConversation();
+
+      } catch (e) {
+        console.error('Pre-chat error:', e);
+        // Still allow chat to proceed on error (fallback)
+        state.clientName = name;
+        state.preChatCompleted = true;
+        try {
+          localStorage.setItem(USER_DATA_STORAGE_KEY, JSON.stringify({
+            name: name,
+            phone: preChatPhoneInput.value
+          }));
+        } catch (_) {}
+        showChatContent();
+        startConversation();
+      } finally {
+        setPreChatLoading(false);
+      }
+    }
+
+    preChatSubmitBtn.addEventListener('click', submitPreChat);
+    preChatPhoneInput.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Enter') {
+        ev.preventDefault();
+        submitPreChat();
+      }
+    });
+    preChatNameInput.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Enter') {
+        ev.preventDefault();
+        preChatPhoneInput.focus();
+      }
+    });
 
     async function startConversation() {
       state.hasStarted = true;
@@ -209,10 +428,12 @@
           body: JSON.stringify({
             messages: [],
             leadId: state.leadId || undefined,
+            sessionId: state.sessionId || undefined,
             pageUrl: window.location.href,
             origin: CONFIG.origin || 'Site',
             propertyId: CONFIG.propertyId,
             propertyName: CONFIG.propertyName,
+            clientName: state.clientName,
           }),
         });
 
@@ -224,13 +445,12 @@
           try { localStorage.setItem(LEAD_STORAGE_KEY, responseLeadId); } catch (_) {}
         }
 
-        await processStream(resp, false); // No sound on initial greeting
+        await processStream(resp, false);
       } catch (e) {
-        // fallback
-        state.messages.push({
-          role: 'assistant',
-          content: 'Olá! Seja bem-vindo(a) 😊\nMe conta: você está procurando um imóvel para morar ou investir?',
-        });
+        var greeting = state.clientName 
+          ? 'Olá, ' + state.clientName + '! 😊\nMe conta: você está procurando um imóvel para morar ou investir?'
+          : 'Olá! Seja bem-vindo(a) 😊\nMe conta: você está procurando um imóvel para morar ou investir?';
+        state.messages.push({ role: 'assistant', content: greeting });
         renderMessages();
       } finally {
         setLoading(false);
@@ -246,7 +466,6 @@
       var assistantContent = '';
       var soundPlayed = false;
 
-      // add placeholder assistant message
       state.messages.push({ role: 'assistant', content: '' });
       var idx = state.messages.length - 1;
       renderMessages();
@@ -273,7 +492,6 @@
             var delta = parsed && parsed.choices && parsed.choices[0] && parsed.choices[0].delta;
             var c = delta && delta.content;
             if (c) {
-              // Play sound on first content received
               if (!soundPlayed && shouldPlaySound) {
                 playNotificationSound();
                 soundPlayed = true;
@@ -283,7 +501,6 @@
               renderMessages();
             }
           } catch (e) {
-            // put back and wait for more
             buffer = line + '\n' + buffer;
             break;
           }
@@ -295,7 +512,6 @@
       var content = input.value.trim();
       if (!content || state.isLoading) return;
 
-      // push user msg
       state.messages.push({ role: 'user', content: content });
       input.value = '';
       renderMessages();
@@ -315,10 +531,12 @@
           body: JSON.stringify({
             messages: payloadMessages,
             leadId: state.leadId || undefined,
+            sessionId: state.sessionId || undefined,
             pageUrl: window.location.href,
             origin: CONFIG.origin || 'Site',
             propertyId: CONFIG.propertyId,
             propertyName: CONFIG.propertyName,
+            clientName: state.clientName,
           }),
         });
 
@@ -333,7 +551,7 @@
           try { localStorage.setItem(LEAD_STORAGE_KEY, responseLeadId); } catch (_) {}
         }
 
-        await processStream(resp, true); // Play sound on new messages
+        await processStream(resp, true);
       } catch (e) {
         state.messages.push({ role: 'assistant', content: 'Desculpe, ocorreu um erro. Tente novamente.' });
         renderMessages();
@@ -361,7 +579,7 @@
     mount.appendChild(fab);
     document.documentElement.appendChild(root);
 
-    // Auto open apenas 1x na primeira visita (armazenado em localStorage)
+    // Auto open (only once per user)
     var autoOpenMs = typeof CONFIG.autoOpenMs === 'number' ? CONFIG.autoOpenMs : 7000;
     var hasAutoOpened = false;
     try {
@@ -372,7 +590,6 @@
       setTimeout(function () {
         if (!state.isOpen) {
           open();
-          // Marcar que já abriu automaticamente
           try {
             localStorage.setItem(AUTO_OPEN_STORAGE_KEY, 'true');
           } catch (_) {}
