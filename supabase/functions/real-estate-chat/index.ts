@@ -175,6 +175,8 @@ interface ChatRequest {
   origin?: string;
   pageProperties?: PageProperty[];
   pageContext?: string;
+  clientName?: string;
+  clientPhone?: string;
 }
 
 function validateMessages(messages: unknown): { valid: boolean; error?: string } {
@@ -232,7 +234,7 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { messages, leadId, propertyId, propertyName, pageUrl, origin, pageProperties, pageContext } = body as ChatRequest;
+    const { messages, leadId, propertyId, propertyName, pageUrl, origin, pageProperties, pageContext, clientName, clientPhone } = body as ChatRequest;
     
     const validation = validateMessages(messages);
     if (!validation.valid) {
@@ -260,7 +262,69 @@ serve(async (req) => {
     let currentLeadId = leadId;
     let leadImobiliarioId: string | null = null;
     
-    if (!currentLeadId) {
+    // Se já temos leadId do pré-chat, buscar/atualizar os dados
+    if (currentLeadId) {
+      console.log("Lead já existe via pré-chat:", currentLeadId);
+      
+      // Buscar dados atuais do lead
+      const { data: existingLead } = await supabase
+        .from("leads")
+        .select("name, phone")
+        .eq("id", currentLeadId)
+        .single();
+      
+      console.log("Dados do lead existente:", existingLead);
+      
+      // Sincronizar com leads_imobiliarios se ainda não existir
+      const leadName = clientName || existingLead?.name || "Visitante do Chat";
+      const leadPhone = clientPhone || existingLead?.phone || "A definir";
+      
+      // Verificar se já existe lead_imobiliario com mesmo telefone
+      if (leadPhone && leadPhone !== "A definir") {
+        const cleanPhone = leadPhone.replace(/\D/g, "");
+        const { data: existingImobLead } = await supabase
+          .from("leads_imobiliarios")
+          .select("id")
+          .or(`telefone.eq.${leadPhone},telefone.eq.${cleanPhone}`)
+          .limit(1)
+          .single();
+        
+        if (existingImobLead) {
+          leadImobiliarioId = existingImobLead.id;
+          // Atualizar dados
+          await supabase
+            .from("leads_imobiliarios")
+            .update({
+              nome: leadName !== "Visitante do Chat" ? leadName : undefined,
+              telefone: leadPhone,
+              pagina_origem: pageUrl || null,
+              updated_at: new Date().toISOString()
+            })
+            .eq("id", existingImobLead.id);
+          console.log("✅ Lead imobiliário existente atualizado:", existingImobLead.id);
+        } else {
+          // Criar novo lead_imobiliario
+          const { data: newImobLead } = await supabase
+            .from("leads_imobiliarios")
+            .insert({
+              nome: leadName,
+              telefone: leadPhone,
+              origem: origin || "site",
+              pagina_origem: pageUrl || null,
+              status: "novo",
+              descricao: `Lead do chat. Página: ${pageUrl || "Homepage"}`
+            })
+            .select()
+            .single();
+          
+          if (newImobLead) {
+            leadImobiliarioId = newImobLead.id;
+            console.log("✅ Novo lead imobiliário criado com dados do pré-chat:", leadImobiliarioId);
+          }
+        }
+      }
+    } else {
+      // Criar novo lead se não existe
       if (checkLeadCreationLimit(clientIp)) {
         console.warn(`Lead creation limit exceeded for IP: ${clientIp}`);
         return new Response(
@@ -279,10 +343,16 @@ serve(async (req) => {
       
       console.log("Atendente ativo encontrado:", activeAttendant?.name || "Nenhum");
 
+      // Usar dados do clientName/clientPhone se fornecidos
+      const leadName = clientName || "Visitante do Chat";
+      const leadPhone = clientPhone || "A definir";
+
       // 1. Criar lead na tabela leads (para compatibilidade com funções existentes)
       const { data: newLead, error: leadError } = await supabase
         .from("leads")
         .insert({
+          name: leadName,
+          phone: leadPhone,
           property_id: propertyId || null,
           origin: origin || "site",
           page_url: pageUrl || null,
@@ -295,31 +365,60 @@ serve(async (req) => {
         console.error("Erro ao criar lead (tabela leads):", leadError);
       } else {
         currentLeadId = newLead.id;
-        console.log("Lead criado (tabela leads):", currentLeadId);
+        console.log("Lead criado (tabela leads):", currentLeadId, "Nome:", leadName);
       }
 
-      // 2. CRIAR LEAD NA FONTE ÚNICA: leads_imobiliarios (OBRIGATÓRIO)
-      const { data: newLeadImobiliario, error: leadImobError } = await supabase
-        .from("leads_imobiliarios")
-        .insert({
-          nome: "Visitante do Chat",
-          telefone: "A definir",
-          origem: origin || "site",
-          pagina_origem: pageUrl || null,
-          status: "novo",
-          descricao: `Lead criado automaticamente via chat. Página: ${pageUrl || "Homepage"}`
-        })
-        .select()
-        .single();
-
-      if (leadImobError) {
-        console.error("Erro ao criar lead_imobiliario:", leadImobError);
-      } else {
-        leadImobiliarioId = newLeadImobiliario.id;
-        console.log("✅ Lead criado em leads_imobiliarios:", leadImobiliarioId);
+      // 2. Verificar duplicidade por telefone antes de criar em leads_imobiliarios
+      let existingImobLeadId: string | null = null;
+      if (leadPhone && leadPhone !== "A definir") {
+        const cleanPhone = leadPhone.replace(/\D/g, "");
+        const { data: existingImob } = await supabase
+          .from("leads_imobiliarios")
+          .select("id")
+          .or(`telefone.eq.${leadPhone},telefone.eq.${cleanPhone}`)
+          .limit(1)
+          .single();
+        
+        if (existingImob) {
+          existingImobLeadId = existingImob.id;
+          leadImobiliarioId = existingImob.id;
+          // Atualizar lead existente
+          await supabase
+            .from("leads_imobiliarios")
+            .update({
+              nome: leadName !== "Visitante do Chat" ? leadName : undefined,
+              pagina_origem: pageUrl || null,
+              updated_at: new Date().toISOString()
+            })
+            .eq("id", existingImob.id);
+          console.log("✅ Lead imobiliário existente atualizado (duplicidade evitada):", existingImob.id);
+        }
       }
 
-      // 3. Atribuir corretor usando RPC (mantém compatibilidade)
+      // 3. CRIAR LEAD NA FONTE ÚNICA: leads_imobiliarios (se não existe)
+      if (!existingImobLeadId) {
+        const { data: newLeadImobiliario, error: leadImobError } = await supabase
+          .from("leads_imobiliarios")
+          .insert({
+            nome: leadName,
+            telefone: leadPhone,
+            origem: origin || "site",
+            pagina_origem: pageUrl || null,
+            status: "novo",
+            descricao: `Lead criado automaticamente via chat. Página: ${pageUrl || "Homepage"}`
+          })
+          .select()
+          .single();
+
+        if (leadImobError) {
+          console.error("Erro ao criar lead_imobiliario:", leadImobError);
+        } else {
+          leadImobiliarioId = newLeadImobiliario.id;
+          console.log("✅ Lead criado em leads_imobiliarios:", leadImobiliarioId, "Nome:", leadName);
+        }
+      }
+
+      // 4. Atribuir corretor usando RPC (mantém compatibilidade)
       if (currentLeadId) {
         const { data: brokerId } = await supabase.rpc("assign_lead_to_broker", {
           p_lead_id: currentLeadId,
@@ -328,8 +427,8 @@ serve(async (req) => {
         console.log("Corretor atribuído via RPC:", brokerId);
       }
 
-      // 4. Enviar WhatsApp ao atendente ativo
-      if (activeAttendant?.phone) {
+      // 5. Enviar WhatsApp ao atendente ativo
+      if (activeAttendant?.phone && leadName !== "Visitante do Chat") {
         try {
           let propertyTitle = "Não especificado";
           if (propertyId) {
@@ -347,6 +446,8 @@ serve(async (req) => {
 
 Olá ${activeAttendant.name}! Você recebeu um novo lead no chat.
 
+👤 *Nome:* ${leadName}
+📞 *Telefone:* ${leadPhone}
 📍 *Imóvel:* ${propertyTitle}
 🌐 *Origem:* ${origin || "site"}
 🔗 *Página:* ${pageUrl || "Homepage"}

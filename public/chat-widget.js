@@ -26,6 +26,7 @@
     messages: [],
     isLoading: false,
     clientName: null,
+    clientPhone: null,
     showPreChat: false,
     preChatCompleted: false,
   };
@@ -100,6 +101,7 @@
       if (userData) {
         var parsed = JSON.parse(userData);
         state.clientName = parsed.name;
+        state.clientPhone = parsed.phone;
         state.preChatCompleted = true;
       }
     } catch (_) {}
@@ -370,6 +372,7 @@
 
         // Save user data to localStorage
         state.clientName = name;
+        state.clientPhone = preChatPhoneInput.value;
         state.preChatCompleted = true;
         try {
           localStorage.setItem(USER_DATA_STORAGE_KEY, JSON.stringify({
@@ -434,6 +437,7 @@
             propertyId: CONFIG.propertyId,
             propertyName: CONFIG.propertyName,
             clientName: state.clientName,
+            clientPhone: state.clientPhone,
           }),
         });
 
@@ -537,6 +541,7 @@
             propertyId: CONFIG.propertyId,
             propertyName: CONFIG.propertyName,
             clientName: state.clientName,
+            clientPhone: state.clientPhone,
           }),
         });
 
