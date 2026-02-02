@@ -17,10 +17,12 @@
   var AUTO_OPEN_STORAGE_KEY = "supreme_chat_auto_opened";
   var USER_DATA_STORAGE_KEY = "supreme_chat_user_data";
   var SESSION_STORAGE_KEY = "supreme_chat_session_id";
+  var LEAD_IMOB_STORAGE_KEY = "supreme_chat_lead_imob_id";
 
   var state = {
     isOpen: false,
     leadId: null,
+    leadImobId: null,
     sessionId: null,
     hasStarted: false,
     messages: [],
@@ -41,6 +43,12 @@
     if (digits.length <= 2) return digits.length ? "(" + digits : "";
     if (digits.length <= 7) return "(" + digits.slice(0, 2) + ") " + digits.slice(2);
     return "(" + digits.slice(0, 2) + ") " + digits.slice(2, 7) + "-" + digits.slice(7);
+  }
+
+  // Validar telefone brasileiro: DDD (2 dígitos) + 9 dígitos
+  function validateBrazilianPhone(phone) {
+    var digits = phone.replace(/\D/g, "");
+    return digits.length >= 10 && digits.length <= 11;
   }
 
   function playNotificationSound() {
@@ -96,13 +104,14 @@
     // Load stored data
     try {
       state.leadId = localStorage.getItem(LEAD_STORAGE_KEY);
+      state.leadImobId = localStorage.getItem(LEAD_IMOB_STORAGE_KEY);
       state.sessionId = localStorage.getItem(SESSION_STORAGE_KEY);
       var userData = localStorage.getItem(USER_DATA_STORAGE_KEY);
       if (userData) {
         var parsed = JSON.parse(userData);
         state.clientName = parsed.name;
         state.clientPhone = parsed.phone;
-        state.preChatCompleted = true;
+        state.preChatCompleted = !!(parsed.name && parsed.phone);
       }
     } catch (_) {}
 
@@ -279,21 +288,24 @@
       fab.setAttribute('aria-label', 'Assistente Online');
     }
 
-    // Submit pre-chat form - create/update lead and session
+    // Submit pre-chat form - create lead in leads_imobiliarios FIRST
     async function submitPreChat() {
       var name = preChatNameInput.value.trim();
-      var phone = preChatPhoneInput.value.replace(/\D/g, '');
+      var phone = preChatPhoneInput.value;
+      var phoneDigits = phone.replace(/\D/g, '');
 
       preChatError.style.display = 'none';
 
-      if (!name) {
-        preChatError.textContent = 'Por favor, informe seu nome.';
+      // Validação de nome
+      if (!name || name.length < 2) {
+        preChatError.textContent = 'Por favor, informe seu nome completo.';
         preChatError.style.display = 'block';
         return;
       }
 
-      if (phone.length < 10) {
-        preChatError.textContent = 'Por favor, informe um WhatsApp válido com DDD.';
+      // Validação de telefone brasileiro
+      if (!validateBrazilianPhone(phone)) {
+        preChatError.textContent = 'Por favor, informe um WhatsApp válido com DDD (ex: 62 99999-9999).';
         preChatError.style.display = 'block';
         return;
       }
@@ -301,30 +313,59 @@
       setPreChatLoading(true);
 
       try {
-        // Create or update lead via Supabase REST API
-        var leadPayload = {
-          name: name,
-          phone: preChatPhoneInput.value,
-          origin: CONFIG.origin || 'Site',
-          page_url: window.location.href,
-          status: 'new'
-        };
+        console.log('[Chat Widget] Salvando lead com:', { name, phone });
 
-        // If we have an existing leadId, update it
-        var leadResponse;
-        if (state.leadId) {
-          leadResponse = await fetch(SUPABASE_URL + '/rest/v1/leads?id=eq.' + state.leadId, {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer ' + ANON_KEY,
-              'apikey': ANON_KEY,
-              'Prefer': 'return=representation'
-            },
-            body: JSON.stringify({ name: name, phone: preChatPhoneInput.value })
-          });
-        } else {
-          leadResponse = await fetch(SUPABASE_URL + '/rest/v1/leads', {
+        // ============================================
+        // CRIAR LEAD DIRETO EM leads_imobiliarios
+        // ============================================
+        var existingLeadId = null;
+        
+        // 1. Verificar se já existe lead com mesmo telefone
+        var checkResponse = await fetch(SUPABASE_URL + '/rest/v1/leads_imobiliarios?or=(telefone.eq.' + encodeURIComponent(phone) + ',telefone.eq.' + phoneDigits + ')&limit=1', {
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer ' + ANON_KEY,
+            'apikey': ANON_KEY
+          }
+        });
+
+        if (checkResponse.ok) {
+          var existingData = await checkResponse.json();
+          if (existingData && existingData.length > 0) {
+            existingLeadId = existingData[0].id;
+            console.log('[Chat Widget] Lead existente encontrado:', existingLeadId);
+            
+            // Atualizar lead existente
+            await fetch(SUPABASE_URL + '/rest/v1/leads_imobiliarios?id=eq.' + existingLeadId, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + ANON_KEY,
+                'apikey': ANON_KEY
+              },
+              body: JSON.stringify({ 
+                nome: name, 
+                telefone: phone,
+                updated_at: new Date().toISOString()
+              })
+            });
+          }
+        }
+
+        // 2. Se não existe, criar novo
+        if (!existingLeadId) {
+          var leadImobPayload = {
+            nome: name,
+            telefone: phone,
+            origem: CONFIG.origin || 'chat',
+            pagina_origem: window.location.href,
+            status: 'novo',
+            descricao: 'Lead capturado via chat do site'
+          };
+
+          console.log('[Chat Widget] Criando lead em leads_imobiliarios:', leadImobPayload);
+
+          var leadImobResponse = await fetch(SUPABASE_URL + '/rest/v1/leads_imobiliarios', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -332,19 +373,54 @@
               'apikey': ANON_KEY,
               'Prefer': 'return=representation'
             },
-            body: JSON.stringify(leadPayload)
+            body: JSON.stringify(leadImobPayload)
           });
+
+          if (leadImobResponse.ok) {
+            var leadImobData = await leadImobResponse.json();
+            if (leadImobData && leadImobData.length > 0) {
+              state.leadImobId = leadImobData[0].id;
+              try { localStorage.setItem(LEAD_IMOB_STORAGE_KEY, state.leadImobId); } catch (_) {}
+              console.log('[Chat Widget] ✅ Lead criado em leads_imobiliarios:', state.leadImobId);
+            }
+          } else {
+            console.error('[Chat Widget] Erro ao criar lead_imobiliario:', await leadImobResponse.text());
+          }
+        } else {
+          state.leadImobId = existingLeadId;
+          try { localStorage.setItem(LEAD_IMOB_STORAGE_KEY, existingLeadId); } catch (_) {}
         }
+
+        // 3. Também criar na tabela leads para compatibilidade
+        var leadPayload = {
+          name: name,
+          phone: phone,
+          origin: CONFIG.origin || 'chat',
+          page_url: window.location.href,
+          status: 'novo'
+        };
+
+        var leadResponse = await fetch(SUPABASE_URL + '/rest/v1/leads', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + ANON_KEY,
+            'apikey': ANON_KEY,
+            'Prefer': 'return=representation'
+          },
+          body: JSON.stringify(leadPayload)
+        });
 
         if (leadResponse.ok) {
           var leadData = await leadResponse.json();
           if (leadData && leadData.length > 0) {
             state.leadId = leadData[0].id;
             try { localStorage.setItem(LEAD_STORAGE_KEY, state.leadId); } catch (_) {}
+            console.log('[Chat Widget] Lead criado em leads:', state.leadId);
           }
         }
 
-        // Create chat session linked to lead
+        // 4. Criar chat session
         if (state.leadId) {
           var sessionResponse = await fetch(SUPABASE_URL + '/rest/v1/chat_sessions', {
             method: 'POST',
@@ -370,34 +446,27 @@
           }
         }
 
-        // Save user data to localStorage
+        // 5. Salvar dados do usuário no localStorage
         state.clientName = name;
-        state.clientPhone = preChatPhoneInput.value;
+        state.clientPhone = phone;
         state.preChatCompleted = true;
         try {
           localStorage.setItem(USER_DATA_STORAGE_KEY, JSON.stringify({
             name: name,
-            phone: preChatPhoneInput.value
+            phone: phone
           }));
         } catch (_) {}
+
+        console.log('[Chat Widget] ✅ Pré-chat completo. Lead salvo com nome e telefone.');
 
         // Show chat and start conversation
         showChatContent();
         startConversation();
 
       } catch (e) {
-        console.error('Pre-chat error:', e);
-        // Still allow chat to proceed on error (fallback)
-        state.clientName = name;
-        state.preChatCompleted = true;
-        try {
-          localStorage.setItem(USER_DATA_STORAGE_KEY, JSON.stringify({
-            name: name,
-            phone: preChatPhoneInput.value
-          }));
-        } catch (_) {}
-        showChatContent();
-        startConversation();
+        console.error('[Chat Widget] Erro no pré-chat:', e);
+        preChatError.textContent = 'Erro ao salvar seus dados. Tente novamente.';
+        preChatError.style.display = 'block';
       } finally {
         setPreChatLoading(false);
       }
@@ -430,102 +499,61 @@
           },
           body: JSON.stringify({
             messages: [],
-            leadId: state.leadId || undefined,
-            sessionId: state.sessionId || undefined,
+            leadId: state.leadId || null,
+            leadImobId: state.leadImobId || null,
+            origin: CONFIG.origin || 'site',
             pageUrl: window.location.href,
-            origin: CONFIG.origin || 'Site',
-            propertyId: CONFIG.propertyId,
-            propertyName: CONFIG.propertyName,
+            pageContext: 'Página inicial do site Supreme Empreendimentos.',
             clientName: state.clientName,
             clientPhone: state.clientPhone,
-          }),
+            skipLeadCreation: true  // Sinaliza que o lead já foi criado
+          })
         });
 
-        if (!resp.ok) throw new Error('Falha ao iniciar chat');
-
-        var responseLeadId = resp.headers.get('X-Lead-Id');
-        if (responseLeadId) {
-          state.leadId = responseLeadId;
-          try { localStorage.setItem(LEAD_STORAGE_KEY, responseLeadId); } catch (_) {}
+        if (!resp.ok) {
+          throw new Error("Chat API error: " + resp.status);
         }
 
-        await processStream(resp, false);
-      } catch (e) {
+        var data = await resp.json();
+        
+        // Update leadId if returned
+        if (data.leadId && !state.leadId) {
+          state.leadId = data.leadId;
+          try { localStorage.setItem(LEAD_STORAGE_KEY, state.leadId); } catch (_) {}
+        }
+        
+        if (data.leadImobId && !state.leadImobId) {
+          state.leadImobId = data.leadImobId;
+          try { localStorage.setItem(LEAD_IMOB_STORAGE_KEY, state.leadImobId); } catch (_) {}
+        }
+        
+        // Greeting uses clientName
         var greeting = state.clientName 
-          ? 'Olá, ' + state.clientName + '! 😊\nMe conta: você está procurando um imóvel para morar ou investir?'
-          : 'Olá! Seja bem-vindo(a) 😊\nMe conta: você está procurando um imóvel para morar ou investir?';
-        state.messages.push({ role: 'assistant', content: greeting });
+          ? "Olá, " + state.clientName + "! 👋 Sou consultor da Supreme Empreendimentos. Como posso ajudar você hoje?"
+          : (data.reply || "Olá! 👋 Sou consultor da Supreme Empreendimentos. Como posso ajudar você hoje?");
+        
+        state.messages = [{ role: 'assistant', content: greeting }];
+        renderMessages();
+        playNotificationSound();
+      } catch (e) {
+        console.error('[Chat Widget] Erro ao iniciar conversa:', e);
+        state.messages = [{ role: 'assistant', content: 'Desculpe, tive um problema ao conectar. Tente novamente em instantes.' }];
         renderMessages();
       } finally {
         setLoading(false);
       }
     }
 
-    async function processStream(resp, shouldPlaySound) {
-      var reader = resp.body && resp.body.getReader ? resp.body.getReader() : null;
-      if (!reader) return;
-
-      var decoder = new TextDecoder();
-      var buffer = '';
-      var assistantContent = '';
-      var soundPlayed = false;
-
-      state.messages.push({ role: 'assistant', content: '' });
-      var idx = state.messages.length - 1;
-      renderMessages();
-
-      while (true) {
-        var r = await reader.read();
-        if (r.done) break;
-        buffer += decoder.decode(r.value, { stream: true });
-
-        var nl;
-        while ((nl = buffer.indexOf('\n')) !== -1) {
-          var line = buffer.slice(0, nl);
-          buffer = buffer.slice(nl + 1);
-
-          if (line.endsWith('\r')) line = line.slice(0, -1);
-          if (!line || line[0] === ':' || line.trim() === '') continue;
-          if (line.indexOf('data: ') !== 0) continue;
-
-          var jsonStr = line.slice(6).trim();
-          if (jsonStr === '[DONE]') break;
-
-          try {
-            var parsed = JSON.parse(jsonStr);
-            var delta = parsed && parsed.choices && parsed.choices[0] && parsed.choices[0].delta;
-            var c = delta && delta.content;
-            if (c) {
-              if (!soundPlayed && shouldPlaySound) {
-                playNotificationSound();
-                soundPlayed = true;
-              }
-              assistantContent += c;
-              state.messages[idx].content = assistantContent;
-              renderMessages();
-            }
-          } catch (e) {
-            buffer = line + '\n' + buffer;
-            break;
-          }
-        }
-      }
-    }
-
     async function sendMessage() {
-      var content = input.value.trim();
-      if (!content || state.isLoading) return;
+      var text = input.value.trim();
+      if (!text || state.isLoading) return;
 
-      state.messages.push({ role: 'user', content: content });
-      input.value = '';
+      state.messages.push({ role: 'user', content: text });
       renderMessages();
+      input.value = '';
       setLoading(true);
 
       try {
-        var payloadMessages = state.messages
-          .slice(-20)
-          .map(function (m) { return ({ role: m.role, content: m.content }); });
-
         var resp = await fetch(CHAT_URL, {
           method: 'POST',
           headers: {
@@ -533,31 +561,34 @@
             'Authorization': 'Bearer ' + ANON_KEY,
           },
           body: JSON.stringify({
-            messages: payloadMessages,
-            leadId: state.leadId || undefined,
-            sessionId: state.sessionId || undefined,
+            messages: state.messages,
+            leadId: state.leadId || null,
+            leadImobId: state.leadImobId || null,
+            origin: CONFIG.origin || 'site',
             pageUrl: window.location.href,
-            origin: CONFIG.origin || 'Site',
-            propertyId: CONFIG.propertyId,
-            propertyName: CONFIG.propertyName,
             clientName: state.clientName,
             clientPhone: state.clientPhone,
-          }),
+            skipLeadCreation: true
+          })
         });
 
         if (!resp.ok) {
-          if (resp.status === 429) throw new Error('Muitas requisições. Aguarde um momento.');
-          throw new Error('Erro ao enviar mensagem');
+          throw new Error("Chat API error: " + resp.status);
         }
 
-        var responseLeadId = resp.headers.get('X-Lead-Id');
-        if (responseLeadId && responseLeadId !== state.leadId) {
-          state.leadId = responseLeadId;
-          try { localStorage.setItem(LEAD_STORAGE_KEY, responseLeadId); } catch (_) {}
+        var data = await resp.json();
+        
+        // Update leadId if returned
+        if (data.leadId && !state.leadId) {
+          state.leadId = data.leadId;
+          try { localStorage.setItem(LEAD_STORAGE_KEY, state.leadId); } catch (_) {}
         }
 
-        await processStream(resp, true);
+        state.messages.push({ role: 'assistant', content: data.reply || 'Desculpe, não consegui processar sua mensagem.' });
+        renderMessages();
+        playNotificationSound();
       } catch (e) {
+        console.error('[Chat Widget] Erro ao enviar mensagem:', e);
         state.messages.push({ role: 'assistant', content: 'Desculpe, ocorreu um erro. Tente novamente.' });
         renderMessages();
       } finally {
@@ -565,11 +596,6 @@
       }
     }
 
-    fab.addEventListener('click', function () {
-      fab.classList.add('no-bounce');
-      state.isOpen ? close() : open();
-    });
-    closeBtn.addEventListener('click', close);
     sendBtn.addEventListener('click', sendMessage);
     input.addEventListener('keydown', function (ev) {
       if (ev.key === 'Enter') {
@@ -578,31 +604,44 @@
       }
     });
 
-    // Mount
+    fab.addEventListener('click', function () {
+      fab.classList.add('no-bounce');
+      if (state.isOpen) {
+        close();
+      } else {
+        open();
+      }
+    });
+
+    closeBtn.addEventListener('click', close);
+
+    // ESC to close
+    document.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Escape' && state.isOpen) close();
+    });
+
     mount.appendChild(styles);
-    mount.appendChild(panel);
     mount.appendChild(fab);
-    document.documentElement.appendChild(root);
+    mount.appendChild(panel);
+    document.body.appendChild(root);
 
-    // Auto open (only once per user)
-    var autoOpenMs = typeof CONFIG.autoOpenMs === 'number' ? CONFIG.autoOpenMs : 7000;
-    var hasAutoOpened = false;
-    try {
-      hasAutoOpened = localStorage.getItem(AUTO_OPEN_STORAGE_KEY) === 'true';
-    } catch (_) {}
-
-    if (autoOpenMs > 0 && !hasAutoOpened) {
-      setTimeout(function () {
-        if (!state.isOpen) {
-          open();
-          try {
-            localStorage.setItem(AUTO_OPEN_STORAGE_KEY, 'true');
-          } catch (_) {}
+    // Auto-open after delay (if configured and not already shown)
+    var autoOpenMs = CONFIG.autoOpenMs;
+    if (autoOpenMs && typeof autoOpenMs === 'number') {
+      try {
+        if (!localStorage.getItem(AUTO_OPEN_STORAGE_KEY)) {
+          setTimeout(function () {
+            if (!state.isOpen) {
+              open();
+              localStorage.setItem(AUTO_OPEN_STORAGE_KEY, 'true');
+            }
+          }, autoOpenMs);
         }
-      }, autoOpenMs);
+      } catch (_) {}
     }
   }
 
+  // Inject when DOM ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', inject);
   } else {
