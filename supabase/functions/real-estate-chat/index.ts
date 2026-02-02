@@ -169,6 +169,7 @@ interface PageProperty {
 interface ChatRequest {
   messages: ChatMessage[];
   leadId?: string;
+  leadImobId?: string;
   propertyId?: string;
   propertyName?: string;
   pageUrl?: string;
@@ -177,6 +178,7 @@ interface ChatRequest {
   pageContext?: string;
   clientName?: string;
   clientPhone?: string;
+  skipLeadCreation?: boolean;
 }
 
 function validateMessages(messages: unknown): { valid: boolean; error?: string } {
@@ -234,7 +236,7 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { messages, leadId, propertyId, propertyName, pageUrl, origin, pageProperties, pageContext, clientName, clientPhone } = body as ChatRequest;
+    const { messages, leadId, leadImobId, propertyId, propertyName, pageUrl, origin, pageProperties, pageContext, clientName, clientPhone, skipLeadCreation } = body as ChatRequest;
     
     const validation = validateMessages(messages);
     if (!validation.valid) {
@@ -260,11 +262,38 @@ serve(async (req) => {
     // GESTÃO DE LEAD - FONTE ÚNICA: leads_imobiliarios
     // =====================================================
     let currentLeadId = leadId;
-    let leadImobiliarioId: string | null = null;
+    let leadImobiliarioId: string | null = leadImobId || null;
     
-    // Se já temos leadId do pré-chat, buscar/atualizar os dados
-    if (currentLeadId) {
-      console.log("Lead já existe via pré-chat:", currentLeadId);
+    // Log para debug
+    console.log("🔍 Dados recebidos:", { 
+      leadId, 
+      leadImobId, 
+      clientName, 
+      clientPhone, 
+      skipLeadCreation,
+      origin 
+    });
+    
+    // Se skipLeadCreation é true, o lead já foi criado pelo widget
+    // Apenas usar os IDs fornecidos e não criar novos
+    if (skipLeadCreation && (currentLeadId || leadImobiliarioId)) {
+      console.log("✅ Lead já criado pelo widget. Usando IDs existentes:", { currentLeadId, leadImobiliarioId });
+      
+      // Sincronizar dados se necessário
+      if (clientName && clientPhone && leadImobiliarioId) {
+        await supabase
+          .from("leads_imobiliarios")
+          .update({
+            nome: clientName,
+            telefone: clientPhone,
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", leadImobiliarioId);
+        console.log("✅ Dados do lead atualizados:", { clientName, clientPhone });
+      }
+    } else if (currentLeadId && !skipLeadCreation) {
+      // Lead existe mas não veio do widget (compatibilidade)
+      console.log("Lead já existe (legacy):", currentLeadId);
       
       // Buscar dados atuais do lead
       const { data: existingLead } = await supabase
@@ -272,8 +301,6 @@ serve(async (req) => {
         .select("name, phone")
         .eq("id", currentLeadId)
         .single();
-      
-      console.log("Dados do lead existente:", existingLead);
       
       // Sincronizar com leads_imobiliarios se ainda não existir
       const leadName = clientName || existingLead?.name || "Visitante do Chat";
@@ -291,7 +318,6 @@ serve(async (req) => {
         
         if (existingImobLead) {
           leadImobiliarioId = existingImobLead.id;
-          // Atualizar dados
           await supabase
             .from("leads_imobiliarios")
             .update({
@@ -319,11 +345,11 @@ serve(async (req) => {
           
           if (newImobLead) {
             leadImobiliarioId = newImobLead.id;
-            console.log("✅ Novo lead imobiliário criado com dados do pré-chat:", leadImobiliarioId);
+            console.log("✅ Novo lead imobiliário criado:", leadImobiliarioId);
           }
         }
       }
-    } else {
+    } else if (!skipLeadCreation) {
       // Criar novo lead se não existe
       if (checkLeadCreationLimit(clientIp)) {
         console.warn(`Lead creation limit exceeded for IP: ${clientIp}`);
