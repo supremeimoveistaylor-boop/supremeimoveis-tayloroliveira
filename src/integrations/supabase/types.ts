@@ -1005,6 +1005,7 @@ export type Database = {
         Returns: string
       }
       calculate_lead_score: { Args: { p_lead_id: string }; Returns: number }
+      cleanup_old_chat_messages: { Args: never; Returns: number }
       finish_chat_session: {
         Args: { p_session_id: string; p_summary?: string }
         Returns: Json
