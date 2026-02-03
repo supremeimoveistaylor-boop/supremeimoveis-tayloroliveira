@@ -736,6 +736,7 @@ export type Database = {
           bathrooms: number | null
           bedrooms: number | null
           created_at: string
+          delivery_date: string | null
           description: string | null
           exclusive_broker_id: string | null
           featured: boolean | null
@@ -763,6 +764,7 @@ export type Database = {
           bathrooms?: number | null
           bedrooms?: number | null
           created_at?: string
+          delivery_date?: string | null
           description?: string | null
           exclusive_broker_id?: string | null
           featured?: boolean | null
@@ -790,6 +792,7 @@ export type Database = {
           bathrooms?: number | null
           bedrooms?: number | null
           created_at?: string
+          delivery_date?: string | null
           description?: string | null
           exclusive_broker_id?: string | null
           featured?: boolean | null

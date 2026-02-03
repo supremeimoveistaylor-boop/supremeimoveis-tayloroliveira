@@ -35,6 +35,7 @@ interface Property {
   property_code?: string;
   latitude?: number;
   longitude?: number;
+  delivery_date?: string;
 }
 
 // Gera URL canônica pública para o imóvel
@@ -681,6 +682,20 @@ const PropertyDetails = () => {
                         <div>
                           <p className="text-sm text-muted-foreground">Área</p>
                           <p className="font-bold">{property.area}m²</p>
+                        </div>
+                      </div>
+                    )}
+                    {property.delivery_date && (
+                      <div className="flex items-center gap-2">
+                        <Home className="h-5 w-5 text-primary" />
+                        <div>
+                          <p className="text-sm text-muted-foreground">Entrega</p>
+                          <p className="font-bold">
+                            {new Date(property.delivery_date + 'T00:00:00').toLocaleDateString('pt-BR', {
+                              month: 'long',
+                              year: 'numeric'
+                            })}
+                          </p>
                         </div>
                       </div>
                     )}

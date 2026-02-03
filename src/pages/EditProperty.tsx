@@ -56,6 +56,7 @@ interface Property {
   property_code?: string;
   latitude?: number;
   longitude?: number;
+  delivery_date?: string;
 }
 
 const EditProperty = () => {
@@ -75,6 +76,7 @@ const EditProperty = () => {
   const [listingStatus, setListingStatus] = useState<'available' | 'sold' | 'rented'>('available');
   const [latitude, setLatitude] = useState<number | undefined>();
   const [longitude, setLongitude] = useState<number | undefined>();
+  const [deliveryDate, setDeliveryDate] = useState<string>('');
   
   // Validation errors
   const [errors, setErrors] = useState<{
@@ -142,6 +144,7 @@ const EditProperty = () => {
       setListingStatus(propertyData.listing_status || 'available');
       setLatitude(propertyData.latitude);
       setLongitude(propertyData.longitude);
+      setDeliveryDate(propertyData.delivery_date || '');
     } catch (error: any) {
       toast({
         title: "Erro ao carregar imóvel",
@@ -403,6 +406,7 @@ const EditProperty = () => {
           youtube_link: formData.get('youtube_link') as string || null,
           latitude,
           longitude,
+          delivery_date: deliveryDate || null,
         } as any)
         .eq('id', property.id);
 
@@ -599,6 +603,21 @@ const EditProperty = () => {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              {/* Delivery Date */}
+              <div className="space-y-2">
+                <Label htmlFor="delivery_date">Data de Entrega</Label>
+                <Input
+                  id="delivery_date"
+                  name="delivery_date"
+                  type="date"
+                  value={deliveryDate}
+                  onChange={(e) => setDeliveryDate(e.target.value)}
+                />
+                <p className="text-sm text-muted-foreground">
+                  Data prevista de entrega do imóvel (para lançamentos/construção)
+                </p>
               </div>
 
               {/* Property Details */}
