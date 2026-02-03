@@ -58,6 +58,7 @@ const AddProperty = () => {
   const [status, setStatus] = useState<string>('active');
   const [latitude, setLatitude] = useState<number | undefined>();
   const [longitude, setLongitude] = useState<number | undefined>();
+  const [deliveryDate, setDeliveryDate] = useState<string>('');
   
   // Validation errors
   const [errors, setErrors] = useState<{
@@ -311,6 +312,7 @@ const AddProperty = () => {
           youtube_link: youtubeLink,
           latitude,
           longitude,
+          delivery_date: deliveryDate || null,
         } as any)
         .select()
         .single();
@@ -538,6 +540,21 @@ const AddProperty = () => {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              {/* Delivery Date */}
+              <div className="space-y-2">
+                <Label htmlFor="delivery_date">Data de Entrega</Label>
+                <Input
+                  id="delivery_date"
+                  name="delivery_date"
+                  type="date"
+                  value={deliveryDate}
+                  onChange={(e) => setDeliveryDate(e.target.value)}
+                />
+                <p className="text-sm text-muted-foreground">
+                  Data prevista de entrega do imóvel (para lançamentos/construção)
+                </p>
               </div>
 
               {/* Property Details */}
