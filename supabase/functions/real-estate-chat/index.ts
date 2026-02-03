@@ -691,18 +691,18 @@ Entre em contato o quanto antes.`;
     }
 
     // =====================================================
-    // BUSCAR NOME DO CLIENTE
+    // BUSCAR NOME DO CLIENTE (usa clientName do request OU busca no DB)
     // =====================================================
-    let clientName: string | null = null;
-    if (currentLeadId) {
+    let resolvedClientName: string | null = clientName || null;
+    if (!resolvedClientName && currentLeadId) {
       const { data: leadData } = await supabase
         .from("leads")
         .select("name")
         .eq("id", currentLeadId)
         .single();
       
-      if (leadData?.name) {
-        clientName = leadData.name;
+      if (leadData?.name && leadData.name !== "Visitante do Chat") {
+        resolvedClientName = leadData.name;
       }
     }
 
@@ -735,9 +735,9 @@ Entre em contato o quanto antes.`;
     let dynamicContext = "";
     
     // Contexto do nome
-    if (clientName) {
-      dynamicContext += `\n\n👤 NOME DO CLIENTE: "${clientName}"
-→ Use "${clientName}" em TODAS as respostas
+    if (resolvedClientName) {
+      dynamicContext += `\n\n👤 NOME DO CLIENTE: "${resolvedClientName}"
+→ Use "${resolvedClientName}" em TODAS as respostas
 → NÃO pergunte o nome novamente`;
     } else {
       dynamicContext += `\n\n👤 NOME: Ainda não informado
