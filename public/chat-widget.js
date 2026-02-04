@@ -11,6 +11,7 @@
 
   var SUPABASE_URL = "https://ypkmorgcpooygsvhcpvo.supabase.co";
   var CHAT_URL = SUPABASE_URL + "/functions/v1/real-estate-chat";
+  var LEADS_URL = SUPABASE_URL + "/functions/v1/real_estate_leads";
   var ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlwa21vcmdjcG9veWdzdmhjcHZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY5ODY1MjAsImV4cCI6MjA3MjU2MjUyMH0.A8MoJFe_ACtVDl7l0crAyU7ZxxOhdWJ8NShaqSHBxQc";
 
   var LEAD_STORAGE_KEY = "supreme_chat_lead_id";
@@ -288,11 +289,10 @@
       fab.setAttribute('aria-label', 'Assistente Online');
     }
 
-    // Submit pre-chat form - create lead in leads_imobiliarios FIRST
+    // Submit pre-chat form - use real_estate_leads Edge Function
     async function submitPreChat() {
       var name = preChatNameInput.value.trim();
       var phone = preChatPhoneInput.value;
-      var phoneDigits = phone.replace(/\D/g, '');
 
       preChatError.style.display = 'none';
 
@@ -313,140 +313,36 @@
       setPreChatLoading(true);
 
       try {
-        console.log('[Chat Widget] Salvando lead com:', { name, phone });
+        console.log('[Chat Widget] Salvando lead via Edge Function:', { name, phone });
 
         // ============================================
-        // CRIAR LEAD DIRETO EM leads_imobiliarios
+        // USAR EDGE FUNCTION real_estate_leads
         // ============================================
-        var existingLeadId = null;
-        
-        // 1. Verificar se já existe lead com mesmo telefone
-        var checkResponse = await fetch(SUPABASE_URL + '/rest/v1/leads_imobiliarios?or=(telefone.eq.' + encodeURIComponent(phone) + ',telefone.eq.' + phoneDigits + ')&limit=1', {
-          method: 'GET',
-          headers: {
-            'Authorization': 'Bearer ' + ANON_KEY,
-            'apikey': ANON_KEY
-          }
-        });
-
-        if (checkResponse.ok) {
-          var existingData = await checkResponse.json();
-          if (existingData && existingData.length > 0) {
-            existingLeadId = existingData[0].id;
-            console.log('[Chat Widget] Lead existente encontrado:', existingLeadId);
-            
-            // Atualizar lead existente
-            await fetch(SUPABASE_URL + '/rest/v1/leads_imobiliarios?id=eq.' + existingLeadId, {
-              method: 'PATCH',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + ANON_KEY,
-                'apikey': ANON_KEY
-              },
-              body: JSON.stringify({ 
-                nome: name, 
-                telefone: phone,
-                updated_at: new Date().toISOString()
-              })
-            });
-          }
-        }
-
-        // 2. Se não existe, criar novo
-        if (!existingLeadId) {
-          var leadImobPayload = {
-            nome: name,
-            telefone: phone,
-            origem: CONFIG.origin || 'chat',
-            pagina_origem: window.location.href,
-            status: 'novo',
-            descricao: 'Lead capturado via chat do site'
-          };
-
-          console.log('[Chat Widget] Criando lead em leads_imobiliarios:', leadImobPayload);
-
-          var leadImobResponse = await fetch(SUPABASE_URL + '/rest/v1/leads_imobiliarios', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer ' + ANON_KEY,
-              'apikey': ANON_KEY,
-              'Prefer': 'return=representation'
-            },
-            body: JSON.stringify(leadImobPayload)
-          });
-
-          if (leadImobResponse.ok) {
-            var leadImobData = await leadImobResponse.json();
-            if (leadImobData && leadImobData.length > 0) {
-              state.leadImobId = leadImobData[0].id;
-              try { localStorage.setItem(LEAD_IMOB_STORAGE_KEY, state.leadImobId); } catch (_) {}
-              console.log('[Chat Widget] ✅ Lead criado em leads_imobiliarios:', state.leadImobId);
-            }
-          } else {
-            console.error('[Chat Widget] Erro ao criar lead_imobiliario:', await leadImobResponse.text());
-          }
-        } else {
-          state.leadImobId = existingLeadId;
-          try { localStorage.setItem(LEAD_IMOB_STORAGE_KEY, existingLeadId); } catch (_) {}
-        }
-
-        // 3. Também criar na tabela leads para compatibilidade
-        var leadPayload = {
-          name: name,
-          phone: phone,
-          origin: CONFIG.origin || 'chat',
-          page_url: window.location.href,
-          status: 'novo'
-        };
-
-        var leadResponse = await fetch(SUPABASE_URL + '/rest/v1/leads', {
+        var leadResponse = await fetch(LEADS_URL, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + ANON_KEY,
-            'apikey': ANON_KEY,
-            'Prefer': 'return=representation'
+            'Content-Type': 'application/json'
           },
-          body: JSON.stringify(leadPayload)
+          body: JSON.stringify({
+            clientName: name,
+            clientPhone: phone,
+            origin: CONFIG.origin || 'chat'
+          })
         });
 
         if (leadResponse.ok) {
           var leadData = await leadResponse.json();
-          if (leadData && leadData.length > 0) {
-            state.leadId = leadData[0].id;
+          if (leadData.success && leadData.leadId) {
+            state.leadId = leadData.leadId;
             try { localStorage.setItem(LEAD_STORAGE_KEY, state.leadId); } catch (_) {}
-            console.log('[Chat Widget] Lead criado em leads:', state.leadId);
+            console.log('[Chat Widget] ✅ Lead criado via Edge Function:', state.leadId);
           }
+        } else {
+          var errorText = await leadResponse.text();
+          console.error('[Chat Widget] Erro na Edge Function:', errorText);
         }
 
-        // 4. Criar chat session
-        if (state.leadId) {
-          var sessionResponse = await fetch(SUPABASE_URL + '/rest/v1/chat_sessions', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer ' + ANON_KEY,
-              'apikey': ANON_KEY,
-              'Prefer': 'return=representation'
-            },
-            body: JSON.stringify({
-              lead_id: state.leadId,
-              status: 'active',
-              started_at: new Date().toISOString()
-            })
-          });
-
-          if (sessionResponse.ok) {
-            var sessionData = await sessionResponse.json();
-            if (sessionData && sessionData.length > 0) {
-              state.sessionId = sessionData[0].id;
-              try { localStorage.setItem(SESSION_STORAGE_KEY, state.sessionId); } catch (_) {}
-            }
-          }
-        }
-
-        // 5. Salvar dados do usuário no localStorage
+        // Salvar dados do usuário no localStorage
         state.clientName = name;
         state.clientPhone = phone;
         state.preChatCompleted = true;
