@@ -50,28 +50,9 @@ const Admin = () => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'properties' | 'users' | 'leads' | 'attendants' | 'sessions' | 'metrics' | 'conversions'>('properties');
+  const [accessDenied, setAccessDenied] = useState(false);
 
-  // Redirect if not authenticated or not admin
-  if (!user && !loading) {
-    return <Navigate to="/auth" replace />;
-  }
-
-  if (!isAdmin && !loading) {
-    toast({
-      title: "Acesso negado",
-      description: "Você não tem permissão para acessar esta página.",
-      variant: "destructive",
-    });
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  useEffect(() => {
-    if (!isAdmin) return;
-    setIsLoading(true);
-    Promise.all([fetchAllProperties(), fetchAllProfiles()])
-      .finally(() => setIsLoading(false));
-  }, [isAdmin]);
-
+  // Fetch data functions
   const fetchAllProperties = async () => {
     try {
       const { data: resp, error } = await supabase.functions.invoke('get_public_properties', {
@@ -80,11 +61,15 @@ const Admin = () => {
       if (error) throw error as any;
       setProperties(((resp as any)?.data || []) as Property[]);
     } catch (error: any) {
-      toast({
-        title: 'Erro ao carregar imóveis',
-        description: error?.message || 'Falha ao buscar imóveis',
-        variant: 'destructive',
-      });
+      console.error('Erro ao carregar imóveis:', error);
+      // Don't show toast for auth errors - just log them
+      if (!error?.message?.includes('auth')) {
+        toast({
+          title: 'Erro ao carregar imóveis',
+          description: error?.message || 'Falha ao buscar imóveis',
+          variant: 'destructive',
+        });
+      }
     }
   };
 
@@ -111,13 +96,50 @@ const Admin = () => {
 
       setProfiles(profilesWithRoles);
     } catch (error: any) {
-      toast({
-        title: "Erro ao carregar usuários",
-        description: error.message,
-        variant: "destructive",
-      });
+      console.error('Erro ao carregar usuários:', error);
     }
   };
+
+  // ALL useEffects MUST come before any conditional returns
+  useEffect(() => {
+    // Check access after loading completes
+    if (!loading && !user) {
+      // Not authenticated - redirect handled below
+      setIsLoading(false);
+      return;
+    }
+    
+    if (!loading && user && !isAdmin) {
+      // User is authenticated but not admin
+      setAccessDenied(true);
+      setIsLoading(false);
+      toast({
+        title: "Acesso negado",
+        description: "Você não tem permissão para acessar esta página.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!loading && isAdmin) {
+      // User is admin - fetch data
+      setIsLoading(true);
+      Promise.all([fetchAllProperties(), fetchAllProfiles()])
+        .catch(err => console.error('Error loading admin data:', err))
+        .finally(() => setIsLoading(false));
+    }
+  }, [loading, user, isAdmin]);
+
+  // Conditional returns AFTER all hooks
+  if (!user && !loading) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  if (accessDenied) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+
 
   const updatePropertyStatus = async (id: string, status: string) => {
     try {
