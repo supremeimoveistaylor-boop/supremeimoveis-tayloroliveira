@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.send-whatsapp]
 verify_jwt = false
+
+[functions.real_estate_leads]
+verify_jwt = false
