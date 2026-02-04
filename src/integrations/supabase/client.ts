@@ -8,6 +8,17 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
+// Detect if running in production (not in Lovable editor/preview)
+const isProductionDomain = (() => {
+  if (typeof window === 'undefined') return false;
+  const hostname = window.location.hostname;
+  // Production domains: lovable.app, custom domains, Vercel, etc.
+  // NOT production: lovableproject.com (preview), localhost
+  return !hostname.includes('lovableproject.com') && 
+         !hostname.includes('localhost') && 
+         !hostname.includes('127.0.0.1');
+})();
+
 // Use a safe storage to avoid crashes on Safari Private Mode and restricted environments
 const safeStorage = (() => {
   try {
@@ -26,5 +37,9 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     storage: safeStorage,
     persistSession: Boolean(safeStorage),
     autoRefreshToken: true,
+    // Use PKCE flow explicitly to bypass any external auth-bridge injection
+    flowType: 'pkce',
+    // In production, don't detect session from URL (prevents auth-bridge interference)
+    detectSessionInUrl: !isProductionDomain,
   }
 });
