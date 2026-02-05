@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Calculator, Building, Percent, Clock, TrendingUp, AlertCircle } from "lucide-react";
+import { Loader2, Calculator, Building, Percent, Clock, TrendingUp, AlertCircle, DollarSign } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { FinancingResult } from "./FinancingResult";
 import { BankComparison } from "./BankComparison";
@@ -40,12 +40,6 @@ const BANCOS = [
   { id: 5, nome: "Santander" },
 ];
 
-const RENDAS = [
-  { value: 10000, label: "R$ 10.000" },
-  { value: 20000, label: "R$ 20.000" },
-  { value: 50000, label: "R$ 50.000+" },
-];
-
 const PRAZOS = [
   { value: 20, label: "20 anos" },
   { value: 25, label: "25 anos" },
@@ -68,18 +62,47 @@ export const FinancingSimulator = ({ userData }: FinancingSimulatorProps) => {
     banco_id: "",
   });
 
-  const formatCurrency = (value: string) => {
-    const numericValue = value.replace(/\D/g, "");
-    const formatted = new Intl.NumberFormat("pt-BR", {
+  // Formatar valor para exibição no formato brasileiro (R$ 10.000,00)
+  const formatCurrency = (value: string): string => {
+    // Remove tudo que não é número
+    const numericOnly = value.replace(/\D/g, "");
+    
+    if (!numericOnly || numericOnly === "") return "";
+    
+    // Converte para número (centavos)
+    const cents = parseInt(numericOnly, 10);
+    
+    // Divide por 100 para obter o valor real
+    const realValue = cents / 100;
+    
+    // Formata para pt-BR
+    return realValue.toLocaleString("pt-BR", {
       style: "currency",
       currency: "BRL",
-      minimumFractionDigits: 0,
-    }).format(Number(numericValue) / 100);
-    return formatted;
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
   };
 
-  const parseCurrency = (value: string) => {
-    return Number(value.replace(/\D/g, "")) / 100;
+  // Converter valor formatado para número (float)
+  // "R$ 10.000.000,00" → 10000000.00
+  const parseCurrency = (value: string): number => {
+    if (!value || value === "") return 0;
+    
+    let str = String(value).trim();
+    
+    // Remove símbolo de moeda e espaços
+    str = str.replace(/[R$\s]/g, "");
+    
+    // Formato brasileiro: ponto é milhar, vírgula é decimal
+    // Remove pontos (separador de milhar)
+    str = str.replace(/\./g, "");
+    
+    // Substitui vírgula (separador decimal) por ponto
+    str = str.replace(",", ".");
+    
+    const parsed = parseFloat(str);
+    return isNaN(parsed) ? 0 : parsed;
   };
 
   const handleSimulate = async () => {
@@ -96,12 +119,28 @@ export const FinancingSimulator = ({ userData }: FinancingSimulatorProps) => {
     setBankResults(null);
 
     try {
+      const rendaValue = parseCurrency(formData.renda_mensal);
+      const valorImovelValue = parseCurrency(formData.valor_imovel);
+      const entradaValue = parseCurrency(formData.entrada);
+      const fgtsValue = formData.usar_fgts ? parseCurrency(formData.valor_fgts) : 0;
+
+      // Validação de valores mínimos
+      if (valorImovelValue <= 0 || rendaValue <= 0) {
+        toast({
+          title: "Valores inválidos",
+          description: "O valor do imóvel e a renda devem ser maiores que zero.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
       const payload = {
         user_id: userData.user_id,
-        valor_imovel: parseCurrency(formData.valor_imovel),
-        entrada: parseCurrency(formData.entrada),
-        fgts: formData.usar_fgts ? parseCurrency(formData.valor_fgts) : 0,
-        renda: Number(formData.renda_mensal),
+        valor_imovel: valorImovelValue,
+        entrada: entradaValue,
+        fgts: fgtsValue,
+        renda: rendaValue,
         prazo: Number(formData.prazo_anos),
         banco_id: Number(formData.banco_id),
       };
@@ -118,12 +157,13 @@ export const FinancingSimulator = ({ userData }: FinancingSimulatorProps) => {
       setResult(data);
     } catch (error) {
       console.error("Error calculating:", error);
-      // Demo fallback
+      // Demo fallback com valores já parseados
+      const rendaValue = parseCurrency(formData.renda_mensal);
       const valorFinanciado = parseCurrency(formData.valor_imovel) - parseCurrency(formData.entrada) - (formData.usar_fgts ? parseCurrency(formData.valor_fgts) : 0);
       const taxa = 0.0085; // 0.85% a.m.
       const prazoMeses = Number(formData.prazo_anos) * 12;
       const parcela = valorFinanciado * (taxa * Math.pow(1 + taxa, prazoMeses)) / (Math.pow(1 + taxa, prazoMeses) - 1);
-      const percentualRenda = (parcela / Number(formData.renda_mensal)) * 100;
+      const percentualRenda = rendaValue > 0 ? (parcela / rendaValue) * 100 : 0;
       
       setResult({
         parcela: Math.round(parcela),
@@ -151,12 +191,28 @@ export const FinancingSimulator = ({ userData }: FinancingSimulatorProps) => {
     setResult(null);
 
     try {
+      const rendaValue = parseCurrency(formData.renda_mensal);
+      const valorImovelValue = parseCurrency(formData.valor_imovel);
+      const entradaValue = parseCurrency(formData.entrada);
+      const fgtsValue = formData.usar_fgts ? parseCurrency(formData.valor_fgts) : 0;
+
+      // Validação de valores mínimos
+      if (valorImovelValue <= 0 || rendaValue <= 0) {
+        toast({
+          title: "Valores inválidos",
+          description: "O valor do imóvel e a renda devem ser maiores que zero.",
+          variant: "destructive",
+        });
+        setIsComparing(false);
+        return;
+      }
+
       const payload = {
         user_id: userData.user_id,
-        valor_imovel: parseCurrency(formData.valor_imovel),
-        entrada: parseCurrency(formData.entrada),
-        fgts: formData.usar_fgts ? parseCurrency(formData.valor_fgts) : 0,
-        renda: Number(formData.renda_mensal),
+        valor_imovel: valorImovelValue,
+        entrada: entradaValue,
+        fgts: fgtsValue,
+        renda: rendaValue,
         prazo: Number(formData.prazo_anos),
       };
 
@@ -172,14 +228,15 @@ export const FinancingSimulator = ({ userData }: FinancingSimulatorProps) => {
       setBankResults(data);
     } catch (error) {
       console.error("Error comparing:", error);
-      // Demo fallback
+      // Demo fallback com valores já parseados
+      const rendaValue = parseCurrency(formData.renda_mensal);
       const valorFinanciado = parseCurrency(formData.valor_imovel) - parseCurrency(formData.entrada) - (formData.usar_fgts ? parseCurrency(formData.valor_fgts) : 0);
       const prazoMeses = Number(formData.prazo_anos) * 12;
       
       const demoResults: BankResult[] = BANCOS.map((banco, index) => {
         const taxa = 0.0075 + (index * 0.001);
         const parcela = valorFinanciado * (taxa * Math.pow(1 + taxa, prazoMeses)) / (Math.pow(1 + taxa, prazoMeses) - 1);
-        const percentualRenda = (parcela / Number(formData.renda_mensal)) * 100;
+        const percentualRenda = rendaValue > 0 ? (parcela / rendaValue) * 100 : 0;
         
         return {
           banco: banco.nome,
@@ -223,27 +280,18 @@ export const FinancingSimulator = ({ userData }: FinancingSimulatorProps) => {
               />
             </div>
 
-            {/* Renda Mensal */}
+            {/* Renda Mensal - Agora é input livre */}
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-accent" />
+                <DollarSign className="h-4 w-4 text-accent" />
                 Renda Mensal Familiar
               </Label>
-              <Select
+              <Input
+                placeholder="R$ 0,00"
                 value={formData.renda_mensal}
-                onValueChange={(value) => setFormData({ ...formData, renda_mensal: value })}
-              >
-                <SelectTrigger className="bg-background border-border">
-                  <SelectValue placeholder="Selecione sua renda" />
-                </SelectTrigger>
-                <SelectContent>
-                  {RENDAS.map((renda) => (
-                    <SelectItem key={renda.value} value={String(renda.value)}>
-                      {renda.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                onChange={(e) => setFormData({ ...formData, renda_mensal: formatCurrency(e.target.value) })}
+                className="bg-background border-border text-lg"
+              />
             </div>
 
             {/* Entrada */}
