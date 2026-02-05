@@ -1,6 +1,7 @@
-/* Supreme Chat Widget v3.0 - IA SEMPRE ATIVA
-   A IA responde IMEDIATAMENTE sem bloqueios.
-   Lead capture é ASSÍNCRONO e não bloqueia.
+/* Supreme Chat Widget v4.0 - PRÉ-CAPTURA + IA
+   Formulário de captura ANTES do chat.
+   Após captura, chat funciona normalmente.
+   Template do chat 100% preservado.
 */
 (function () {
   var CONFIG = (window.chatConfig && typeof window.chatConfig === 'object') ? window.chatConfig : {};
@@ -12,6 +13,9 @@
   var SESSION_NAME_KEY = "supreme_chat_name";
   var SESSION_PHONE_KEY = "supreme_chat_phone";
 
+  // Fluxo: CAPTURE -> CHAT
+  var FLOW = { CAPTURE: 'capture', CHAT: 'chat' };
+
   // Estado em memória
   var state = {
     isOpen: false,
@@ -20,7 +24,8 @@
     clientName: null,
     clientPhone: null,
     leadSaved: false,
-    pendingLeadSave: false
+    pendingLeadSave: false,
+    flowState: FLOW.CAPTURE // Começa no formulário
   };
 
   // ============================================
@@ -31,6 +36,10 @@
       state.leadSaved = sessionStorage.getItem(SESSION_LEAD_KEY) === 'true';
       state.clientName = sessionStorage.getItem(SESSION_NAME_KEY) || null;
       state.clientPhone = sessionStorage.getItem(SESSION_PHONE_KEY) || null;
+      // Se já salvou lead, pular para o chat
+      if (state.leadSaved && state.clientName) {
+        state.flowState = FLOW.CHAT;
+      }
     } catch (_) {}
   }
 
@@ -319,13 +328,59 @@
       ".send{border-radius:12px;padding:0 14px;background:" + primary + ";color:#111;font-weight:700}\n" +
       ".send[disabled]{opacity:0.6;cursor:not-allowed}\n" +
       ".online-dot{width:8px;height:8px;background:#4ade80;border-radius:50%;animation:pulse 2s infinite}\n" +
+      // Estilos para o formulário de captura
+      ".capture-view{flex:1;display:flex;flex-direction:column;padding:20px;background:" + bg + "}\n" +
+      ".capture-greeting{background:rgba(255,255,255,0.08);border-radius:14px;border-bottom-left-radius:6px;padding:12px;margin-bottom:20px;font-size:13px;line-height:1.4}\n" +
+      ".capture-form{display:flex;flex-direction:column;gap:12px}\n" +
+      ".capture-label{font-size:12px;color:" + muted + ";margin-bottom:4px}\n" +
+      ".capture-input{width:100%;border-radius:12px;border:1px solid rgba(255,255,255,0.10);background:rgba(0,0,0,0.20);color:" + text + ";padding:12px;font-size:14px}\n" +
+      ".capture-input:focus{outline:none;border-color:" + primary + "}\n" +
+      ".capture-input::placeholder{color:rgba(255,255,255,0.4)}\n" +
+      ".capture-btn{width:100%;border-radius:12px;padding:14px;background:" + primary + ";color:#111;font-weight:700;font-size:14px;margin-top:8px;transition:opacity 0.2s}\n" +
+      ".capture-btn:hover{opacity:0.9}\n" +
+      ".capture-btn[disabled]{opacity:0.6;cursor:not-allowed}\n" +
+      ".capture-error{color:#ef4444;font-size:12px;margin-top:-8px}\n" +
+      ".chat-view{display:flex;flex-direction:column;flex:1;overflow:hidden}\n" +
+      ".hidden{display:none!important}\n" +
       "" });
 
+    // ============================================
+    // ELEMENTOS DO FORMULÁRIO DE CAPTURA
+    // ============================================
+    var nameInput = el('input', { class: 'capture-input', placeholder: 'Seu nome', type: 'text', maxlength: '100' });
+    var phoneInput = el('input', { class: 'capture-input', placeholder: '(00) 00000-0000', type: 'tel', maxlength: '15' });
+    var captureError = el('div', { class: 'capture-error hidden', text: '' });
+    var captureBtn = el('button', { class: 'btn capture-btn', type: 'button', text: 'Iniciar Conversa' });
+
+    var captureView = el('div', { class: 'capture-view' },
+      el('div', { class: 'capture-greeting', text: 'Olá! 👋 Sou o assistente da Supreme Empreendimentos.\n\nPara começar, preencha seus dados abaixo:' }),
+      el('div', { class: 'capture-form' },
+        el('div', {},
+          el('div', { class: 'capture-label', text: 'Nome' }),
+          nameInput
+        ),
+        el('div', {},
+          el('div', { class: 'capture-label', text: 'Telefone' }),
+          phoneInput,
+          captureError
+        ),
+        captureBtn
+      )
+    );
+
+    // ============================================
+    // ELEMENTOS DO CHAT (TEMPLATE ORIGINAL)
+    // ============================================
     var msgList = el('div', { class: 'msgs', role: 'log', 'aria-live': 'polite' });
     var input = el('input', { class: 'in', placeholder: 'Digite sua mensagem...', type: 'text', maxlength: '500' });
     var sendBtn = el('button', { class: 'btn send', type: 'button' }, el('span', { text: 'Enviar' }));
     var closeBtn = el('button', { class: 'btn iconBtn', type: 'button', title: 'Fechar', 'aria-label': 'Fechar chat' },
       el('span', { text: '×', style: 'font-size:18px;line-height:1' })
+    );
+
+    var chatView = el('div', { class: 'chat-view' },
+      msgList,
+      el('div', { class: 'foot' }, input, sendBtn)
     );
 
     var header = el('div', { class: 'hdr' },
@@ -349,13 +404,120 @@
 
     var panel = el('div', { class: 'panel', role: 'dialog', 'aria-label': 'Chat de atendimento' },
       header,
-      msgList,
-      el('div', { class: 'foot' }, input, sendBtn)
+      captureView,
+      chatView
     );
 
     var fab = el('button', { class: 'btn fab', type: 'button', 'aria-label': 'Assistente Online' },
       el('span', { text: '💬', style: 'font-size:22px' })
     );
+
+    // ============================================
+    // MÁSCARA DE TELEFONE
+    // ============================================
+    function formatPhone(value) {
+      var digits = value.replace(/\D/g, '');
+      if (digits.length <= 2) return digits;
+      if (digits.length <= 7) return '(' + digits.slice(0, 2) + ') ' + digits.slice(2);
+      if (digits.length <= 11) return '(' + digits.slice(0, 2) + ') ' + digits.slice(2, 7) + '-' + digits.slice(7);
+      return '(' + digits.slice(0, 2) + ') ' + digits.slice(2, 7) + '-' + digits.slice(7, 11);
+    }
+
+    phoneInput.addEventListener('input', function() {
+      phoneInput.value = formatPhone(phoneInput.value);
+    });
+
+    // ============================================
+    // RENDERIZAR VISÃO ATUAL
+    // ============================================
+    function renderCurrentView() {
+      if (state.flowState === FLOW.CAPTURE) {
+        captureView.classList.remove('hidden');
+        chatView.classList.add('hidden');
+      } else {
+        captureView.classList.add('hidden');
+        chatView.classList.remove('hidden');
+      }
+    }
+
+    // ============================================
+    // SALVAR LEAD E TRANSICIONAR PARA CHAT
+    // ============================================
+    async function submitCapture() {
+      var name = nameInput.value.trim();
+      var phone = phoneInput.value.replace(/\D/g, '');
+
+      // Validação
+      if (!name || name.length < 2) {
+        captureError.textContent = 'Por favor, informe seu nome';
+        captureError.classList.remove('hidden');
+        nameInput.focus();
+        return;
+      }
+      if (phone.length < 10 || phone.length > 11) {
+        captureError.textContent = 'Telefone inválido (min 10 dígitos)';
+        captureError.classList.remove('hidden');
+        phoneInput.focus();
+        return;
+      }
+
+      captureError.classList.add('hidden');
+      captureBtn.disabled = true;
+      captureBtn.textContent = 'Salvando...';
+
+      try {
+        var response = await fetch(LEADS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            clientName: name,
+            clientPhone: phone,
+            origin: 'Chat'
+          })
+        });
+
+        if (!response.ok) throw new Error('Falha ao salvar');
+
+        console.log('[Chat] ✅ Lead salvo com sucesso');
+        
+        // Atualizar estado
+        state.clientName = name;
+        state.clientPhone = phone;
+        state.leadSaved = true;
+        state.flowState = FLOW.CHAT;
+        saveSessionData();
+
+        // Transicionar para o chat
+        renderCurrentView();
+        
+        // Mensagem de boas vindas personalizada
+        addMessage('assistant', 'Obrigado, ' + name + '! 😊\n\nComo posso ajudar você hoje?');
+        input.focus();
+
+      } catch (e) {
+        console.error('[Chat] Erro ao salvar lead:', e);
+        captureError.textContent = 'Erro ao salvar. Tente novamente.';
+        captureError.classList.remove('hidden');
+      } finally {
+        captureBtn.disabled = false;
+        captureBtn.textContent = 'Iniciar Conversa';
+      }
+    }
+
+    // Event listeners do formulário
+    captureBtn.addEventListener('click', submitCapture);
+    nameInput.addEventListener('keydown', function(ev) {
+      if (ev.key === 'Enter') {
+        ev.preventDefault();
+        phoneInput.focus();
+      }
+    });
+    phoneInput.addEventListener('keydown', function(ev) {
+      if (ev.key === 'Enter') {
+        ev.preventDefault();
+        submitCapture();
+      }
+    });
 
     function addMessage(role, content) {
       state.messages.push({ role: role, content: content });
@@ -440,15 +602,19 @@
       panel.classList.add('open');
       fab.classList.add('no-bounce');
 
-      // Mensagem de boas vindas
-      if (state.messages.length === 0) {
-        var greeting = state.clientName 
-          ? 'Olá, ' + state.clientName + '! 👋 Bem-vindo de volta à Supreme Empreendimentos.\n\nComo posso ajudar você hoje?'
-          : 'Olá! 👋 Sou o assistente da Supreme Empreendimentos.\n\nComo posso ajudar você hoje?';
-        addMessage('assistant', greeting);
-      }
+      // Renderizar visão correta (captura ou chat)
+      renderCurrentView();
 
-      input.focus();
+      // Se já passou pela captura e é a primeira abertura do chat
+      if (state.flowState === FLOW.CHAT && state.messages.length === 0) {
+        var greeting = 'Olá, ' + (state.clientName || 'Visitante') + '! 👋 Bem-vindo de volta à Supreme Empreendimentos.\n\nComo posso ajudar você hoje?';
+        addMessage('assistant', greeting);
+        input.focus();
+      } else if (state.flowState === FLOW.CAPTURE) {
+        nameInput.focus();
+      } else {
+        input.focus();
+      }
     }
 
     function close() {
@@ -481,6 +647,9 @@
     mount.appendChild(fab);
     mount.appendChild(panel);
     document.body.appendChild(root);
+
+    // Renderizar visão inicial
+    renderCurrentView();
 
     // Auto-open após delay
     var autoOpenMs = CONFIG.autoOpenMs;
