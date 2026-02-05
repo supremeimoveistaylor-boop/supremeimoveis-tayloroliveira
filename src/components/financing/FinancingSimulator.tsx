@@ -233,15 +233,24 @@ export const FinancingSimulator = ({ userData }: FinancingSimulatorProps) => {
       const valorFinanciado = parseCurrency(formData.valor_imovel) - parseCurrency(formData.entrada) - (formData.usar_fgts ? parseCurrency(formData.valor_fgts) : 0);
       const prazoMeses = Number(formData.prazo_anos) * 12;
       
-      const demoResults: BankResult[] = BANCOS.map((banco, index) => {
-        const taxa = 0.0075 + (index * 0.001);
-        const parcela = valorFinanciado * (taxa * Math.pow(1 + taxa, prazoMeses)) / (Math.pow(1 + taxa, prazoMeses) - 1);
+      // Taxas mensais específicas por banco (baseadas nas taxas anuais)
+      const taxasPorBanco: Record<number, { mensal: number; cet: number }> = {
+        1: { mensal: 0.00868, cet: 10.92 }, // Caixa Econômica - 10,92% a.a.
+        2: { mensal: 0.0085, cet: 10.7 },   // Banco do Brasil
+        3: { mensal: 0.0095, cet: 12.0 },   // Itaú
+        4: { mensal: 0.0092, cet: 11.6 },   // Bradesco
+        5: { mensal: 0.0098, cet: 12.4 },   // Santander
+      };
+      
+      const demoResults: BankResult[] = BANCOS.map((banco) => {
+        const taxas = taxasPorBanco[banco.id] || { mensal: 0.0091, cet: 11.5 };
+        const parcela = valorFinanciado * (taxas.mensal * Math.pow(1 + taxas.mensal, prazoMeses)) / (Math.pow(1 + taxas.mensal, prazoMeses) - 1);
         const percentualRenda = rendaValue > 0 ? (parcela / rendaValue) * 100 : 0;
         
         return {
           banco: banco.nome,
           parcela: Math.round(parcela),
-          cet: 9.5 + (index * 0.5),
+          cet: taxas.cet,
           status: percentualRenda <= 30 ? "aprovável" : "renda_insuficiente",
         };
       });
