@@ -18,6 +18,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
+import { LeadCaptureDialog, type LeadCaptureData } from "@/components/chat/LeadCaptureDialog";
 
 // Notification sound using Web Audio API
 const playNotificationSound = () => {
@@ -115,9 +116,9 @@ interface RealEstateChatProps {
 }
 
 const CHAT_URL = `https://ypkmorgcpooygsvhcpvo.supabase.co/functions/v1/real-estate-chat`;
+const LEADS_URL = `https://ypkmorgcpooygsvhcpvo.supabase.co/functions/v1/real_estate_leads`;
 const LEAD_STORAGE_KEY = "supreme_chat_lead_id";
 const AUTO_OPEN_STORAGE_KEY = "supreme_chat_auto_opened";
-
 // Allowed file types
 const IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
 const DOCUMENT_TYPES = [
@@ -154,6 +155,14 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
   const [showFinishDialog, setShowFinishDialog] = useState(false);
   const [finishSummary, setFinishSummary] = useState("");
   const [isFinishing, setIsFinishing] = useState(false);
+
+  // Pré-chat (lead obrigatório)
+  const [showLeadCapture, setShowLeadCapture] = useState(false);
+  const [isSavingLead, setIsSavingLead] = useState(false);
+  const [leadCaptureError, setLeadCaptureError] = useState<string | null>(null);
+  const [clientName, setClientName] = useState<string | null>(null);
+  const [clientPhone, setClientPhone] = useState<string | null>(null);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -236,17 +245,79 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
     }
   }, []);
 
-  const startConversation = useCallback(async () => {
+  const saveLead = useCallback(async (data: LeadCaptureData): Promise<string> => {
+    const response = await fetch(LEADS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        clientName: data.name,
+        clientPhone: data.phoneDigits,
+        origin: "Chat",
+      }),
+    });
+
+    const json = await response.json().catch(() => ({} as any));
+    if (!response.ok || !json?.leadId) {
+      throw new Error(json?.error || "Falha ao salvar lead");
+    }
+
+    return json.leadId as string;
+  }, []);
+
+  const handleLeadCaptureSubmit = useCallback(async (data: LeadCaptureData) => {
+    setIsSavingLead(true);
+    setLeadCaptureError(null);
+
+    try {
+      const newLeadId = await saveLead(data);
+      setLeadId(newLeadId);
+      localStorage.setItem(LEAD_STORAGE_KEY, newLeadId);
+
+      setClientName(data.name);
+      setClientPhone(data.phoneDigits);
+
+      // Persistir para compatibilidade com o widget do site (se existir)
+      try {
+        sessionStorage.setItem("supreme_chat_name", data.name);
+        sessionStorage.setItem("supreme_chat_phone", data.phoneDigits);
+        sessionStorage.setItem("supreme_chat_lead_saved", "true");
+      } catch {
+        // ignore
+      }
+
+      setShowLeadCapture(false);
+
+      // Garante sessão antes de iniciar fluxo
+      await createOrGetSession(newLeadId);
+
+      // Reinicia o startConversation agora com leadId existente
+      setHasStarted(false);
+    } catch (e) {
+      console.error("Erro ao salvar lead:", e);
+      setLeadCaptureError("Não foi possível salvar seus dados. Tente novamente.");
+      return;
+    } finally {
+      setIsSavingLead(false);
+    }
+  }, [saveLead]);
+
+  const startConversation = useCallback(async (overrideLeadId?: string) => {
     if (hasStarted) return;
+
+    const effectiveLeadId = overrideLeadId ?? leadId;
+
+    // Pré-chat obrigatório: sem leadId, pedir nome/telefone
+    if (!effectiveLeadId) {
+      setShowLeadCapture(true);
+      return;
+    }
+
     setHasStarted(true);
 
-    if (leadId) {
-      const hasLoadedHistory = await loadChatHistory(leadId);
-      if (hasLoadedHistory) {
-        // Criar/recuperar sessão para lead existente
-        await createOrGetSession(leadId);
-        return;
-      }
+    const hasLoadedHistory = await loadChatHistory(effectiveLeadId);
+    if (hasLoadedHistory) {
+      await createOrGetSession(effectiveLeadId);
+      return;
     }
 
     setIsLoading(true);
@@ -260,13 +331,16 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
         },
         body: JSON.stringify({
           messages: [],
-          leadId,
+          leadId: effectiveLeadId,
           propertyId,
           propertyName,
           pageUrl: window.location.href,
           origin: origin || "Direto",
-          pageProperties: pageProperties?.slice(0, 10), // Limita a 10 imóveis para contexto
+          pageProperties: pageProperties?.slice(0, 10),
           pageContext,
+          clientName: clientName || undefined,
+          clientPhone: clientPhone || undefined,
+          skipLeadCreation: true,
         }),
       });
 
@@ -274,35 +348,31 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
         throw new Error("Erro ao iniciar conversa");
       }
 
-      const responseLeadId = response.headers.get("X-Lead-Id");
-      if (responseLeadId) {
-        setLeadId(responseLeadId);
-        // Criar sessão de chat com atribuição automática de atendente
-        await createOrGetSession(responseLeadId);
-      }
+      // Criar sessão de chat com atribuição automática de atendente
+      await createOrGetSession(effectiveLeadId);
 
-      await processStream(response, responseLeadId || leadId);
+      await processStream(response, effectiveLeadId);
     } catch (error) {
       console.error("Erro ao iniciar:", error);
-      setMessages([{
-        id: "1",
-        role: "assistant",
-        content: propertyName 
-          ? `Olá 😊 Vi que você está olhando o imóvel ${propertyName}. Posso te ajudar com alguma informação?`
-          : "Olá 😊 Seja bem-vindo(a)! Posso te ajudar a encontrar um imóvel ideal para você?",
-        timestamp: new Date(),
-      }]);
+      setMessages([
+        {
+          id: "1",
+          role: "assistant",
+          content: propertyName
+            ? `Olá 😊 Vi que você está olhando o imóvel ${propertyName}. Posso te ajudar com alguma informação?`
+            : "Olá 😊 Seja bem-vindo(a)! Posso te ajudar a encontrar um imóvel ideal para você?",
+          timestamp: new Date(),
+        },
+      ]);
     } finally {
       setIsLoading(false);
     }
-  }, [hasStarted, propertyId, propertyName, origin, leadId, loadChatHistory, pageProperties, pageContext]);
-
+  }, [hasStarted, leadId, loadChatHistory, propertyId, propertyName, origin, pageProperties, pageContext, clientName, clientPhone]);
   useEffect(() => {
     if (isOpen && !hasStarted) {
       startConversation();
     }
   }, [isOpen, hasStarted, startConversation]);
-
   const processStream = async (response: Response, currentLeadId: string | null) => {
     const reader = response.body?.getReader();
     if (!reader) return;
@@ -1212,6 +1282,15 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
           📎 Arquivos • 🎤 Áudio • 😊 Emojis • 2x toque para reagir
         </p>
       </div>
+
+      {/* Pré-chat: captura obrigatória de lead */}
+      <LeadCaptureDialog
+        open={showLeadCapture}
+        onOpenChange={setShowLeadCapture}
+        onSubmit={handleLeadCaptureSubmit}
+        isSubmitting={isSavingLead}
+        error={leadCaptureError}
+      />
 
       {/* Dialog para finalizar atendimento */}
       <Dialog open={showFinishDialog} onOpenChange={setShowFinishDialog}>
