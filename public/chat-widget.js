@@ -1,75 +1,80 @@
-/* Supreme Chat Widget - Vanilla JS (independente do React)
-   Versão: 2.0 - Fluxo conversacional sem persistência
-   
-   Injete via <head>:
-   <script>
-     window.chatConfig = { origin: 'Site' };
-   </script>
-   <script async src="/chat-widget.js"></script>
+/* Supreme Chat Widget v3.0 - IA SEMPRE ATIVA
+   A IA responde IMEDIATAMENTE sem bloqueios.
+   Lead capture é ASSÍNCRONO e não bloqueia.
 */
-
 (function () {
   var CONFIG = (window.chatConfig && typeof window.chatConfig === 'object') ? window.chatConfig : {};
-
   var SUPABASE_URL = "https://ypkmorgcpooygsvhcpvo.supabase.co";
   var LEADS_URL = SUPABASE_URL + "/functions/v1/real_estate_leads";
   var CHAT_URL = SUPABASE_URL + "/functions/v1/real-estate-chat";
   var ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlwa21vcmdjcG9veWdzdmhjcHZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY5ODY1MjAsImV4cCI6MjA3MjU2MjUyMH0.A8MoJFe_ACtVDl7l0crAyU7ZxxOhdWJ8NShaqSHBxQc";
-
   var SESSION_LEAD_KEY = "supreme_chat_lead_saved";
+  var SESSION_NAME_KEY = "supreme_chat_name";
+  var SESSION_PHONE_KEY = "supreme_chat_phone";
 
-  // Estados do fluxo conversacional
-  var FLOW_STATE = {
-    GREETING: 'greeting',
-    ASK_NAME: 'ask_name',
-    ASK_PHONE: 'ask_phone',
-    SAVING_LEAD: 'saving_lead',
-    CHAT_ACTIVE: 'chat_active'
-  };
-
-  // Estado em memória (não persiste)
+  // Estado em memória
   var state = {
     isOpen: false,
     messages: [],
     isLoading: false,
-    flowState: FLOW_STATE.GREETING,
     clientName: null,
     clientPhone: null,
-    leadSaved: false
+    leadSaved: false,
+    pendingLeadSave: false
   };
 
-  // Verifica se já salvou lead nesta sessão do navegador
-  function checkLeadSavedInSession() {
+  // ============================================
+  // SESSÃO: Recuperar dados salvos
+  // ============================================
+  function loadSessionData() {
     try {
-      return sessionStorage.getItem(SESSION_LEAD_KEY) === 'true';
-    } catch (_) {
-      return false;
-    }
-  }
-
-  function markLeadSavedInSession() {
-    try {
-      sessionStorage.setItem(SESSION_LEAD_KEY, 'true');
+      state.leadSaved = sessionStorage.getItem(SESSION_LEAD_KEY) === 'true';
+      state.clientName = sessionStorage.getItem(SESSION_NAME_KEY) || null;
+      state.clientPhone = sessionStorage.getItem(SESSION_PHONE_KEY) || null;
     } catch (_) {}
-    state.leadSaved = true;
   }
 
+  function saveSessionData() {
+    try {
+      if (state.clientName) sessionStorage.setItem(SESSION_NAME_KEY, state.clientName);
+      if (state.clientPhone) sessionStorage.setItem(SESSION_PHONE_KEY, state.clientPhone);
+      if (state.leadSaved) sessionStorage.setItem(SESSION_LEAD_KEY, 'true');
+    } catch (_) {}
+  }
+
+  // ============================================
+  // UTILIDADES
+  // ============================================
   function safeText(str) {
     return String(str || "").replace(/[<>]/g, '');
   }
 
-  // Validar telefone brasileiro: mínimo 10 dígitos
   function validatePhone(phone) {
-    var digits = phone.replace(/\D/g, "");
+    var digits = (phone || "").replace(/\D/g, "");
     return digits.length >= 10;
   }
 
-  // Formatar telefone
-  function formatPhone(value) {
-    var digits = value.replace(/\D/g, "").slice(0, 11);
-    if (digits.length <= 2) return digits.length ? "(" + digits : "";
-    if (digits.length <= 7) return "(" + digits.slice(0, 2) + ") " + digits.slice(2);
-    return "(" + digits.slice(0, 2) + ") " + digits.slice(2, 7) + "-" + digits.slice(7);
+  function extractName(text) {
+    // Detectar "meu nome é X" ou "sou X" ou "me chamo X"
+    var patterns = [
+      /(?:meu nome [eé]|me chamo|sou o?a?)\s+([A-Za-zÀ-ÿ]+(?:\s+[A-Za-zÀ-ÿ]+)?)/i,
+      /^([A-Za-zÀ-ÿ]{2,}(?:\s+[A-Za-zÀ-ÿ]+)?)$/i
+    ];
+    for (var i = 0; i < patterns.length; i++) {
+      var match = text.match(patterns[i]);
+      if (match && match[1] && match[1].length >= 2) {
+        return match[1].trim();
+      }
+    }
+    return null;
+  }
+
+  function extractPhone(text) {
+    var digits = text.replace(/\D/g, "");
+    if (digits.length >= 10 && digits.length <= 11) {
+      return digits;
+    }
+    return null;
   }
 
   function playNotificationSound() {
@@ -110,11 +115,167 @@
     return node;
   }
 
+  // ============================================
+  // SALVAR LEAD - ASSÍNCRONO E NÃO BLOQUEANTE
+  // ============================================
+  function saveLeadAsync() {
+    if (state.leadSaved || state.pendingLeadSave) {
+      console.log('[Chat] Lead já salvo ou em progresso');
+      return;
+    }
+    if (!state.clientName || !state.clientPhone) {
+      console.log('[Chat] Dados incompletos para salvar lead');
+      return;
+    }
+    if (!validatePhone(state.clientPhone)) {
+      console.log('[Chat] Telefone inválido');
+      return;
+    }
+
+    state.pendingLeadSave = true;
+    console.log('[Chat] Salvando lead de forma assíncrona:', { name: state.clientName, phone: state.clientPhone });
+
+    fetch(LEADS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        clientName: state.clientName,
+        clientPhone: state.clientPhone,
+        origin: CONFIG.origin || "Chat"
+      })
+    })
+    .then(function(response) {
+      if (response.ok) {
+        return response.json();
+      }
+      throw new Error('Falha ao salvar');
+    })
+    .then(function(data) {
+      console.log('[Chat] ✅ Lead salvo:', data);
+      state.leadSaved = true;
+      state.pendingLeadSave = false;
+      saveSessionData();
+    })
+    .catch(function(e) {
+      console.error('[Chat] Erro ao salvar lead:', e);
+      state.pendingLeadSave = false;
+    });
+  }
+
+  // ============================================
+  // CHAMAR IA - RESPOSTA NÃO BLOQUEANTE
+  // ============================================
+  async function getAIResponse(userMessage) {
+    try {
+      // Preparar mensagens para a IA
+      var messagesForAI = state.messages.slice(-10).map(function(m) {
+        return { role: m.role, content: m.content };
+      });
+
+      var response = await fetch(CHAT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + ANON_KEY
+        },
+        body: JSON.stringify({
+          messages: messagesForAI,
+          clientName: state.clientName || 'Visitante',
+          clientPhone: state.clientPhone || null,
+          origin: CONFIG.origin || 'Chat',
+          pageUrl: window.location.href,
+          pageContext: 'Site Supreme Empreendimentos',
+          skipLeadCreation: true
+        })
+      });
+
+      if (!response.ok) {
+        console.error('[Chat] Erro HTTP:', response.status);
+        return 'Desculpe, tive um problema. Pode repetir?';
+      }
+
+      // Verificar se é streaming SSE
+      var contentType = response.headers.get('content-type') || '';
+      
+      if (contentType.includes('text/event-stream')) {
+        // Processar SSE streaming
+        return await parseSSEStream(response);
+      } else {
+        // Resposta JSON normal
+        var data = await response.json();
+        return data.reply || data.message || 'Como posso ajudar você?';
+      }
+    } catch (e) {
+      console.error('[Chat] Erro ao obter resposta IA:', e);
+      return 'Desculpe, tive um problema de conexão. Pode repetir?';
+    }
+  }
+
+  // ============================================
+  // PARSER SSE STREAMING
+  // ============================================
+  async function parseSSEStream(response) {
+    var reader = response.body.getReader();
+    var decoder = new TextDecoder();
+    var fullText = '';
+    var buffer = '';
+
+    try {
+      while (true) {
+        var result = await reader.read();
+        if (result.done) break;
+
+        buffer += decoder.decode(result.value, { stream: true });
+        var lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (var i = 0; i < lines.length; i++) {
+          var line = lines[i].trim();
+          if (!line || line.startsWith(':')) continue;
+          if (line === 'data: [DONE]') continue;
+          if (!line.startsWith('data: ')) continue;
+
+          var jsonStr = line.slice(6);
+          try {
+            var parsed = JSON.parse(jsonStr);
+            var content = parsed.choices && parsed.choices[0] && parsed.choices[0].delta && parsed.choices[0].delta.content;
+            if (content) {
+              fullText += content;
+            }
+            // Check for non-streaming reply format
+            if (parsed.reply) {
+              fullText = parsed.reply;
+            }
+          } catch (parseErr) {
+            // Ignore parse errors for incomplete JSON
+          }
+        }
+      }
+
+      // Process remaining buffer
+      if (buffer.trim()) {
+        var remaining = buffer.trim();
+        if (remaining.startsWith('data: ') && remaining !== 'data: [DONE]') {
+          try {
+            var parsed = JSON.parse(remaining.slice(6));
+            if (parsed.reply) fullText = parsed.reply;
+            if (parsed.choices && parsed.choices[0] && parsed.choices[0].delta && parsed.choices[0].delta.content) {
+              fullText += parsed.choices[0].delta.content;
+            }
+          } catch (_) {}
+        }
+      }
+    } catch (streamErr) {
+      console.error('[Chat] Erro no stream:', streamErr);
+    }
+
+    return fullText || 'Como posso ajudar você?';
+  }
+
   function inject() {
     if (document.getElementById('supreme-chat-widget-root')) return;
 
-    // Verificar se lead já foi salvo nesta sessão
-    state.leadSaved = checkLeadSavedInSession();
+    loadSessionData();
 
     var root = el('div', { id: 'supreme-chat-widget-root' });
     var shadow = root.attachShadow ? root.attachShadow({ mode: 'open' }) : null;
@@ -225,140 +386,45 @@
     }
 
     // ============================================
-    // SALVAR LEAD - UMA ÚNICA VEZ
-    // ============================================
-    async function saveLeadOnce() {
-      if (state.leadSaved) {
-        console.log('[Chat] Lead já foi salvo nesta sessão');
-        return true;
-      }
-
-      console.log('[Chat] Salvando lead:', { name: state.clientName, phone: state.clientPhone });
-
-      try {
-        var response = await fetch(LEADS_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            clientName: state.clientName,
-            clientPhone: state.clientPhone,
-            origin: "Chat"
-          })
-        });
-
-        if (response.ok) {
-          var data = await response.json();
-          console.log('[Chat] ✅ Lead salvo com sucesso:', data);
-          markLeadSavedInSession();
-          return true;
-        } else {
-          console.error('[Chat] Erro ao salvar lead:', await response.text());
-          return false;
-        }
-      } catch (e) {
-        console.error('[Chat] Erro de rede ao salvar lead:', e);
-        return false;
-      }
-    }
-
-    // ============================================
-    // CHAMAR IA PARA RESPOSTA (sem persistência)
-    // ============================================
-    async function getAIResponse(userMessage) {
-      try {
-        var response = await fetch(CHAT_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + ANON_KEY
-          },
-          body: JSON.stringify({
-            messages: state.messages.slice(-10), // Apenas últimas 10 mensagens em memória
-            clientName: state.clientName,
-            clientPhone: state.clientPhone,
-            origin: CONFIG.origin || 'Chat',
-            pageUrl: window.location.href,
-            skipLeadCreation: true // Não criar lead via chat
-          })
-        });
-
-        if (response.ok) {
-          var data = await response.json();
-          return data.reply || 'Como posso ajudar você?';
-        }
-      } catch (e) {
-        console.error('[Chat] Erro ao obter resposta IA:', e);
-      }
-      return 'Desculpe, tive um problema. Pode repetir?';
-    }
-
-    // ============================================
-    // PROCESSAR MENSAGEM DO USUÁRIO
+    // PROCESSAR MENSAGEM - IA SEMPRE RESPONDE PRIMEIRO
     // ============================================
     async function processUserMessage(text) {
       addMessage('user', text);
       setLoading(true);
 
-      try {
-        switch (state.flowState) {
-          case FLOW_STATE.GREETING:
-          case FLOW_STATE.ASK_NAME:
-            // Capturar nome
-            var name = text.trim();
-            if (name.length >= 2) {
-              state.clientName = name;
-              state.flowState = FLOW_STATE.ASK_PHONE;
-              setTimeout(function() {
-                setLoading(false);
-                addMessage('assistant', 'Prazer, ' + name + '! 📱 Qual seu WhatsApp para contato? (com DDD)');
-              }, 500);
-            } else {
-              setTimeout(function() {
-                setLoading(false);
-                addMessage('assistant', 'Por favor, me diga seu nome completo para eu te atender melhor.');
-              }, 500);
-            }
-            break;
-
-          case FLOW_STATE.ASK_PHONE:
-            // Capturar telefone
-            var phone = text.replace(/\D/g, '');
-            if (validatePhone(phone)) {
-              state.clientPhone = phone;
-              state.flowState = FLOW_STATE.SAVING_LEAD;
-              
-              // Salvar lead UMA ÚNICA VEZ
-              var saved = await saveLeadOnce();
-              
-              state.flowState = FLOW_STATE.CHAT_ACTIVE;
-              setLoading(false);
-              
-              if (saved) {
-                addMessage('assistant', 'Perfeito, ' + state.clientName + '! ✅ Seus dados foram registrados.\n\nComo posso ajudar você hoje? Está procurando imóvel para comprar, alugar, ou quer vender/anunciar?');
-              } else {
-                addMessage('assistant', 'Ótimo, ' + state.clientName + '! Como posso ajudar você hoje?');
-              }
-            } else {
-              setLoading(false);
-              addMessage('assistant', 'Por favor, informe um número válido com DDD (mínimo 10 dígitos).\n\nExemplo: 62 99999-9999');
-            }
-            break;
-
-          case FLOW_STATE.CHAT_ACTIVE:
-            // Chat ativo - responder via IA
-            var aiReply = await getAIResponse(text);
-            setLoading(false);
-            addMessage('assistant', aiReply);
-            break;
-
-          default:
-            setLoading(false);
-            addMessage('assistant', 'Como posso ajudar?');
+      // CAPTURA DE DADOS EM PARALELO (NÃO BLOQUEANTE)
+      if (!state.clientName) {
+        var extractedName = extractName(text);
+        if (extractedName) {
+          state.clientName = extractedName;
+          saveSessionData();
+          console.log('[Chat] Nome capturado:', extractedName);
         }
-      } catch (e) {
-        console.error('[Chat] Erro:', e);
+      }
+
+      if (!state.clientPhone) {
+        var extractedPhone = extractPhone(text);
+        if (extractedPhone) {
+          state.clientPhone = extractedPhone;
+          saveSessionData();
+          console.log('[Chat] Telefone capturado:', extractedPhone);
+        }
+      }
+
+      // TENTAR SALVAR LEAD ASSÍNCRONO (se tiver dados completos)
+      if (state.clientName && state.clientPhone && !state.leadSaved) {
+        saveLeadAsync(); // Não bloqueia!
+      }
+
+      // CHAMAR IA IMEDIATAMENTE - NUNCA BLOQUEADO
+      try {
+        var aiReply = await getAIResponse(text);
         setLoading(false);
-        addMessage('assistant', 'Desculpe, ocorreu um erro. Tente novamente.');
+        addMessage('assistant', aiReply);
+      } catch (e) {
+        console.error('[Chat] Erro ao processar:', e);
+        setLoading(false);
+        addMessage('assistant', 'Desculpe, tive um problema. Pode repetir?');
       }
     }
 
@@ -374,17 +440,12 @@
       panel.classList.add('open');
       fab.classList.add('no-bounce');
 
-      // Iniciar conversa se ainda não iniciou
+      // Mensagem de boas vindas
       if (state.messages.length === 0) {
-        if (state.leadSaved) {
-          // Lead já salvo - ir direto para chat
-          state.flowState = FLOW_STATE.CHAT_ACTIVE;
-          addMessage('assistant', 'Olá! 👋 Bem-vindo de volta à Supreme Empreendimentos.\n\nComo posso ajudar você hoje?');
-        } else {
-          // Iniciar fluxo conversacional
-          state.flowState = FLOW_STATE.ASK_NAME;
-          addMessage('assistant', 'Olá! 👋 Sou o assistente da Supreme Empreendimentos.\n\nPara começar, qual é o seu nome?');
-        }
+        var greeting = state.clientName 
+          ? 'Olá, ' + state.clientName + '! 👋 Bem-vindo de volta à Supreme Empreendimentos.\n\nComo posso ajudar você hoje?'
+          : 'Olá! 👋 Sou o assistente da Supreme Empreendimentos.\n\nComo posso ajudar você hoje?';
+        addMessage('assistant', greeting);
       }
 
       input.focus();
@@ -421,7 +482,7 @@
     mount.appendChild(panel);
     document.body.appendChild(root);
 
-    // Auto-open após delay (se configurado)
+    // Auto-open após delay
     var autoOpenMs = CONFIG.autoOpenMs;
     if (autoOpenMs && typeof autoOpenMs === 'number') {
       setTimeout(function () {
@@ -430,7 +491,6 @@
     }
   }
 
-  // Inject when DOM ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', inject);
   } else {
