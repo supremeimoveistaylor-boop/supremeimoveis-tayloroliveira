@@ -141,7 +141,7 @@
       body: JSON.stringify({
         clientName: state.clientName,
         clientPhone: state.clientPhone,
-        origin: CONFIG.origin || "Chat"
+        origin: "Chat"
       })
     })
     .then(function(response) {
