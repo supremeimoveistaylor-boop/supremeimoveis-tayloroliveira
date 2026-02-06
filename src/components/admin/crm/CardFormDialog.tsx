@@ -140,6 +140,7 @@ export const CardFormDialog = memo(function CardFormDialog({
                   <SelectItem value="proposta">Proposta Enviada</SelectItem>
                   <SelectItem value="negociacao">Negociação</SelectItem>
                   <SelectItem value="fechado">Fechado</SelectItem>
+                  <SelectItem value="sem_interesse">Sem Interesse</SelectItem>
                 </SelectContent>
               </Select>
             </div>
