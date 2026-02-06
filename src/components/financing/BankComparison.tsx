@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, CheckCircle2, XCircle, TrendingDown, Award } from "lucide-react";
+import { Trophy, CheckCircle2, XCircle, TrendingDown, Award, Percent } from "lucide-react";
 import type { BankResult } from "./FinancingSimulator";
 
 interface BankComparisonProps {
@@ -18,6 +18,9 @@ export const BankComparison = ({ results }: BankComparisonProps) => {
   // Sort by parcela (lowest first)
   const sortedResults = [...results].sort((a, b) => a.parcela - b.parcela);
   const bestBank = sortedResults.find(r => r.status === "aprovável") || sortedResults[0];
+  
+  // Find bank with lowest CET (interest rate)
+  const lowestRateBank = [...results].sort((a, b) => a.cet - b.cet)[0];
 
   return (
     <Card className="border-accent/30 shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -60,6 +63,7 @@ export const BankComparison = ({ results }: BankComparisonProps) => {
           {sortedResults.map((bank, index) => {
             const isApproved = bank.status === "aprovável";
             const isBest = bank.banco === bestBank.banco;
+            const isLowestRate = bank.banco === lowestRateBank.banco;
 
             return (
               <div
@@ -78,12 +82,18 @@ export const BankComparison = ({ results }: BankComparisonProps) => {
                       {index + 1}º
                     </div>
                     <div>
-                      <p className="font-bold text-lg flex items-center gap-2">
+                      <p className="font-bold text-lg flex items-center gap-2 flex-wrap">
                         {bank.banco}
                         {isBest && <TrendingDown className="h-4 w-4 text-green-500" />}
+                        {isLowestRate && (
+                          <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-xs flex items-center gap-1">
+                            <Percent className="h-3 w-3" />
+                            Menor Taxa
+                          </Badge>
+                        )}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        CET: {bank.cet}% a.a.
+                        CET: <span className={isLowestRate ? "text-blue-400 font-semibold" : ""}>{bank.cet}% a.a.</span>
                       </p>
                     </div>
                   </div>
@@ -123,7 +133,7 @@ export const BankComparison = ({ results }: BankComparisonProps) => {
         {/* Legend */}
         <div className="mt-6 p-4 bg-secondary/30 rounded-lg">
           <p className="text-xs text-muted-foreground">
-            <strong>Critérios de ordenação:</strong> 1️⃣ Menor parcela • 2️⃣ Menor CET • 3️⃣ Maior aprovação
+            <strong>Legenda:</strong> 🟢 Menor parcela • <span className="text-blue-400">Menor Taxa</span> = CET mais baixo • ✅ Aprovável = até 30% da renda
           </p>
         </div>
       </CardContent>
