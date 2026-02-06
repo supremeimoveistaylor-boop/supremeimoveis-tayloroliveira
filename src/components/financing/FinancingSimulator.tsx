@@ -157,20 +157,50 @@ export const FinancingSimulator = ({ userData }: FinancingSimulatorProps) => {
       setResult(data);
     } catch (error) {
       console.error("Error calculating:", error);
-      // Demo fallback com valores já parseados
+      // Fallback: Cálculo SAC local
       const rendaValue = parseCurrency(formData.renda_mensal);
-      const valorFinanciado = parseCurrency(formData.valor_imovel) - parseCurrency(formData.entrada) - (formData.usar_fgts ? parseCurrency(formData.valor_fgts) : 0);
-      const taxa = 0.0085; // 0.85% a.m.
+      const valorImovelValue = parseCurrency(formData.valor_imovel);
+      const valorFinanciado = valorImovelValue - parseCurrency(formData.entrada) - (formData.usar_fgts ? parseCurrency(formData.valor_fgts) : 0);
       const prazoMeses = Number(formData.prazo_anos) * 12;
-      const parcela = valorFinanciado * (taxa * Math.pow(1 + taxa, prazoMeses)) / (Math.pow(1 + taxa, prazoMeses) - 1);
-      const percentualRenda = rendaValue > 0 ? (parcela / rendaValue) * 100 : 0;
+      const bancoId = Number(formData.banco_id);
+      
+      // Taxas CET anuais fixas por banco
+      const cetAnualPorBanco: Record<number, number> = {
+        1: 12.00,  // Caixa Econômica
+        2: 12.00,  // Banco do Brasil
+        3: 11.60,  // Itaú
+        4: 11.70,  // Bradesco
+        5: 11.79,  // Santander
+      };
+      
+      const cetAnual = cetAnualPorBanco[bancoId] || 12.00;
+      // Conversão CET anual para mensal: CET / 12 (conforme especificado)
+      const taxaMensal = cetAnual / 100 / 12;
+      
+      // Sistema SAC - Cálculo da PRIMEIRA parcela
+      // Amortização fixa = Valor Financiado / Prazo em meses
+      const amortizacao = valorFinanciado / prazoMeses;
+      
+      // Juros sobre saldo devedor (primeira parcela = saldo total)
+      const jurosPrimeiraParcela = valorFinanciado * taxaMensal;
+      
+      // Seguro MIP: 0,03% ao mês sobre saldo devedor
+      const seguroMIP = valorFinanciado * 0.0003;
+      
+      // Seguro DFI: 0,02% ao mês sobre valor do imóvel
+      const seguroDFI = valorImovelValue * 0.0002;
+      
+      // Primeira parcela SAC = Amortização + Juros + MIP + DFI
+      const primeiraParcela = amortizacao + jurosPrimeiraParcela + seguroMIP + seguroDFI;
+      
+      const percentualRenda = rendaValue > 0 ? (primeiraParcela / rendaValue) * 100 : 0;
       
       setResult({
-        parcela: Math.round(parcela),
-        cet: 10.5,
+        parcela: Math.round(primeiraParcela * 100) / 100,
+        cet: cetAnual,
         percentual_renda: Math.round(percentualRenda * 10) / 10,
         status: percentualRenda <= 30 ? "aprovável" : "renda_insuficiente",
-        banco: BANCOS.find(b => b.id === Number(formData.banco_id))?.nome,
+        banco: BANCOS.find(b => b.id === bancoId)?.nome,
       });
     } finally {
       setIsLoading(false);
@@ -228,33 +258,53 @@ export const FinancingSimulator = ({ userData }: FinancingSimulatorProps) => {
       setBankResults(data);
     } catch (error) {
       console.error("Error comparing:", error);
-      // Demo fallback com valores já parseados
+      // Fallback: Cálculo SAC local para todos os bancos
       const rendaValue = parseCurrency(formData.renda_mensal);
-      const valorFinanciado = parseCurrency(formData.valor_imovel) - parseCurrency(formData.entrada) - (formData.usar_fgts ? parseCurrency(formData.valor_fgts) : 0);
+      const valorImovelValue = parseCurrency(formData.valor_imovel);
+      const valorFinanciado = valorImovelValue - parseCurrency(formData.entrada) - (formData.usar_fgts ? parseCurrency(formData.valor_fgts) : 0);
       const prazoMeses = Number(formData.prazo_anos) * 12;
       
-      // Taxas mensais específicas por banco (baseadas nas taxas anuais reais - Fev/2026)
-      const taxasPorBanco: Record<number, { mensal: number; cet: number }> = {
-        1: { mensal: 0.0095, cet: 12.00 },  // Caixa Econômica - 12,00% a.a. + TR
-        2: { mensal: 0.0095, cet: 12.00 },  // Banco do Brasil - 12,00% a.a. + TR
-        3: { mensal: 0.0092, cet: 11.60 },  // Itaú - 11,60% a.a. + TR
-        4: { mensal: 0.0092, cet: 11.70 },  // Bradesco - 11,70% a.a. + TR
-        5: { mensal: 0.0093, cet: 11.79 },  // Santander - 11,79% a.a. + TR
+      // Taxas CET anuais fixas por banco
+      const cetAnualPorBanco: Record<number, number> = {
+        1: 12.00,  // Caixa Econômica
+        2: 12.00,  // Banco do Brasil
+        3: 11.60,  // Itaú
+        4: 11.70,  // Bradesco
+        5: 11.79,  // Santander
       };
       
       const demoResults: BankResult[] = BANCOS.map((banco) => {
-        const taxas = taxasPorBanco[banco.id] || { mensal: 0.0091, cet: 11.5 };
-        const parcela = valorFinanciado * (taxas.mensal * Math.pow(1 + taxas.mensal, prazoMeses)) / (Math.pow(1 + taxas.mensal, prazoMeses) - 1);
-        const percentualRenda = rendaValue > 0 ? (parcela / rendaValue) * 100 : 0;
+        const cetAnual = cetAnualPorBanco[banco.id] || 12.00;
+        // Conversão CET anual para mensal: CET / 12
+        const taxaMensal = cetAnual / 100 / 12;
+        
+        // Sistema SAC - Cálculo da PRIMEIRA parcela
+        // Amortização fixa = Valor Financiado / Prazo em meses
+        const amortizacao = valorFinanciado / prazoMeses;
+        
+        // Juros sobre saldo devedor (primeira parcela = saldo total)
+        const jurosPrimeiraParcela = valorFinanciado * taxaMensal;
+        
+        // Seguro MIP: 0,03% ao mês sobre saldo devedor
+        const seguroMIP = valorFinanciado * 0.0003;
+        
+        // Seguro DFI: 0,02% ao mês sobre valor do imóvel
+        const seguroDFI = valorImovelValue * 0.0002;
+        
+        // Primeira parcela SAC = Amortização + Juros + MIP + DFI
+        const primeiraParcela = amortizacao + jurosPrimeiraParcela + seguroMIP + seguroDFI;
+        
+        const percentualRenda = rendaValue > 0 ? (primeiraParcela / rendaValue) * 100 : 0;
         
         return {
           banco: banco.nome,
-          parcela: Math.round(parcela),
-          cet: taxas.cet,
+          parcela: Math.round(primeiraParcela * 100) / 100,
+          cet: cetAnual,
           status: percentualRenda <= 30 ? "aprovável" : "renda_insuficiente",
         };
       });
 
+      // Ordena por parcela (menor primeiro) - agora bancos com CET diferente terão parcelas diferentes
       setBankResults(demoResults.sort((a, b) => a.parcela - b.parcela));
     } finally {
       setIsComparing(false);
