@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, Home, Edit, Trash2, ArrowLeft, Users, UserCheck, MessageSquare, Headphones, MessageCircle, BarChart3, TrendingUp, LayoutDashboard, CalendarCheck, Kanban } from 'lucide-react';
+import { Plus, Home, Edit, Trash2, ArrowLeft, Users, UserCheck, MessageSquare, Headphones, MessageCircle, BarChart3, TrendingUp, LayoutDashboard, CalendarCheck, Kanban, Wallet } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LeadsImobiliariosPanel } from '@/components/admin/LeadsImobiliariosPanel';
@@ -16,6 +16,7 @@ import { ChatConversionsPanel } from '@/components/admin/ChatConversionsPanel';
 import { AdminDashboardPanel } from '@/components/admin/AdminDashboardPanel';
 import { VisitSchedulingPanel } from '@/components/admin/VisitSchedulingPanel';
 import { CRMKanbanPanel } from '@/components/admin/crm';
+import { FinancialControlPanel } from '@/components/admin/financial';
 import { useLeadNotification } from '@/hooks/useLeadNotification';
 
 interface Property {
@@ -53,7 +54,7 @@ const Admin = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'properties' | 'users' | 'leads' | 'attendants' | 'sessions' | 'metrics' | 'conversions' | 'visits' | 'crm'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'properties' | 'users' | 'leads' | 'attendants' | 'sessions' | 'metrics' | 'conversions' | 'visits' | 'crm' | 'financial'>('dashboard');
   const [accessDenied, setAccessDenied] = useState(false);
 
   // Enable real-time lead notifications with sound
@@ -341,6 +342,13 @@ const Admin = () => {
             <Kanban className="mr-2 h-4 w-4" />
             CRM Kanban
           </Button>
+          <Button
+            variant={activeTab === 'financial' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('financial')}
+          >
+            <Wallet className="mr-2 h-4 w-4" />
+            Financeiro
+          </Button>
         </div>
 
         {/* Dashboard Tab */}
@@ -354,6 +362,11 @@ const Admin = () => {
             currentUserId={user?.id}
             currentUserRole={userRole === 'super_admin' ? 'admin' : (userRole as 'admin' | 'gestor' | 'corretor' ?? 'admin')}
           />
+        )}
+
+        {/* Financial Control Tab */}
+        {activeTab === 'financial' && (
+          <FinancialControlPanel />
         )}
 
         {/* Visits Tab */}
