@@ -13,6 +13,7 @@ import { ChatAttendantsPanel } from '@/components/admin/ChatAttendantsPanel';
 import { ChatSessionsPanel } from '@/components/admin/ChatSessionsPanel';
 import { ChatFlowMetricsPanel } from '@/components/admin/ChatFlowMetricsPanel';
 import { ChatConversionsPanel } from '@/components/admin/ChatConversionsPanel';
+import { useLeadNotification } from '@/hooks/useLeadNotification';
 
 interface Property {
   id: string;
@@ -51,6 +52,9 @@ const Admin = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'properties' | 'users' | 'leads' | 'attendants' | 'sessions' | 'metrics' | 'conversions'>('properties');
   const [accessDenied, setAccessDenied] = useState(false);
+
+  // Enable real-time lead notifications with sound
+  useLeadNotification();
 
   // Fetch data functions
   const fetchAllProperties = async () => {
