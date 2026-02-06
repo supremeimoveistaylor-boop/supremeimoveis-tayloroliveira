@@ -824,6 +824,70 @@ export type Database = {
           },
         ]
       }
+      scheduled_visits: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          property_id: string | null
+          property_name: string | null
+          status: string
+          tenant_id: string
+          updated_at: string
+          visit_date: string
+          visit_time: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          property_id?: string | null
+          property_name?: string | null
+          status?: string
+          tenant_id: string
+          updated_at?: string
+          visit_date: string
+          visit_time: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          property_id?: string | null
+          property_name?: string | null
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+          visit_date?: string
+          visit_time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_visits_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "visit_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_visits_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_visits_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "public_properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       security_logs: {
         Row: {
           action: string
@@ -917,6 +981,33 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["user_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      visit_clients: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          phone: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          phone: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          phone?: string
+          tenant_id?: string
+          updated_at?: string
         }
         Relationships: []
       }

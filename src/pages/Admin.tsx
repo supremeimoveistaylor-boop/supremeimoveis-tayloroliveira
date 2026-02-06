@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, Home, Edit, Trash2, ArrowLeft, Users, UserCheck, MessageSquare, Headphones, MessageCircle, BarChart3, TrendingUp } from 'lucide-react';
+import { Plus, Home, Edit, Trash2, ArrowLeft, Users, UserCheck, MessageSquare, Headphones, MessageCircle, BarChart3, TrendingUp, LayoutDashboard, CalendarCheck } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LeadsImobiliariosPanel } from '@/components/admin/LeadsImobiliariosPanel';
@@ -13,6 +13,8 @@ import { ChatAttendantsPanel } from '@/components/admin/ChatAttendantsPanel';
 import { ChatSessionsPanel } from '@/components/admin/ChatSessionsPanel';
 import { ChatFlowMetricsPanel } from '@/components/admin/ChatFlowMetricsPanel';
 import { ChatConversionsPanel } from '@/components/admin/ChatConversionsPanel';
+import { AdminDashboardPanel } from '@/components/admin/AdminDashboardPanel';
+import { VisitSchedulingPanel } from '@/components/admin/VisitSchedulingPanel';
 import { useLeadNotification } from '@/hooks/useLeadNotification';
 
 interface Property {
@@ -50,7 +52,7 @@ const Admin = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'properties' | 'users' | 'leads' | 'attendants' | 'sessions' | 'metrics' | 'conversions'>('properties');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'properties' | 'users' | 'leads' | 'attendants' | 'sessions' | 'metrics' | 'conversions' | 'visits'>('dashboard');
   const [accessDenied, setAccessDenied] = useState(false);
 
   // Enable real-time lead notifications with sound
@@ -269,6 +271,20 @@ const Admin = () => {
         {/* Tabs */}
         <div className="flex gap-4 mb-8 flex-wrap">
           <Button
+            variant={activeTab === 'dashboard' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('dashboard')}
+          >
+            <LayoutDashboard className="mr-2 h-4 w-4" />
+            Dashboard
+          </Button>
+          <Button
+            variant={activeTab === 'visits' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('visits')}
+          >
+            <CalendarCheck className="mr-2 h-4 w-4" />
+            Agendamentos
+          </Button>
+          <Button
             variant={activeTab === 'properties' ? 'default' : 'outline'}
             onClick={() => setActiveTab('properties')}
           >
@@ -318,6 +334,16 @@ const Admin = () => {
             Conversões
           </Button>
         </div>
+
+        {/* Dashboard Tab */}
+        {activeTab === 'dashboard' && (
+          <AdminDashboardPanel />
+        )}
+
+        {/* Visits Tab */}
+        {activeTab === 'visits' && (
+          <VisitSchedulingPanel />
+        )}
 
         {/* Properties Tab */}
         {activeTab === 'properties' && (
