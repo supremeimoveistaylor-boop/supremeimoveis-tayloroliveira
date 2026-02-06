@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, Home, Edit, Trash2, ArrowLeft, Users, UserCheck, MessageSquare, Headphones, MessageCircle, BarChart3, TrendingUp, LayoutDashboard, CalendarCheck } from 'lucide-react';
+import { Plus, Home, Edit, Trash2, ArrowLeft, Users, UserCheck, MessageSquare, Headphones, MessageCircle, BarChart3, TrendingUp, LayoutDashboard, CalendarCheck, Kanban } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LeadsImobiliariosPanel } from '@/components/admin/LeadsImobiliariosPanel';
@@ -15,6 +15,7 @@ import { ChatFlowMetricsPanel } from '@/components/admin/ChatFlowMetricsPanel';
 import { ChatConversionsPanel } from '@/components/admin/ChatConversionsPanel';
 import { AdminDashboardPanel } from '@/components/admin/AdminDashboardPanel';
 import { VisitSchedulingPanel } from '@/components/admin/VisitSchedulingPanel';
+import { CRMKanbanPanel } from '@/components/admin/crm';
 import { useLeadNotification } from '@/hooks/useLeadNotification';
 
 interface Property {
@@ -52,7 +53,7 @@ const Admin = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'properties' | 'users' | 'leads' | 'attendants' | 'sessions' | 'metrics' | 'conversions' | 'visits'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'properties' | 'users' | 'leads' | 'attendants' | 'sessions' | 'metrics' | 'conversions' | 'visits' | 'crm'>('dashboard');
   const [accessDenied, setAccessDenied] = useState(false);
 
   // Enable real-time lead notifications with sound
@@ -333,11 +334,26 @@ const Admin = () => {
             <TrendingUp className="mr-2 h-4 w-4" />
             Conversões
           </Button>
+          <Button
+            variant={activeTab === 'crm' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('crm')}
+          >
+            <Kanban className="mr-2 h-4 w-4" />
+            CRM Kanban
+          </Button>
         </div>
 
         {/* Dashboard Tab */}
         {activeTab === 'dashboard' && (
           <AdminDashboardPanel />
+        )}
+
+        {/* CRM Kanban Tab */}
+        {activeTab === 'crm' && (
+          <CRMKanbanPanel 
+            currentUserId={user?.id}
+            currentUserRole={userRole === 'super_admin' ? 'admin' : (userRole as 'admin' | 'gestor' | 'corretor' ?? 'admin')}
+          />
         )}
 
         {/* Visits Tab */}
