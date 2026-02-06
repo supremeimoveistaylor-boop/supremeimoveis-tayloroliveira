@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect, useCallback } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,7 +13,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
 import { 
   Plus, Edit, Trash2, Calendar, Clock, User, Phone, 
-  Home, FileText, Printer, Download, ChevronDown
+  Home, Printer
 } from 'lucide-react';
 
 interface VisitClient {
@@ -60,7 +60,7 @@ export function VisitSchedulingPanel() {
   const [editingVisit, setEditingVisit] = useState<ScheduledVisit | null>(null);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [visitForm, setVisitForm] = useState({
-    property_id: '',
+    property_id: 'none',
     property_name: '',
     visit_date: '',
     visit_time: '',
@@ -68,45 +68,48 @@ export function VisitSchedulingPanel() {
     notes: '',
   });
 
-  useEffect(() => {
-    if (user) {
-      fetchData();
-    }
-  }, [user]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
+    if (!user?.id) return;
+    
     try {
       setIsLoading(true);
       
-      // Fetch clients
+      // Fetch clients with error handling
       const { data: clientsData, error: clientsError } = await supabase
         .from('visit_clients')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (clientsError) throw clientsError;
-      setClients(clientsData || []);
+      if (clientsError) {
+        console.error('Error fetching clients:', clientsError);
+      }
+      setClients(clientsData ?? []);
 
-      // Fetch visits
+      // Fetch visits with error handling
       const { data: visitsData, error: visitsError } = await supabase
         .from('scheduled_visits')
         .select('*')
         .order('visit_date', { ascending: true });
 
-      if (visitsError) throw visitsError;
-      setVisits((visitsData || []).map(v => ({
+      if (visitsError) {
+        console.error('Error fetching visits:', visitsError);
+      }
+      setVisits((visitsData ?? []).map(v => ({
         ...v,
-        status: v.status as 'agendada' | 'realizada' | 'cancelada'
+        status: (v?.status ?? 'agendada') as 'agendada' | 'realizada' | 'cancelada'
       })));
 
-      // Fetch properties for dropdown
-      const { data: propertiesData } = await supabase
+      // Fetch properties for dropdown with error handling
+      const { data: propertiesData, error: propertiesError } = await supabase
         .from('properties')
         .select('id, title')
         .eq('status', 'active')
         .order('title');
 
-      setProperties(propertiesData || []);
+      if (propertiesError) {
+        console.error('Error fetching properties:', propertiesError);
+      }
+      setProperties(propertiesData ?? []);
 
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
@@ -118,13 +121,48 @@ export function VisitSchedulingPanel() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchData();
+    }
+  }, [user?.id, fetchData]);
+
+  // Reset client form state safely
+  const resetClientForm = useCallback(() => {
+    setEditingClient(null);
+    setClientForm({ name: '', phone: '' });
+  }, []);
+
+  // Reset visit form state safely
+  const resetVisitForm = useCallback(() => {
+    setEditingVisit(null);
+    setSelectedClientId(null);
+    setVisitForm({
+      property_id: 'none',
+      property_name: '',
+      visit_date: '',
+      visit_time: '',
+      status: 'agendada',
+      notes: '',
+    });
+  }, []);
+
+  // Open client dialog safely
+  const handleOpenClientDialog = useCallback(() => {
+    resetClientForm();
+    setIsClientDialogOpen(true);
+  }, [resetClientForm]);
 
   // Client CRUD
   const handleSaveClient = async () => {
-    if (!user) return;
+    if (!user?.id) return;
     
-    if (!clientForm.name.trim() || !clientForm.phone.trim()) {
+    const trimmedName = clientForm?.name?.trim() ?? '';
+    const trimmedPhone = clientForm?.phone?.trim() ?? '';
+    
+    if (!trimmedName || !trimmedPhone) {
       toast({
         title: 'Campos obrigatórios',
         description: 'Preencha o nome e telefone do cliente.',
@@ -134,12 +172,12 @@ export function VisitSchedulingPanel() {
     }
 
     try {
-      if (editingClient) {
+      if (editingClient?.id) {
         const { error } = await supabase
           .from('visit_clients')
           .update({ 
-            name: clientForm.name, 
-            phone: clientForm.phone 
+            name: trimmedName, 
+            phone: trimmedPhone 
           })
           .eq('id', editingClient.id);
 
@@ -150,8 +188,8 @@ export function VisitSchedulingPanel() {
           .from('visit_clients')
           .insert({ 
             tenant_id: user.id,
-            name: clientForm.name, 
-            phone: clientForm.phone 
+            name: trimmedName, 
+            phone: trimmedPhone 
           });
 
         if (error) throw error;
@@ -159,25 +197,30 @@ export function VisitSchedulingPanel() {
       }
 
       setIsClientDialogOpen(false);
-      setEditingClient(null);
-      setClientForm({ name: '', phone: '' });
+      resetClientForm();
       fetchData();
     } catch (error: any) {
+      console.error('Error saving client:', error);
       toast({
         title: 'Erro ao salvar cliente',
-        description: error.message,
+        description: error?.message ?? 'Erro desconhecido',
         variant: 'destructive',
       });
     }
   };
 
-  const handleEditClient = (client: VisitClient) => {
+  const handleEditClient = useCallback((client: VisitClient) => {
+    if (!client?.id) return;
     setEditingClient(client);
-    setClientForm({ name: client.name, phone: client.phone });
+    setClientForm({ 
+      name: client?.name ?? '', 
+      phone: client?.phone ?? '' 
+    });
     setIsClientDialogOpen(true);
-  };
+  }, []);
 
   const handleDeleteClient = async (clientId: string) => {
+    if (!clientId) return;
     if (!confirm('Tem certeza? Todas as visitas deste cliente serão excluídas.')) return;
 
     try {
@@ -190,20 +233,24 @@ export function VisitSchedulingPanel() {
       toast({ title: 'Cliente excluído com sucesso!' });
       fetchData();
     } catch (error: any) {
+      console.error('Error deleting client:', error);
       toast({
         title: 'Erro ao excluir cliente',
-        description: error.message,
+        description: error?.message ?? 'Erro desconhecido',
         variant: 'destructive',
       });
     }
   };
 
   // Visit CRUD
-  const getClientVisitCount = (clientId: string) => {
-    return visits.filter(v => v.client_id === clientId).length;
-  };
+  const getClientVisitCount = useCallback((clientId: string) => {
+    if (!clientId) return 0;
+    return visits?.filter(v => v?.client_id === clientId)?.length ?? 0;
+  }, [visits]);
 
-  const handleOpenVisitDialog = (clientId: string, visit?: ScheduledVisit) => {
+  const handleOpenVisitDialog = useCallback((clientId: string, visit?: ScheduledVisit) => {
+    if (!clientId) return;
+    
     if (!visit && getClientVisitCount(clientId) >= 5) {
       toast({
         title: 'Limite atingido',
@@ -214,20 +261,21 @@ export function VisitSchedulingPanel() {
     }
 
     setSelectedClientId(clientId);
-    if (visit) {
+    
+    if (visit?.id) {
       setEditingVisit(visit);
       setVisitForm({
-        property_id: visit.property_id || '',
-        property_name: visit.property_name || '',
-        visit_date: visit.visit_date,
-        visit_time: visit.visit_time,
-        status: visit.status,
-        notes: visit.notes || '',
+        property_id: visit?.property_id ?? 'none',
+        property_name: visit?.property_name ?? '',
+        visit_date: visit?.visit_date ?? '',
+        visit_time: visit?.visit_time ?? '',
+        status: visit?.status ?? 'agendada',
+        notes: visit?.notes ?? '',
       });
     } else {
       setEditingVisit(null);
       setVisitForm({
-        property_id: '',
+        property_id: 'none',
         property_name: '',
         visit_date: '',
         visit_time: '',
@@ -236,12 +284,15 @@ export function VisitSchedulingPanel() {
       });
     }
     setIsVisitDialogOpen(true);
-  };
+  }, [getClientVisitCount]);
 
   const handleSaveVisit = async () => {
-    if (!user || !selectedClientId) return;
+    if (!user?.id || !selectedClientId) return;
 
-    if (!visitForm.visit_date || !visitForm.visit_time) {
+    const trimmedDate = visitForm?.visit_date?.trim() ?? '';
+    const trimmedTime = visitForm?.visit_time?.trim() ?? '';
+
+    if (!trimmedDate || !trimmedTime) {
       toast({
         title: 'Campos obrigatórios',
         description: 'Preencha a data e horário da visita.',
@@ -251,19 +302,21 @@ export function VisitSchedulingPanel() {
     }
 
     try {
-      const selectedProperty = properties.find(p => p.id === visitForm.property_id);
+      const propertyId = visitForm?.property_id === 'none' ? null : visitForm?.property_id;
+      const selectedProperty = properties?.find(p => p?.id === propertyId);
+      
       const visitData = {
         tenant_id: user.id,
         client_id: selectedClientId,
-        property_id: visitForm.property_id || null,
-        property_name: selectedProperty?.title || visitForm.property_name || null,
-        visit_date: visitForm.visit_date,
-        visit_time: visitForm.visit_time,
-        status: visitForm.status,
-        notes: visitForm.notes || null,
+        property_id: propertyId,
+        property_name: selectedProperty?.title ?? visitForm?.property_name ?? null,
+        visit_date: trimmedDate,
+        visit_time: trimmedTime,
+        status: visitForm?.status ?? 'agendada',
+        notes: visitForm?.notes?.trim() || null,
       };
 
-      if (editingVisit) {
+      if (editingVisit?.id) {
         const { error } = await supabase
           .from('scheduled_visits')
           .update(visitData)
@@ -281,27 +334,20 @@ export function VisitSchedulingPanel() {
       }
 
       setIsVisitDialogOpen(false);
-      setEditingVisit(null);
-      setSelectedClientId(null);
-      setVisitForm({
-        property_id: '',
-        property_name: '',
-        visit_date: '',
-        visit_time: '',
-        status: 'agendada',
-        notes: '',
-      });
+      resetVisitForm();
       fetchData();
     } catch (error: any) {
+      console.error('Error saving visit:', error);
       toast({
         title: 'Erro ao salvar visita',
-        description: error.message,
+        description: error?.message ?? 'Erro desconhecido',
         variant: 'destructive',
       });
     }
   };
 
   const handleDeleteVisit = async (visitId: string) => {
+    if (!visitId) return;
     if (!confirm('Tem certeza que deseja excluir esta visita?')) return;
 
     try {
@@ -314,23 +360,28 @@ export function VisitSchedulingPanel() {
       toast({ title: 'Visita excluída com sucesso!' });
       fetchData();
     } catch (error: any) {
+      console.error('Error deleting visit:', error);
       toast({
         title: 'Erro ao excluir visita',
-        description: error.message,
+        description: error?.message ?? 'Erro desconhecido',
         variant: 'destructive',
       });
     }
   };
 
-  // PDF Generation
-  const generatePDF = (client: VisitClient) => {
-    const clientVisits = visits.filter(v => v.client_id === client.id);
+  // PDF Generation - safe implementation
+  const generatePDF = useCallback((client: VisitClient) => {
+    if (!client?.id) return;
+    
+    const clientVisits = visits?.filter(v => v?.client_id === client.id) ?? [];
+    const clientName = client?.name ?? 'Cliente';
+    const clientPhone = client?.phone ?? 'Não informado';
     
     const printContent = `
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Visitas - ${client.name}</title>
+        <title>Visitas - ${clientName}</title>
         <style>
           body { font-family: Arial, sans-serif; margin: 40px; color: #333; }
           h1 { color: #1a1a1a; border-bottom: 2px solid #333; padding-bottom: 10px; }
@@ -354,8 +405,8 @@ export function VisitSchedulingPanel() {
         <h1>📅 Relatório de Visitas</h1>
         
         <div class="client-info">
-          <p><strong>Cliente:</strong> ${client.name}</p>
-          <p><strong>Telefone:</strong> ${client.phone}</p>
+          <p><strong>Cliente:</strong> ${clientName}</p>
+          <p><strong>Telefone:</strong> ${clientPhone}</p>
           <p><strong>Total de Visitas:</strong> ${clientVisits.length}</p>
         </div>
         
@@ -370,17 +421,22 @@ export function VisitSchedulingPanel() {
               </tr>
             </thead>
             <tbody>
-              ${clientVisits.map(visit => `
+              ${clientVisits.map(visit => {
+                const visitDate = visit?.visit_date ? new Date(visit.visit_date).toLocaleDateString('pt-BR') : 'N/A';
+                const visitTime = visit?.visit_time ?? 'N/A';
+                const propertyName = visit?.property_name ?? 'Não especificado';
+                const status = visit?.status ?? 'agendada';
+                return `
                 <tr>
-                  <td>${new Date(visit.visit_date).toLocaleDateString('pt-BR')}</td>
-                  <td>${visit.visit_time}</td>
-                  <td>${visit.property_name || 'Não especificado'}</td>
-                  <td class="status-${visit.status}">
-                    ${visit.status === 'agendada' ? '🔵 Agendada' : 
-                      visit.status === 'realizada' ? '🟢 Realizada' : '🔴 Cancelada'}
+                  <td>${visitDate}</td>
+                  <td>${visitTime}</td>
+                  <td>${propertyName}</td>
+                  <td class="status-${status}">
+                    ${status === 'agendada' ? '🔵 Agendada' : 
+                      status === 'realizada' ? '🟢 Realizada' : '🔴 Cancelada'}
                   </td>
                 </tr>
-              `).join('')}
+              `}).join('')}
             </tbody>
           </table>
         ` : '<p>Nenhuma visita cadastrada para este cliente.</p>'}
@@ -392,17 +448,33 @@ export function VisitSchedulingPanel() {
       </html>
     `;
 
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(printContent);
-      printWindow.document.close();
-      printWindow.focus();
-      setTimeout(() => printWindow.print(), 250);
+    try {
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(printContent);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+          try {
+            printWindow.print();
+          } catch (e) {
+            console.error('Print error:', e);
+          }
+        }, 250);
+      }
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: 'Erro ao gerar PDF',
+        description: 'Não foi possível gerar o relatório.',
+        variant: 'destructive',
+      });
     }
-  };
+  }, [visits]);
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
+  const getStatusBadge = useCallback((status: string | null | undefined) => {
+    const safeStatus = status ?? 'agendada';
+    switch (safeStatus) {
       case 'agendada':
         return <Badge className="bg-blue-500/20 text-blue-600 border-blue-500/30">Agendada</Badge>;
       case 'realizada':
@@ -410,9 +482,24 @@ export function VisitSchedulingPanel() {
       case 'cancelada':
         return <Badge className="bg-red-500/20 text-red-600 border-red-500/30">Cancelada</Badge>;
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return <Badge variant="outline">{safeStatus}</Badge>;
     }
-  };
+  }, []);
+
+  // Safe dialog close handlers
+  const handleClientDialogChange = useCallback((open: boolean) => {
+    setIsClientDialogOpen(open);
+    if (!open) {
+      resetClientForm();
+    }
+  }, [resetClientForm]);
+
+  const handleVisitDialogChange = useCallback((open: boolean) => {
+    setIsVisitDialogOpen(open);
+    if (!open) {
+      resetVisitForm();
+    }
+  }, [resetVisitForm]);
 
   if (isLoading) {
     return (
@@ -430,12 +517,9 @@ export function VisitSchedulingPanel() {
           <h2 className="text-2xl font-bold">Agendamento de Visitas</h2>
           <p className="text-muted-foreground">Gerencie clientes e visitas imobiliárias</p>
         </div>
-        <Dialog open={isClientDialogOpen} onOpenChange={setIsClientDialogOpen}>
+        <Dialog open={isClientDialogOpen} onOpenChange={handleClientDialogChange}>
           <DialogTrigger asChild>
-            <Button onClick={() => {
-              setEditingClient(null);
-              setClientForm({ name: '', phone: '' });
-            }}>
+            <Button onClick={handleOpenClientDialog}>
               <Plus className="mr-2 h-4 w-4" />
               Novo Cliente
             </Button>
@@ -454,8 +538,8 @@ export function VisitSchedulingPanel() {
                 <Label htmlFor="client-name">Nome *</Label>
                 <Input
                   id="client-name"
-                  value={clientForm.name}
-                  onChange={(e) => setClientForm({ ...clientForm, name: e.target.value })}
+                  value={clientForm?.name ?? ''}
+                  onChange={(e) => setClientForm(prev => ({ ...prev, name: e.target.value ?? '' }))}
                   placeholder="Nome do cliente"
                 />
               </div>
@@ -463,14 +547,14 @@ export function VisitSchedulingPanel() {
                 <Label htmlFor="client-phone">Telefone *</Label>
                 <Input
                   id="client-phone"
-                  value={clientForm.phone}
-                  onChange={(e) => setClientForm({ ...clientForm, phone: e.target.value })}
+                  value={clientForm?.phone ?? ''}
+                  onChange={(e) => setClientForm(prev => ({ ...prev, phone: e.target.value ?? '' }))}
                   placeholder="(00) 00000-0000"
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsClientDialogOpen(false)}>
+              <Button variant="outline" onClick={() => handleClientDialogChange(false)}>
                 Cancelar
               </Button>
               <Button onClick={handleSaveClient}>
@@ -482,7 +566,7 @@ export function VisitSchedulingPanel() {
       </div>
 
       {/* Visit Dialog */}
-      <Dialog open={isVisitDialogOpen} onOpenChange={setIsVisitDialogOpen}>
+      <Dialog open={isVisitDialogOpen} onOpenChange={handleVisitDialogChange}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
@@ -498,8 +582,8 @@ export function VisitSchedulingPanel() {
               <Input
                 id="visit-date"
                 type="date"
-                value={visitForm.visit_date}
-                onChange={(e) => setVisitForm({ ...visitForm, visit_date: e.target.value })}
+                value={visitForm?.visit_date ?? ''}
+                onChange={(e) => setVisitForm(prev => ({ ...prev, visit_date: e.target.value ?? '' }))}
               />
             </div>
             <div>
@@ -507,36 +591,38 @@ export function VisitSchedulingPanel() {
               <Input
                 id="visit-time"
                 type="time"
-                value={visitForm.visit_time}
-                onChange={(e) => setVisitForm({ ...visitForm, visit_time: e.target.value })}
+                value={visitForm?.visit_time ?? ''}
+                onChange={(e) => setVisitForm(prev => ({ ...prev, visit_time: e.target.value ?? '' }))}
               />
             </div>
             <div>
               <Label htmlFor="visit-property">Imóvel</Label>
               <Select
-                value={visitForm.property_id}
-                onValueChange={(value) => setVisitForm({ ...visitForm, property_id: value })}
+                value={visitForm?.property_id ?? 'none'}
+                onValueChange={(value) => setVisitForm(prev => ({ ...prev, property_id: value ?? 'none' }))}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione um imóvel" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhum</SelectItem>
-                  {properties.map((property) => (
-                    <SelectItem key={property.id} value={property.id}>
-                      {property.title}
-                    </SelectItem>
+                  <SelectItem value="none">Nenhum</SelectItem>
+                  {(properties ?? []).map((property) => (
+                    property?.id ? (
+                      <SelectItem key={property.id} value={property.id}>
+                        {property?.title ?? 'Sem título'}
+                      </SelectItem>
+                    ) : null
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            {!visitForm.property_id && (
+            {visitForm?.property_id === 'none' && (
               <div>
                 <Label htmlFor="visit-property-name">Ou digite o nome do imóvel</Label>
                 <Input
                   id="visit-property-name"
-                  value={visitForm.property_name}
-                  onChange={(e) => setVisitForm({ ...visitForm, property_name: e.target.value })}
+                  value={visitForm?.property_name ?? ''}
+                  onChange={(e) => setVisitForm(prev => ({ ...prev, property_name: e.target.value ?? '' }))}
                   placeholder="Nome do imóvel"
                 />
               </div>
@@ -544,9 +630,9 @@ export function VisitSchedulingPanel() {
             <div>
               <Label htmlFor="visit-status">Status</Label>
               <Select
-                value={visitForm.status}
+                value={visitForm?.status ?? 'agendada'}
                 onValueChange={(value: 'agendada' | 'realizada' | 'cancelada') => 
-                  setVisitForm({ ...visitForm, status: value })
+                  setVisitForm(prev => ({ ...prev, status: value ?? 'agendada' }))
                 }
               >
                 <SelectTrigger>
@@ -563,14 +649,14 @@ export function VisitSchedulingPanel() {
               <Label htmlFor="visit-notes">Observações</Label>
               <Input
                 id="visit-notes"
-                value={visitForm.notes}
-                onChange={(e) => setVisitForm({ ...visitForm, notes: e.target.value })}
+                value={visitForm?.notes ?? ''}
+                onChange={(e) => setVisitForm(prev => ({ ...prev, notes: e.target.value ?? '' }))}
                 placeholder="Notas adicionais"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsVisitDialogOpen(false)}>
+            <Button variant="outline" onClick={() => handleVisitDialogChange(false)}>
               Cancelar
             </Button>
             <Button onClick={handleSaveVisit}>
@@ -581,7 +667,7 @@ export function VisitSchedulingPanel() {
       </Dialog>
 
       {/* Clients List */}
-      {clients.length === 0 ? (
+      {(clients?.length ?? 0) === 0 ? (
         <Card>
           <CardContent className="text-center py-12">
             <User className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
@@ -593,8 +679,10 @@ export function VisitSchedulingPanel() {
         </Card>
       ) : (
         <Accordion type="multiple" className="space-y-4">
-          {clients.map((client) => {
-            const clientVisits = visits.filter(v => v.client_id === client.id);
+          {(clients ?? []).map((client) => {
+            if (!client?.id) return null;
+            
+            const clientVisits = (visits ?? []).filter(v => v?.client_id === client.id);
             
             return (
               <AccordionItem 
@@ -609,16 +697,16 @@ export function VisitSchedulingPanel() {
                         <User className="h-5 w-5 text-primary" />
                       </div>
                       <div className="text-left">
-                        <p className="font-semibold">{client.name}</p>
+                        <p className="font-semibold">{client?.name ?? 'Nome não informado'}</p>
                         <p className="text-sm text-muted-foreground flex items-center gap-1">
                           <Phone className="h-3 w-3" />
-                          {client.phone}
+                          {client?.phone ?? 'Telefone não informado'}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant="outline">
-                        {clientVisits.length}/5 visitas
+                        {clientVisits?.length ?? 0}/5 visitas
                       </Badge>
                     </div>
                   </div>
@@ -639,7 +727,7 @@ export function VisitSchedulingPanel() {
                         size="sm"
                         variant="outline"
                         onClick={() => handleOpenVisitDialog(client.id)}
-                        disabled={clientVisits.length >= 5}
+                        disabled={(clientVisits?.length ?? 0) >= 5}
                       >
                         <Plus className="h-4 w-4 mr-1" />
                         Nova Visita
@@ -663,7 +751,7 @@ export function VisitSchedulingPanel() {
                     </div>
 
                     {/* Visits Table */}
-                    {clientVisits.length > 0 ? (
+                    {(clientVisits?.length ?? 0) > 0 ? (
                       <Table>
                         <TableHeader>
                           <TableRow>
@@ -675,47 +763,55 @@ export function VisitSchedulingPanel() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {clientVisits.map((visit) => (
-                            <TableRow key={visit.id}>
-                              <TableCell>
-                                <div className="flex items-center gap-2">
-                                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                                  {new Date(visit.visit_date).toLocaleDateString('pt-BR')}
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex items-center gap-2">
-                                  <Clock className="h-4 w-4 text-muted-foreground" />
-                                  {visit.visit_time}
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex items-center gap-2">
-                                  <Home className="h-4 w-4 text-muted-foreground" />
-                                  {visit.property_name || 'Não especificado'}
-                                </div>
-                              </TableCell>
-                              <TableCell>{getStatusBadge(visit.status)}</TableCell>
-                              <TableCell className="text-right">
-                                <div className="flex items-center justify-end gap-1">
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => handleOpenVisitDialog(client.id, visit)}
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => handleDeleteVisit(visit.id)}
-                                  >
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))}
+                          {(clientVisits ?? []).map((visit) => {
+                            if (!visit?.id) return null;
+                            
+                            const visitDate = visit?.visit_date 
+                              ? new Date(visit.visit_date).toLocaleDateString('pt-BR') 
+                              : 'N/A';
+                            
+                            return (
+                              <TableRow key={visit.id}>
+                                <TableCell>
+                                  <div className="flex items-center gap-2">
+                                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                                    {visitDate}
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-2">
+                                    <Clock className="h-4 w-4 text-muted-foreground" />
+                                    {visit?.visit_time ?? 'N/A'}
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-2">
+                                    <Home className="h-4 w-4 text-muted-foreground" />
+                                    {visit?.property_name ?? 'Não especificado'}
+                                  </div>
+                                </TableCell>
+                                <TableCell>{getStatusBadge(visit?.status)}</TableCell>
+                                <TableCell className="text-right">
+                                  <div className="flex items-center justify-end gap-1">
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => handleOpenVisitDialog(client.id, visit)}
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => handleDeleteVisit(visit.id)}
+                                    >
+                                      <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
                         </TableBody>
                       </Table>
                     ) : (
