@@ -1,4 +1,4 @@
-import { useState, useCallback, memo } from 'react';
+import { useState, useCallback, useMemo, memo } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,8 @@ import {
   DollarSign,
   Edit,
   Trash2,
-  ArrowRight
+  ArrowRight,
+  AlertTriangle
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -20,7 +21,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import { KanbanCard as KanbanCardType, KanbanColumn, KANBAN_COLUMNS } from './types';
+import { KanbanCard as KanbanCardType, KanbanColumn, KANBAN_COLUMNS, ALERT_THRESHOLD_DAYS } from './types';
 
 interface KanbanCardProps {
   card: KanbanCardType;
@@ -93,8 +94,40 @@ export const KanbanCardComponent = memo(function KanbanCardComponent({
 
   if (!card) return null;
 
+  const isSemInteresse = column === 'sem_interesse';
+  
+  // Check if card has inactivity alert (3+ days without interaction)
+  const hasAlert = useMemo(() => {
+    if (isSemInteresse) return false;
+    try {
+      const lastInteraction = card?.lastInteractionAt || card?.createdAt;
+      if (!lastInteraction) return false;
+      const diffMs = Date.now() - new Date(lastInteraction).getTime();
+      return diffMs >= ALERT_THRESHOLD_DAYS * 24 * 60 * 60 * 1000;
+    } catch {
+      return false;
+    }
+  }, [card?.lastInteractionAt, card?.createdAt, isSemInteresse]);
+
+  const daysWithoutInteraction = useMemo(() => {
+    try {
+      const lastInteraction = card?.lastInteractionAt || card?.createdAt;
+      if (!lastInteraction) return 0;
+      const diffMs = Date.now() - new Date(lastInteraction).getTime();
+      return Math.floor(diffMs / (24 * 60 * 60 * 1000));
+    } catch {
+      return 0;
+    }
+  }, [card?.lastInteractionAt, card?.createdAt]);
+
   return (
-    <Card className="mb-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer bg-card border border-border">
+    <Card className={`mb-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer border ${
+      isSemInteresse 
+        ? 'bg-muted/50 opacity-70 border-muted' 
+        : hasAlert 
+          ? 'bg-card border-yellow-400/60 ring-1 ring-yellow-400/30' 
+          : 'bg-card border-border'
+    }`}>
       <CardHeader className="p-3 pb-2">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
@@ -140,6 +173,21 @@ export const KanbanCardComponent = memo(function KanbanCardComponent({
         </div>
       </CardHeader>
       <CardContent className="p-3 pt-0 space-y-2">
+        {/* Alert indicator */}
+        {hasAlert && (
+          <div className="flex items-center gap-1.5 text-xs font-medium text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20 rounded px-2 py-1">
+            <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
+            <span>{daysWithoutInteraction}d sem atendimento</span>
+          </div>
+        )}
+
+        {/* Sem Interesse indicator */}
+        {isSemInteresse && (
+          <Badge variant="secondary" className="text-[10px] bg-muted text-muted-foreground">
+            Encerrado
+          </Badge>
+        )}
+
         {/* Cliente */}
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <User className="h-3 w-3 flex-shrink-0" />

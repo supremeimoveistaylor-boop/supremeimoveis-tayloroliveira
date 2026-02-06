@@ -24,6 +24,7 @@ const initialKanbanData: KanbanData = {
   proposta: [],
   negociacao: [],
   fechado: [],
+  sem_interesse: [],
 };
 
 const initialCollaborators: Collaborator[] = [
@@ -82,16 +83,19 @@ export function useCRMStore(currentUserId?: string, currentUserRole: Collaborato
       proposta: kanbanData.proposta.filter(c => c?.responsavel === currentUserId),
       negociacao: kanbanData.negociacao.filter(c => c?.responsavel === currentUserId),
       fechado: kanbanData.fechado.filter(c => c?.responsavel === currentUserId),
+      sem_interesse: kanbanData.sem_interesse.filter(c => c?.responsavel === currentUserId),
     };
   }, [kanbanData, permissions.viewAll, currentUserId]);
 
   // Add card to a column
   const addCard = useCallback((column: KanbanColumn, card: Omit<KanbanCard, 'id' | 'createdAt'>) => {
     try {
+      const now = new Date().toISOString();
       const newCard: KanbanCard = {
         ...card,
         id: generateId(),
-        createdAt: new Date().toISOString(),
+        createdAt: now,
+        lastInteractionAt: now,
       };
       setKanbanData(prev => {
         const updated = {
@@ -108,14 +112,15 @@ export function useCRMStore(currentUserId?: string, currentUserRole: Collaborato
     }
   }, [persistKanban]);
 
-  // Update card
+  // Update card (also updates lastInteractionAt)
   const updateCard = useCallback((column: KanbanColumn, cardId: string, updates: Partial<KanbanCard>) => {
     try {
+      const now = new Date().toISOString();
       setKanbanData(prev => {
         const updated = {
           ...prev,
           [column]: (prev[column] || []).map(card =>
-            card?.id === cardId ? { ...card, ...updates, updatedAt: new Date().toISOString() } : card
+            card?.id === cardId ? { ...card, ...updates, updatedAt: now, lastInteractionAt: now } : card
           ),
         };
         persistKanban(updated);
@@ -148,17 +153,31 @@ export function useCRMStore(currentUserId?: string, currentUserRole: Collaborato
     }
   }, [permissions.canDelete, persistKanban]);
 
-  // Move card between columns
+  // Move card between columns (updates lastInteractionAt and adds history)
   const moveCard = useCallback((fromColumn: KanbanColumn, toColumn: KanbanColumn, cardId: string) => {
     try {
+      const now = new Date().toISOString();
       setKanbanData(prev => {
         const card = (prev[fromColumn] || []).find(c => c?.id === cardId);
         if (!card) return prev;
 
+        const historyEntry = {
+          tipo: 'status' as const,
+          descricao: `Movido de "${fromColumn}" para "${toColumn}"`,
+          data: now,
+        };
+
+        const updatedCard = {
+          ...card,
+          updatedAt: now,
+          lastInteractionAt: toColumn === 'sem_interesse' ? card.lastInteractionAt : now,
+          historico: [...(card?.historico || []), historyEntry],
+        };
+
         const updated = {
           ...prev,
           [fromColumn]: (prev[fromColumn] || []).filter(c => c?.id !== cardId),
-          [toColumn]: [...(prev[toColumn] || []), { ...card, updatedAt: new Date().toISOString() }],
+          [toColumn]: [...(prev[toColumn] || []), updatedCard],
         };
         persistKanban(updated);
         return updated;
@@ -263,7 +282,7 @@ export function useCRMStore(currentUserId?: string, currentUserRole: Collaborato
     }
   }, [persistCollaborators]);
 
-  // Calculate metrics
+  // Calculate metrics (sem_interesse excluded from funnel)
   const metrics = useMemo((): CRMMetrics => {
     try {
       const data = getFilteredKanbanData();
@@ -272,11 +291,30 @@ export function useCRMStore(currentUserId?: string, currentUserRole: Collaborato
       const propostasEnviadas = (data.proposta?.length ?? 0);
       const negociacoes = (data.negociacao?.length ?? 0);
       const fechamentos = (data.fechado?.length ?? 0);
+      const semInteresse = (data.sem_interesse?.length ?? 0);
 
+      // sem_interesse does NOT count for funnel metrics
       const total = totalLeads + leadsEmContato + propostasEnviadas + negociacoes + fechamentos;
 
       const valorTotalNegociacao = (data.negociacao || []).reduce((sum, card) => sum + (card?.valorEstimado ?? 0), 0);
       const valorTotalFechado = (data.fechado || []).reduce((sum, card) => sum + (card?.valorEstimado ?? 0), 0);
+
+      // Count leads without interaction for 3+ days
+      const now = Date.now();
+      const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
+      const activeColumns: KanbanColumn[] = ['leads', 'contato', 'proposta', 'negociacao'];
+      let leadsSemAtendimento = 0;
+      for (const col of activeColumns) {
+        for (const card of (data[col] || [])) {
+          const lastInteraction = card?.lastInteractionAt || card?.createdAt;
+          if (lastInteraction) {
+            try {
+              const diff = now - new Date(lastInteraction).getTime();
+              if (diff >= threeDaysMs) leadsSemAtendimento++;
+            } catch { /* ignore */ }
+          }
+        }
+      }
 
       return {
         totalLeads,
@@ -284,12 +322,14 @@ export function useCRMStore(currentUserId?: string, currentUserRole: Collaborato
         propostasEnviadas,
         negociacoes,
         fechamentos,
+        semInteresse,
         taxaConversaoContato: total > 0 ? Math.round((leadsEmContato / total) * 100) : 0,
         taxaConversaoProposta: total > 0 ? Math.round((propostasEnviadas / total) * 100) : 0,
         taxaConversaoNegociacao: total > 0 ? Math.round((negociacoes / total) * 100) : 0,
         taxaConversaoFechamento: total > 0 ? Math.round((fechamentos / total) * 100) : 0,
         valorTotalNegociacao,
         valorTotalFechado,
+        leadsSemAtendimento,
       };
     } catch {
       return {
@@ -298,12 +338,14 @@ export function useCRMStore(currentUserId?: string, currentUserRole: Collaborato
         propostasEnviadas: 0,
         negociacoes: 0,
         fechamentos: 0,
+        semInteresse: 0,
         taxaConversaoContato: 0,
         taxaConversaoProposta: 0,
         taxaConversaoNegociacao: 0,
         taxaConversaoFechamento: 0,
         valorTotalNegociacao: 0,
         valorTotalFechado: 0,
+        leadsSemAtendimento: 0,
       };
     }
   }, [getFilteredKanbanData]);
@@ -318,6 +360,7 @@ export function useCRMStore(currentUserId?: string, currentUserRole: Collaborato
         ...(data.proposta || []),
         ...(data.negociacao || []),
         ...(data.fechado || []),
+        ...(data.sem_interesse || []),
       ].filter(Boolean);
     } catch {
       return [];

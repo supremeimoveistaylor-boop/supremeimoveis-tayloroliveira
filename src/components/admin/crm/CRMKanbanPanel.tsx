@@ -3,17 +3,21 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
 import { 
   LayoutGrid, 
   BarChart3, 
   Users, 
   RefreshCw,
-  Plus
+  Plus,
+  Bell
 } from 'lucide-react';
 import { useCRMStore } from './useCRMStore';
+import { useAlerts } from './useAlerts';
 import { KanbanColumnComponent } from './KanbanColumn';
 import { CRMMetricsPanel } from './CRMMetricsPanel';
 import { CollaboratorsPanel } from './CollaboratorsPanel';
+import { AlertsPanel } from './AlertsPanel';
 import { CardFormDialog } from './CardFormDialog';
 import { KanbanCard, KanbanColumn, KANBAN_COLUMNS } from './types';
 import { toast } from '@/hooks/use-toast';
@@ -41,10 +45,14 @@ export const CRMKanbanPanel = memo(function CRMKanbanPanel({
     deleteCollaborator,
   } = useCRMStore(currentUserId, currentUserRole);
 
-  const [activeSubTab, setActiveSubTab] = useState<'kanban' | 'metrics' | 'team'>('kanban');
+  const alerts = useAlerts(kanbanData);
+
+  const [activeSubTab, setActiveSubTab] = useState<'kanban' | 'metrics' | 'team' | 'alerts'>('kanban');
   const [isCardDialogOpen, setIsCardDialogOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<KanbanCard | null>(null);
   const [selectedColumn, setSelectedColumn] = useState<KanbanColumn>('leads');
+
+  const criticalAlerts = (alerts ?? []).filter(a => a?.tipo === 'risco_perda' || a?.tipo === 'sem_atendimento');
 
   const handleAddCard = useCallback((column: KanbanColumn) => {
     try {
@@ -83,9 +91,12 @@ export const CRMKanbanPanel = memo(function CRMKanbanPanel({
   const handleMoveCard = useCallback((fromColumn: KanbanColumn, cardId: string, toColumn: KanbanColumn) => {
     try {
       moveCard(fromColumn, toColumn, cardId);
+      const toLabel = KANBAN_COLUMNS.find(c => c.key === toColumn)?.label ?? toColumn;
       toast({
-        title: 'Card movido',
-        description: `Card movido para ${KANBAN_COLUMNS.find(c => c.key === toColumn)?.label ?? toColumn}`,
+        title: toColumn === 'sem_interesse' ? 'Lead encerrado' : 'Card movido',
+        description: toColumn === 'sem_interesse'
+          ? 'Lead marcado como Sem Interesse. Cronômetro pausado.'
+          : `Card movido para ${toLabel}`,
       });
     } catch (e) {
       console.error('Error moving card:', e);
@@ -95,7 +106,6 @@ export const CRMKanbanPanel = memo(function CRMKanbanPanel({
   const handleSaveCard = useCallback((data: Partial<KanbanCard>, column: KanbanColumn) => {
     try {
       if (editingCard) {
-        // Find the original column
         let originalColumn: KanbanColumn | null = null;
         for (const col of KANBAN_COLUMNS) {
           if ((kanbanData[col.key] || []).find(c => c?.id === editingCard.id)) {
@@ -106,8 +116,6 @@ export const CRMKanbanPanel = memo(function CRMKanbanPanel({
 
         if (originalColumn) {
           updateCard(originalColumn, editingCard.id, data);
-          
-          // If column changed, move the card
           if (originalColumn !== column) {
             moveCard(originalColumn, column, editingCard.id);
           }
@@ -171,6 +179,15 @@ export const CRMKanbanPanel = memo(function CRMKanbanPanel({
             <BarChart3 className="h-4 w-4" />
             Métricas
           </TabsTrigger>
+          <TabsTrigger value="alerts" className="flex items-center gap-1 relative">
+            <Bell className="h-4 w-4" />
+            Alertas
+            {criticalAlerts.length > 0 && (
+              <Badge variant="destructive" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-[10px] rounded-full">
+                {criticalAlerts.length}
+              </Badge>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="team" className="flex items-center gap-1">
             <Users className="h-4 w-4" />
             Equipe
@@ -203,6 +220,11 @@ export const CRMKanbanPanel = memo(function CRMKanbanPanel({
         {/* Metrics */}
         <TabsContent value="metrics" className="mt-4">
           <CRMMetricsPanel metrics={metrics} />
+        </TabsContent>
+
+        {/* Alerts */}
+        <TabsContent value="alerts" className="mt-4">
+          <AlertsPanel alerts={alerts} />
         </TabsContent>
 
         {/* Team */}

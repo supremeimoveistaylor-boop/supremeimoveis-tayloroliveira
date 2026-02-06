@@ -1,8 +1,14 @@
 // CRM Types - All state managed locally, no Supabase persistence
 
-export type KanbanColumn = 'leads' | 'contato' | 'proposta' | 'negociacao' | 'fechado';
+export type KanbanColumn = 'leads' | 'contato' | 'proposta' | 'negociacao' | 'fechado' | 'sem_interesse';
 
 export type CollaboratorRole = 'admin' | 'gestor' | 'corretor';
+
+export interface KanbanCardHistoryEntry {
+  tipo: 'alerta' | 'status' | 'interacao';
+  descricao: string;
+  data: string;
+}
 
 export interface KanbanCard {
   id: string;
@@ -18,7 +24,9 @@ export interface KanbanCard {
   leadId?: string;
   createdAt: string;
   updatedAt?: string;
+  lastInteractionAt?: string;
   notas?: string;
+  historico?: KanbanCardHistoryEntry[];
 }
 
 export interface Collaborator {
@@ -35,6 +43,7 @@ export interface KanbanData {
   proposta: KanbanCard[];
   negociacao: KanbanCard[];
   fechado: KanbanCard[];
+  sem_interesse: KanbanCard[];
 }
 
 export interface CRMMetrics {
@@ -43,12 +52,14 @@ export interface CRMMetrics {
   propostasEnviadas: number;
   negociacoes: number;
   fechamentos: number;
+  semInteresse: number;
   taxaConversaoContato: number;
   taxaConversaoProposta: number;
   taxaConversaoNegociacao: number;
   taxaConversaoFechamento: number;
   valorTotalNegociacao: number;
   valorTotalFechado: number;
+  leadsSemAtendimento: number;
 }
 
 export const KANBAN_COLUMNS: { key: KanbanColumn; label: string; color: string }[] = [
@@ -57,7 +68,11 @@ export const KANBAN_COLUMNS: { key: KanbanColumn; label: string; color: string }
   { key: 'proposta', label: 'Proposta Enviada', color: 'bg-purple-500' },
   { key: 'negociacao', label: 'Negociação', color: 'bg-orange-500' },
   { key: 'fechado', label: 'Fechado', color: 'bg-green-500' },
+  { key: 'sem_interesse', label: 'Sem Interesse', color: 'bg-gray-400' },
 ];
+
+// Alert threshold in days
+export const ALERT_THRESHOLD_DAYS = 3;
 
 export const ROLE_PERMISSIONS: Record<CollaboratorRole, { canView: boolean; canEdit: boolean; canDelete: boolean; viewAll: boolean }> = {
   admin: { canView: true, canEdit: true, canDelete: true, viewAll: true },

@@ -7,7 +7,9 @@ import {
   Handshake, 
   CheckCircle2, 
   TrendingUp,
-  DollarSign
+  DollarSign,
+  AlertTriangle,
+  XCircle
 } from 'lucide-react';
 import { CRMMetrics } from './types';
 
@@ -69,12 +71,19 @@ export const CRMMetricsPanel = memo(function CRMMetricsPanel({ metrics }: CRMMet
       bgColor: 'bg-green-500/10',
       rate: metrics?.taxaConversaoFechamento ?? 0,
     },
+    {
+      title: 'Sem Interesse',
+      value: metrics?.semInteresse ?? 0,
+      icon: XCircle,
+      color: 'text-gray-400',
+      bgColor: 'bg-gray-400/10',
+    },
   ];
 
   return (
     <div className="space-y-4">
       {/* Métricas principais */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {metricCards.map((metric) => {
           const Icon = metric.icon;
           return (
@@ -97,6 +106,23 @@ export const CRMMetricsPanel = memo(function CRMMetricsPanel({ metrics }: CRMMet
           );
         })}
       </div>
+
+      {/* Alert summary */}
+      {(metrics?.leadsSemAtendimento ?? 0) > 0 && (
+        <Card className="bg-yellow-50 dark:bg-yellow-900/10 border-yellow-200 dark:border-yellow-800">
+          <CardContent className="py-3 px-4 flex items-center gap-3">
+            <AlertTriangle className="h-5 w-5 text-yellow-500 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-yellow-700 dark:text-yellow-400">
+                {metrics.leadsSemAtendimento} lead{(metrics?.leadsSemAtendimento ?? 0) > 1 ? 's' : ''} sem atendimento há 3+ dias
+              </p>
+              <p className="text-xs text-yellow-600/70 dark:text-yellow-500/70">
+                Verifique a aba de Alertas para detalhes
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Valores */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
