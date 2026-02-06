@@ -233,13 +233,13 @@ export const FinancingSimulator = ({ userData }: FinancingSimulatorProps) => {
       const valorFinanciado = parseCurrency(formData.valor_imovel) - parseCurrency(formData.entrada) - (formData.usar_fgts ? parseCurrency(formData.valor_fgts) : 0);
       const prazoMeses = Number(formData.prazo_anos) * 12;
       
-      // Taxas mensais específicas por banco (baseadas nas taxas anuais)
+      // Taxas mensais específicas por banco (baseadas nas taxas anuais reais - Fev/2026)
       const taxasPorBanco: Record<number, { mensal: number; cet: number }> = {
-        1: { mensal: 0.00868, cet: 10.92 }, // Caixa Econômica - 10,92% a.a.
-        2: { mensal: 0.0085, cet: 10.7 },   // Banco do Brasil
-        3: { mensal: 0.0095, cet: 12.0 },   // Itaú
-        4: { mensal: 0.0092, cet: 11.6 },   // Bradesco
-        5: { mensal: 0.0098, cet: 12.4 },   // Santander
+        1: { mensal: 0.0095, cet: 12.00 },  // Caixa Econômica - 12,00% a.a. + TR
+        2: { mensal: 0.0095, cet: 12.00 },  // Banco do Brasil - 12,00% a.a. + TR
+        3: { mensal: 0.0092, cet: 11.60 },  // Itaú - 11,60% a.a. + TR
+        4: { mensal: 0.0092, cet: 11.70 },  // Bradesco - 11,70% a.a. + TR
+        5: { mensal: 0.0093, cet: 11.79 },  // Santander - 11,79% a.a. + TR
       };
       
       const demoResults: BankResult[] = BANCOS.map((banco) => {
