@@ -18,7 +18,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
-import { LeadCaptureDialog, type LeadCaptureData } from "@/components/chat/LeadCaptureDialog";
+// Lead capture removido - extração silenciosa ativa
 
 // Notification sound using Web Audio API
 const playNotificationSound = () => {
@@ -156,12 +156,11 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
   const [finishSummary, setFinishSummary] = useState("");
   const [isFinishing, setIsFinishing] = useState(false);
 
-  // Pré-chat (lead obrigatório)
-  const [showLeadCapture, setShowLeadCapture] = useState(false);
-  const [isSavingLead, setIsSavingLead] = useState(false);
-  const [leadCaptureError, setLeadCaptureError] = useState<string | null>(null);
+  // Extração silenciosa de dados do lead
   const [clientName, setClientName] = useState<string | null>(null);
   const [clientPhone, setClientPhone] = useState<string | null>(null);
+  const [propertyType, setPropertyType] = useState<string | null>(null);
+  const [leadSaveAttempted, setLeadSaveAttempted] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -245,79 +244,115 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
     }
   }, []);
 
-  const saveLead = useCallback(async (data: LeadCaptureData): Promise<string> => {
-    const response = await fetch(LEADS_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        clientName: data.name,
-        clientPhone: data.phoneDigits,
-        origin: "Chat",
-      }),
-    });
-
-    const json = await response.json().catch(() => ({} as any));
-    if (!response.ok || !json?.leadId) {
-      throw new Error(json?.error || "Falha ao salvar lead");
+  // Extração silenciosa de nome
+  const extractNameFromText = useCallback((text: string): string | null => {
+    const patterns = [
+      /(?:meu nome [eé]|me chamo|sou o?a?\s*)\s*([A-Za-zÀ-ÿ]+)/i,
+      /(?:pode me chamar de|chamo[- ]me)\s+([A-Za-zÀ-ÿ]+)/i,
+    ];
+    for (const p of patterns) {
+      const match = text.match(p);
+      if (match?.[1] && match[1].length >= 2) return match[1].trim();
     }
-
-    return json.leadId as string;
+    return null;
   }, []);
 
-  const handleLeadCaptureSubmit = useCallback(async (data: LeadCaptureData) => {
-    setIsSavingLead(true);
-    setLeadCaptureError(null);
-
-    try {
-      const newLeadId = await saveLead(data);
-      setLeadId(newLeadId);
-      localStorage.setItem(LEAD_STORAGE_KEY, newLeadId);
-
-      setClientName(data.name);
-      setClientPhone(data.phoneDigits);
-
-      // Persistir para compatibilidade com o widget do site (se existir)
-      try {
-        sessionStorage.setItem("supreme_chat_name", data.name);
-        sessionStorage.setItem("supreme_chat_phone", data.phoneDigits);
-        sessionStorage.setItem("supreme_chat_lead_saved", "true");
-      } catch {
-        // ignore
-      }
-
-      setShowLeadCapture(false);
-
-      // Garante sessão antes de iniciar fluxo
-      await createOrGetSession(newLeadId);
-
-      // Reinicia o startConversation agora com leadId existente
-      setHasStarted(false);
-    } catch (e) {
-      console.error("Erro ao salvar lead:", e);
-      setLeadCaptureError("Não foi possível salvar seus dados. Tente novamente.");
-      return;
-    } finally {
-      setIsSavingLead(false);
+  // Extração silenciosa de telefone
+  const extractPhoneFromText = useCallback((text: string): string | null => {
+    const phonePattern = /(?:\(?\d{2}\)?\s?)?(?:9\s?)?\d{4}[\s-]?\d{4}/g;
+    const match = text.match(phonePattern);
+    if (match) {
+      const digits = match[0].replace(/\D/g, "");
+      if (digits.length >= 10 && digits.length <= 11) return digits;
     }
-  }, [saveLead]);
+    const allDigits = text.replace(/\D/g, "");
+    if (allDigits.length >= 10 && allDigits.length <= 11) return allDigits;
+    return null;
+  }, []);
+
+  // Extração silenciosa de tipo de imóvel
+  const extractPropertyTypeFromText = useCallback((text: string): string | null => {
+    const lower = text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const mappings: { keywords: string[]; value: string }[] = [
+      { keywords: ["apartamento", "ape", "ap ", "apto"], value: "Apartamento" },
+      { keywords: ["casa em condominio", "condominio fechado"], value: "Casa em condomínio" },
+      { keywords: ["casa"], value: "Casa" },
+      { keywords: ["terreno", "lote"], value: "Terreno" },
+      { keywords: ["sala comercial", "sala"], value: "Sala comercial" },
+      { keywords: ["loja"], value: "Loja" },
+      { keywords: ["galpao", "barracao"], value: "Galpão" },
+      { keywords: ["kitnet", "studio", "kitnete", "estudio"], value: "Kitnet / Studio" },
+      { keywords: ["fazenda", "sitio", "chacara", "rural"], value: "Fazenda / Sítio / Chácara" },
+    ];
+    for (const m of mappings) {
+      for (const kw of m.keywords) {
+        if (lower.includes(kw)) return m.value;
+      }
+    }
+    return null;
+  }, []);
+
+  // Salvar lead silenciosamente quando nome + telefone disponíveis
+  const saveLeadSilently = useCallback(async (name: string, phone: string) => {
+    if (leadSaveAttempted) return;
+    setLeadSaveAttempted(true);
+    try {
+      const response = await fetch(LEADS_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientName: name, clientPhone: phone, origin: "Chat" }),
+      });
+      const json = await response.json().catch(() => ({} as any));
+      if (response.ok && json?.leadId) {
+        setLeadId(json.leadId);
+        localStorage.setItem(LEAD_STORAGE_KEY, json.leadId);
+        console.log("[Chat] ✅ Lead salvo silenciosamente:", json.leadId);
+      }
+    } catch (e) {
+      console.error("[Chat] Erro ao salvar lead silenciosamente:", e);
+      setLeadSaveAttempted(false); // Allow retry
+    }
+  }, [leadSaveAttempted]);
+
+  // Função de extração silenciosa chamada a cada mensagem do usuário
+  const silentExtract = useCallback((text: string) => {
+    try {
+      let currentName = clientName;
+      let currentPhone = clientPhone;
+
+      if (!currentName) {
+        const name = extractNameFromText(text);
+        if (name) { setClientName(name); currentName = name; }
+      }
+      if (!currentPhone) {
+        const phone = extractPhoneFromText(text);
+        if (phone) { setClientPhone(phone); currentPhone = phone; }
+      }
+      if (!propertyType) {
+        const pt = extractPropertyTypeFromText(text);
+        if (pt) setPropertyType(pt);
+      }
+      if (currentName && currentPhone) {
+        saveLeadSilently(currentName, currentPhone);
+      }
+    } catch (_) {}
+  }, [clientName, clientPhone, propertyType, extractNameFromText, extractPhoneFromText, extractPropertyTypeFromText, saveLeadSilently]);
 
   const startConversation = useCallback(async (overrideLeadId?: string) => {
     if (hasStarted) return;
 
     const effectiveLeadId = overrideLeadId ?? leadId;
 
-    // Pré-chat obrigatório: sem leadId, pedir nome/telefone
-    if (!effectiveLeadId) {
-      setShowLeadCapture(true);
-      return;
-    }
+    // Sem leadId, iniciar sem histórico (extração silenciosa coletará dados)
 
     setHasStarted(true);
 
-    const hasLoadedHistory = await loadChatHistory(effectiveLeadId);
-    if (hasLoadedHistory) {
-      await createOrGetSession(effectiveLeadId);
-      return;
+    if (effectiveLeadId) {
+      const hasLoadedHistory = await loadChatHistory(effectiveLeadId);
+      if (hasLoadedHistory) {
+        await createOrGetSession(effectiveLeadId);
+        return;
+      }
     }
 
     setIsLoading(true);
@@ -606,6 +641,11 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
 
   const handleSendMessage = async () => {
     if ((!inputMessage.trim() && !pendingAttachment) || isLoading) return;
+
+    // Extração silenciosa de dados do lead
+    if (inputMessage.trim()) {
+      silentExtract(inputMessage.trim());
+    }
 
     let messageContent: string | MessageContent[] = inputMessage.trim();
     let displayContent = inputMessage.trim();
@@ -1283,14 +1323,7 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
         </p>
       </div>
 
-      {/* Pré-chat: captura obrigatória de lead */}
-      <LeadCaptureDialog
-        open={showLeadCapture}
-        onOpenChange={setShowLeadCapture}
-        onSubmit={handleLeadCaptureSubmit}
-        isSubmitting={isSavingLead}
-        error={leadCaptureError}
-      />
+      {/* Lead capture removido - extração silenciosa ativa */}
 
       {/* Dialog para finalizar atendimento */}
       <Dialog open={showFinishDialog} onOpenChange={setShowFinishDialog}>
