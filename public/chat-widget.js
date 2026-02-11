@@ -1,6 +1,6 @@
-/* Supreme Chat Widget v4.0 - PRÉ-CAPTURA + IA
-   Formulário de captura ANTES do chat.
-   Após captura, chat funciona normalmente.
+/* Supreme Chat Widget v5.0 - EXTRAÇÃO SILENCIOSA DE LEADS
+   Sem formulário obrigatório. Chat abre direto.
+   Extração automática de nome, telefone e tipo de imóvel em background.
    Template do chat 100% preservado.
 */
 (function () {
@@ -12,9 +12,7 @@
   var SESSION_LEAD_KEY = "supreme_chat_lead_saved";
   var SESSION_NAME_KEY = "supreme_chat_name";
   var SESSION_PHONE_KEY = "supreme_chat_phone";
-
-  // Fluxo: CAPTURE -> CHAT
-  var FLOW = { CAPTURE: 'capture', CHAT: 'chat' };
+  var SESSION_PROPERTY_TYPE_KEY = "supreme_chat_property_type";
 
   // Estado em memória
   var state = {
@@ -23,9 +21,9 @@
     isLoading: false,
     clientName: null,
     clientPhone: null,
+    propertyType: null,
     leadSaved: false,
-    pendingLeadSave: false,
-    flowState: FLOW.CAPTURE // Começa no formulário
+    pendingLeadSave: false
   };
 
   // ============================================
@@ -36,10 +34,7 @@
       state.leadSaved = sessionStorage.getItem(SESSION_LEAD_KEY) === 'true';
       state.clientName = sessionStorage.getItem(SESSION_NAME_KEY) || null;
       state.clientPhone = sessionStorage.getItem(SESSION_PHONE_KEY) || null;
-      // Se já salvou lead, pular para o chat
-      if (state.leadSaved && state.clientName) {
-        state.flowState = FLOW.CHAT;
-      }
+      state.propertyType = sessionStorage.getItem(SESSION_PROPERTY_TYPE_KEY) || null;
     } catch (_) {}
   }
 
@@ -47,6 +42,7 @@
     try {
       if (state.clientName) sessionStorage.setItem(SESSION_NAME_KEY, state.clientName);
       if (state.clientPhone) sessionStorage.setItem(SESSION_PHONE_KEY, state.clientPhone);
+      if (state.propertyType) sessionStorage.setItem(SESSION_PROPERTY_TYPE_KEY, state.propertyType);
       if (state.leadSaved) sessionStorage.setItem(SESSION_LEAD_KEY, 'true');
     } catch (_) {}
   }
@@ -64,10 +60,9 @@
   }
 
   function extractName(text) {
-    // Detectar "meu nome é X" ou "sou X" ou "me chamo X"
     var patterns = [
-      /(?:meu nome [eé]|me chamo|sou o?a?)\s+([A-Za-zÀ-ÿ]+(?:\s+[A-Za-zÀ-ÿ]+)?)/i,
-      /^([A-Za-zÀ-ÿ]{2,}(?:\s+[A-Za-zÀ-ÿ]+)?)$/i
+      /(?:meu nome [eé]|me chamo|sou o?a?\s*)\s*([A-Za-zÀ-ÿ]+)/i,
+      /(?:pode me chamar de|chamo[- ]me)\s+([A-Za-zÀ-ÿ]+)/i
     ];
     for (var i = 0; i < patterns.length; i++) {
       var match = text.match(patterns[i]);
@@ -79,9 +74,42 @@
   }
 
   function extractPhone(text) {
-    var digits = text.replace(/\D/g, "");
-    if (digits.length >= 10 && digits.length <= 11) {
-      return digits;
+    // Match phone patterns with or without formatting
+    var phonePattern = /(?:\(?\d{2}\)?\s?)?(?:9\s?)?\d{4}[\s-]?\d{4}/g;
+    var match = text.match(phonePattern);
+    if (match) {
+      var digits = match[0].replace(/\D/g, "");
+      if (digits.length >= 10 && digits.length <= 11) {
+        return digits;
+      }
+    }
+    // Fallback: pure digits
+    var allDigits = text.replace(/\D/g, "");
+    if (allDigits.length >= 10 && allDigits.length <= 11) {
+      return allDigits;
+    }
+    return null;
+  }
+
+  function extractPropertyType(text) {
+    var lower = text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    var mappings = [
+      { keywords: ["apartamento", "ape", "ap ", "apto"], value: "Apartamento" },
+      { keywords: ["casa em condominio", "condominio fechado", "cond fechado"], value: "Casa em condomínio" },
+      { keywords: ["casa"], value: "Casa" },
+      { keywords: ["terreno", "lote"], value: "Terreno" },
+      { keywords: ["sala comercial", "sala"], value: "Sala comercial" },
+      { keywords: ["loja"], value: "Loja" },
+      { keywords: ["galpao", "galpão", "barracao"], value: "Galpão" },
+      { keywords: ["kitnet", "studio", "kitnete", "estudio"], value: "Kitnet / Studio" },
+      { keywords: ["fazenda", "sitio", "chacara", "rural"], value: "Fazenda / Sítio / Chácara" }
+    ];
+    for (var i = 0; i < mappings.length; i++) {
+      for (var j = 0; j < mappings[i].keywords.length; j++) {
+        if (lower.indexOf(mappings[i].keywords[j]) !== -1) {
+          return mappings[i].value;
+        }
+      }
     }
     return null;
   }
@@ -128,21 +156,12 @@
   // SALVAR LEAD - ASSÍNCRONO E NÃO BLOQUEANTE
   // ============================================
   function saveLeadAsync() {
-    if (state.leadSaved || state.pendingLeadSave) {
-      console.log('[Chat] Lead já salvo ou em progresso');
-      return;
-    }
-    if (!state.clientName || !state.clientPhone) {
-      console.log('[Chat] Dados incompletos para salvar lead');
-      return;
-    }
-    if (!validatePhone(state.clientPhone)) {
-      console.log('[Chat] Telefone inválido');
-      return;
-    }
+    if (state.leadSaved || state.pendingLeadSave) return;
+    if (!state.clientName || !state.clientPhone) return;
+    if (!validatePhone(state.clientPhone)) return;
 
     state.pendingLeadSave = true;
-    console.log('[Chat] Salvando lead de forma assíncrona:', { name: state.clientName, phone: state.clientPhone });
+    console.log('[Chat] Salvando lead silenciosamente:', { name: state.clientName, phone: state.clientPhone, propertyType: state.propertyType });
 
     fetch(LEADS_URL, {
       method: 'POST',
@@ -154,13 +173,11 @@
       })
     })
     .then(function(response) {
-      if (response.ok) {
-        return response.json();
-      }
+      if (response.ok) return response.json();
       throw new Error('Falha ao salvar');
     })
     .then(function(data) {
-      console.log('[Chat] ✅ Lead salvo:', data);
+      console.log('[Chat] ✅ Lead salvo silenciosamente:', data);
       state.leadSaved = true;
       state.pendingLeadSave = false;
       saveSessionData();
@@ -172,11 +189,10 @@
   }
 
   // ============================================
-  // CHAMAR IA - RESPOSTA NÃO BLOQUEANTE
+  // CHAMAR IA
   // ============================================
   async function getAIResponse(userMessage) {
     try {
-      // Preparar mensagens para a IA
       var messagesForAI = state.messages.slice(-10).map(function(m) {
         return { role: m.role, content: m.content };
       });
@@ -203,14 +219,11 @@
         return 'Desculpe, tive um problema. Pode repetir?';
       }
 
-      // Verificar se é streaming SSE
       var contentType = response.headers.get('content-type') || '';
       
       if (contentType.includes('text/event-stream')) {
-        // Processar SSE streaming
         return await parseSSEStream(response);
       } else {
-        // Resposta JSON normal
         var data = await response.json();
         return data.reply || data.message || 'Como posso ajudar você?';
       }
@@ -248,20 +261,12 @@
           try {
             var parsed = JSON.parse(jsonStr);
             var content = parsed.choices && parsed.choices[0] && parsed.choices[0].delta && parsed.choices[0].delta.content;
-            if (content) {
-              fullText += content;
-            }
-            // Check for non-streaming reply format
-            if (parsed.reply) {
-              fullText = parsed.reply;
-            }
-          } catch (parseErr) {
-            // Ignore parse errors for incomplete JSON
-          }
+            if (content) fullText += content;
+            if (parsed.reply) fullText = parsed.reply;
+          } catch (parseErr) {}
         }
       }
 
-      // Process remaining buffer
       if (buffer.trim()) {
         var remaining = buffer.trim();
         if (remaining.startsWith('data: ') && remaining !== 'data: [DONE]') {
@@ -328,59 +333,16 @@
       ".send{border-radius:12px;padding:0 14px;background:" + primary + ";color:#111;font-weight:700}\n" +
       ".send[disabled]{opacity:0.6;cursor:not-allowed}\n" +
       ".online-dot{width:8px;height:8px;background:#4ade80;border-radius:50%;animation:pulse 2s infinite}\n" +
-      // Estilos para o formulário de captura
-      ".capture-view{flex:1;display:flex;flex-direction:column;padding:20px;background:" + bg + "}\n" +
-      ".capture-greeting{background:rgba(255,255,255,0.08);border-radius:14px;border-bottom-left-radius:6px;padding:12px;margin-bottom:20px;font-size:13px;line-height:1.4}\n" +
-      ".capture-form{display:flex;flex-direction:column;gap:12px}\n" +
-      ".capture-label{font-size:12px;color:" + muted + ";margin-bottom:4px}\n" +
-      ".capture-input{width:100%;border-radius:12px;border:1px solid rgba(255,255,255,0.10);background:rgba(0,0,0,0.20);color:" + text + ";padding:12px;font-size:14px}\n" +
-      ".capture-input:focus{outline:none;border-color:" + primary + "}\n" +
-      ".capture-input::placeholder{color:rgba(255,255,255,0.4)}\n" +
-      ".capture-btn{width:100%;border-radius:12px;padding:14px;background:" + primary + ";color:#111;font-weight:700;font-size:14px;margin-top:8px;transition:opacity 0.2s}\n" +
-      ".capture-btn:hover{opacity:0.9}\n" +
-      ".capture-btn[disabled]{opacity:0.6;cursor:not-allowed}\n" +
-      ".capture-error{color:#ef4444;font-size:12px;margin-top:-8px}\n" +
-      ".chat-view{display:flex;flex-direction:column;flex:1;overflow:hidden}\n" +
-      ".hidden{display:none!important}\n" +
       "" });
 
     // ============================================
-    // ELEMENTOS DO FORMULÁRIO DE CAPTURA
-    // ============================================
-    var nameInput = el('input', { class: 'capture-input', placeholder: 'Seu nome', type: 'text', maxlength: '100' });
-    var phoneInput = el('input', { class: 'capture-input', placeholder: '(00) 00000-0000', type: 'tel', maxlength: '15' });
-    var captureError = el('div', { class: 'capture-error hidden', text: '' });
-    var captureBtn = el('button', { class: 'btn capture-btn', type: 'button', text: 'Iniciar Conversa' });
-
-    var captureView = el('div', { class: 'capture-view' },
-      el('div', { class: 'capture-greeting', text: 'Olá! 👋 Sou o assistente da Supreme Empreendimentos.\n\nPara começar, preencha seus dados abaixo:' }),
-      el('div', { class: 'capture-form' },
-        el('div', {},
-          el('div', { class: 'capture-label', text: 'Nome' }),
-          nameInput
-        ),
-        el('div', {},
-          el('div', { class: 'capture-label', text: 'Telefone' }),
-          phoneInput,
-          captureError
-        ),
-        captureBtn
-      )
-    );
-
-    // ============================================
-    // ELEMENTOS DO CHAT (TEMPLATE ORIGINAL)
+    // ELEMENTOS DO CHAT
     // ============================================
     var msgList = el('div', { class: 'msgs', role: 'log', 'aria-live': 'polite' });
     var input = el('input', { class: 'in', placeholder: 'Digite sua mensagem...', type: 'text', maxlength: '500' });
     var sendBtn = el('button', { class: 'btn send', type: 'button' }, el('span', { text: 'Enviar' }));
     var closeBtn = el('button', { class: 'btn iconBtn', type: 'button', title: 'Fechar', 'aria-label': 'Fechar chat' },
       el('span', { text: '×', style: 'font-size:18px;line-height:1' })
-    );
-
-    var chatView = el('div', { class: 'chat-view' },
-      msgList,
-      el('div', { class: 'foot' }, input, sendBtn)
     );
 
     var header = el('div', { class: 'hdr' },
@@ -404,120 +366,13 @@
 
     var panel = el('div', { class: 'panel', role: 'dialog', 'aria-label': 'Chat de atendimento' },
       header,
-      captureView,
-      chatView
+      msgList,
+      el('div', { class: 'foot' }, input, sendBtn)
     );
 
     var fab = el('button', { class: 'btn fab', type: 'button', 'aria-label': 'Assistente Online' },
       el('span', { text: '💬', style: 'font-size:22px' })
     );
-
-    // ============================================
-    // MÁSCARA DE TELEFONE
-    // ============================================
-    function formatPhone(value) {
-      var digits = value.replace(/\D/g, '');
-      if (digits.length <= 2) return digits;
-      if (digits.length <= 7) return '(' + digits.slice(0, 2) + ') ' + digits.slice(2);
-      if (digits.length <= 11) return '(' + digits.slice(0, 2) + ') ' + digits.slice(2, 7) + '-' + digits.slice(7);
-      return '(' + digits.slice(0, 2) + ') ' + digits.slice(2, 7) + '-' + digits.slice(7, 11);
-    }
-
-    phoneInput.addEventListener('input', function() {
-      phoneInput.value = formatPhone(phoneInput.value);
-    });
-
-    // ============================================
-    // RENDERIZAR VISÃO ATUAL
-    // ============================================
-    function renderCurrentView() {
-      if (state.flowState === FLOW.CAPTURE) {
-        captureView.classList.remove('hidden');
-        chatView.classList.add('hidden');
-      } else {
-        captureView.classList.add('hidden');
-        chatView.classList.remove('hidden');
-      }
-    }
-
-    // ============================================
-    // SALVAR LEAD E TRANSICIONAR PARA CHAT
-    // ============================================
-    async function submitCapture() {
-      var name = nameInput.value.trim();
-      var phone = phoneInput.value.replace(/\D/g, '');
-
-      // Validação
-      if (!name || name.length < 2) {
-        captureError.textContent = 'Por favor, informe seu nome';
-        captureError.classList.remove('hidden');
-        nameInput.focus();
-        return;
-      }
-      if (phone.length < 10 || phone.length > 11) {
-        captureError.textContent = 'Telefone inválido (min 10 dígitos)';
-        captureError.classList.remove('hidden');
-        phoneInput.focus();
-        return;
-      }
-
-      captureError.classList.add('hidden');
-      captureBtn.disabled = true;
-      captureBtn.textContent = 'Salvando...';
-
-      try {
-        var response = await fetch(LEADS_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            clientName: name,
-            clientPhone: phone,
-            origin: 'Chat'
-          })
-        });
-
-        if (!response.ok) throw new Error('Falha ao salvar');
-
-        console.log('[Chat] ✅ Lead salvo com sucesso');
-        
-        // Atualizar estado
-        state.clientName = name;
-        state.clientPhone = phone;
-        state.leadSaved = true;
-        state.flowState = FLOW.CHAT;
-        saveSessionData();
-
-        // Transicionar para o chat
-        renderCurrentView();
-        
-        // Mensagem de boas vindas personalizada
-        addMessage('assistant', 'Obrigado, ' + name + '! 😊\n\nComo posso ajudar você hoje?');
-        input.focus();
-
-      } catch (e) {
-        console.error('[Chat] Erro ao salvar lead:', e);
-        captureError.textContent = 'Erro ao salvar. Tente novamente.';
-        captureError.classList.remove('hidden');
-      } finally {
-        captureBtn.disabled = false;
-        captureBtn.textContent = 'Iniciar Conversa';
-      }
-    }
-
-    // Event listeners do formulário
-    captureBtn.addEventListener('click', submitCapture);
-    nameInput.addEventListener('keydown', function(ev) {
-      if (ev.key === 'Enter') {
-        ev.preventDefault();
-        phoneInput.focus();
-      }
-    });
-    phoneInput.addEventListener('keydown', function(ev) {
-      if (ev.key === 'Enter') {
-        ev.preventDefault();
-        submitCapture();
-      }
-    });
 
     function addMessage(role, content) {
       state.messages.push({ role: role, content: content });
@@ -548,37 +403,55 @@
     }
 
     // ============================================
-    // PROCESSAR MENSAGEM - IA SEMPRE RESPONDE PRIMEIRO
+    // EXTRAÇÃO SILENCIOSA DE DADOS DO LEAD
+    // ============================================
+    function silentExtract(text) {
+      try {
+        if (!state.clientName) {
+          var name = extractName(text);
+          if (name) {
+            state.clientName = name;
+            saveSessionData();
+            console.log('[Chat] 🔍 Nome extraído:', name);
+          }
+        }
+
+        if (!state.clientPhone) {
+          var phone = extractPhone(text);
+          if (phone) {
+            state.clientPhone = phone;
+            saveSessionData();
+            console.log('[Chat] 🔍 Telefone extraído:', phone);
+          }
+        }
+
+        if (!state.propertyType) {
+          var propType = extractPropertyType(text);
+          if (propType) {
+            state.propertyType = propType;
+            saveSessionData();
+            console.log('[Chat] 🔍 Tipo de imóvel extraído:', propType);
+          }
+        }
+
+        // Salvar lead quando nome + telefone disponíveis
+        if (state.clientName && state.clientPhone && !state.leadSaved) {
+          saveLeadAsync();
+        }
+      } catch (_) {}
+    }
+
+    // ============================================
+    // PROCESSAR MENSAGEM
     // ============================================
     async function processUserMessage(text) {
       addMessage('user', text);
       setLoading(true);
 
-      // CAPTURA DE DADOS EM PARALELO (NÃO BLOQUEANTE)
-      if (!state.clientName) {
-        var extractedName = extractName(text);
-        if (extractedName) {
-          state.clientName = extractedName;
-          saveSessionData();
-          console.log('[Chat] Nome capturado:', extractedName);
-        }
-      }
+      // Extração silenciosa em background
+      silentExtract(text);
 
-      if (!state.clientPhone) {
-        var extractedPhone = extractPhone(text);
-        if (extractedPhone) {
-          state.clientPhone = extractedPhone;
-          saveSessionData();
-          console.log('[Chat] Telefone capturado:', extractedPhone);
-        }
-      }
-
-      // TENTAR SALVAR LEAD ASSÍNCRONO (se tiver dados completos)
-      if (state.clientName && state.clientPhone && !state.leadSaved) {
-        saveLeadAsync(); // Não bloqueia!
-      }
-
-      // CHAMAR IA IMEDIATAMENTE - NUNCA BLOQUEADO
+      // Chamar IA imediatamente
       try {
         var aiReply = await getAIResponse(text);
         setLoading(false);
@@ -602,19 +475,12 @@
       panel.classList.add('open');
       fab.classList.add('no-bounce');
 
-      // Renderizar visão correta (captura ou chat)
-      renderCurrentView();
-
-      // Se já passou pela captura e é a primeira abertura do chat
-      if (state.flowState === FLOW.CHAT && state.messages.length === 0) {
-        var greeting = 'Olá, ' + (state.clientName || 'Visitante') + '! 👋 Bem-vindo de volta à Supreme Empreendimentos.\n\nComo posso ajudar você hoje?';
+      // Chat direto, sem formulário
+      if (state.messages.length === 0) {
+        var greeting = 'Olá! 👋 Bem-vindo(a) à Supreme Empreendimentos.\n\nComo posso ajudar você hoje?';
         addMessage('assistant', greeting);
-        input.focus();
-      } else if (state.flowState === FLOW.CAPTURE) {
-        nameInput.focus();
-      } else {
-        input.focus();
       }
+      input.focus();
     }
 
     function close() {
@@ -647,9 +513,6 @@
     mount.appendChild(fab);
     mount.appendChild(panel);
     document.body.appendChild(root);
-
-    // Renderizar visão inicial
-    renderCurrentView();
 
     // Auto-open após delay
     var autoOpenMs = CONFIG.autoOpenMs;
