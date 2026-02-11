@@ -160,7 +160,10 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
   const [clientName, setClientName] = useState<string | null>(null);
   const [clientPhone, setClientPhone] = useState<string | null>(null);
   const [propertyType, setPropertyType] = useState<string | null>(null);
+  const [storeInterest, setStoreInterest] = useState<string | null>(null);
+  const [leadScore, setLeadScore] = useState<number>(50);
   const [leadSaveAttempted, setLeadSaveAttempted] = useState(false);
+  const leadScoreRef = useRef<number>(50);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -181,6 +184,14 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
     if (storedLeadId) {
       setLeadId(storedLeadId);
     }
+    // Recuperar score salvo
+    try {
+      const storedScore = localStorage.getItem("supreme_chat_lead_score");
+      if (storedScore) {
+        const parsed = parseInt(storedScore, 10);
+        if (!isNaN(parsed)) { setLeadScore(parsed); leadScoreRef.current = parsed; }
+      }
+    } catch (_) {}
   }, []);
 
   // Auto-open chat apenas 1x na primeira visita (armazenado em localStorage)
@@ -292,6 +303,61 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
     return null;
   }, []);
 
+  // Extração de interesse em loja
+  const extractStoreInterest = useCallback((text: string): string | null => {
+    const lower = text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const storeKeywords = ["loja", "ponto comercial", "espaco comercial", "comercio"];
+    for (const kw of storeKeywords) {
+      if (lower.includes(kw)) return kw.charAt(0).toUpperCase() + kw.slice(1);
+    }
+    return null;
+  }, []);
+
+  // Análise de sentimento para scoring
+  const analyzeSentiment = useCallback((text: string): number => {
+    const lower = text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+    const veryPositive = [
+      "quero comprar agora", "fechar negocio", "vou comprar", "quero assinar",
+      "onde assino", "pode fechar", "fechado", "vamos fechar", "quero ja",
+      "excelente", "perfeito", "maravilhoso", "amei", "sensacional",
+      "quero agendar visita", "quando posso visitar", "vou visitar"
+    ];
+    const positive = [
+      "gostei", "interessante", "quero saber mais", "me interessa",
+      "pode enviar", "quero ver", "bom", "legal", "otimo", "bacana",
+      "show", "top", "massa", "pode ser", "tenho interesse",
+      "quanto custa", "qual o valor", "tem disponivel", "aceita proposta"
+    ];
+    const negative = [
+      "nao gostei", "caro", "muito caro", "nao tenho interesse",
+      "nao quero", "desisto", "esquece", "nao preciso",
+      "ruim", "horrivel", "pessimo", "nao vale", "absurdo"
+    ];
+    const veryNegative = [
+      "nunca mais", "cancelar", "reclamar", "processo",
+      "denuncia", "vergonha", "fraude", "golpe", "enganacao",
+      "nao me ligue", "pare de me", "nao entre em contato"
+    ];
+
+    for (const kw of veryPositive) { if (lower.includes(kw)) return 15; }
+    for (const kw of veryNegative) { if (lower.includes(kw)) return -20; }
+    for (const kw of positive) { if (lower.includes(kw)) return 10; }
+    for (const kw of negative) { if (lower.includes(kw)) return -10; }
+
+    return 0; // Neutro
+  }, []);
+
+  // Atualizar score com limites
+  const updateLeadScore = useCallback((delta: number) => {
+    if (delta === 0) return;
+    const newScore = Math.max(0, Math.min(100, leadScoreRef.current + delta));
+    leadScoreRef.current = newScore;
+    setLeadScore(newScore);
+    try { localStorage.setItem("supreme_chat_lead_score", String(newScore)); } catch (_) {}
+    console.log(`[Chat] 📊 Lead score: ${newScore} (${delta > 0 ? "+" : ""}${delta})`);
+  }, []);
+
   // Salvar lead silenciosamente quando nome + telefone disponíveis
   const saveLeadSilently = useCallback(async (name: string, phone: string) => {
     if (leadSaveAttempted) return;
@@ -310,11 +376,11 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
       }
     } catch (e) {
       console.error("[Chat] Erro ao salvar lead silenciosamente:", e);
-      setLeadSaveAttempted(false); // Allow retry
+      setLeadSaveAttempted(false);
     }
   }, [leadSaveAttempted]);
 
-  // Função de extração silenciosa chamada a cada mensagem do usuário
+  // Função de extração silenciosa + scoring chamada a cada mensagem do usuário
   const silentExtract = useCallback((text: string) => {
     try {
       let currentName = clientName;
@@ -332,11 +398,20 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
         const pt = extractPropertyTypeFromText(text);
         if (pt) setPropertyType(pt);
       }
+      if (!storeInterest) {
+        const si = extractStoreInterest(text);
+        if (si) setStoreInterest(si);
+      }
+
+      // Análise de sentimento → atualizar score
+      const scoreDelta = analyzeSentiment(text);
+      updateLeadScore(scoreDelta);
+
       if (currentName && currentPhone) {
         saveLeadSilently(currentName, currentPhone);
       }
     } catch (_) {}
-  }, [clientName, clientPhone, propertyType, extractNameFromText, extractPhoneFromText, extractPropertyTypeFromText, saveLeadSilently]);
+  }, [clientName, clientPhone, propertyType, storeInterest, extractNameFromText, extractPhoneFromText, extractPropertyTypeFromText, extractStoreInterest, analyzeSentiment, updateLeadScore, saveLeadSilently]);
 
   const startConversation = useCallback(async (overrideLeadId?: string) => {
     if (hasStarted) return;

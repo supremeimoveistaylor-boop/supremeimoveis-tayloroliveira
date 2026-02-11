@@ -22,6 +22,8 @@
     clientName: null,
     clientPhone: null,
     propertyType: null,
+    storeInterest: null,
+    leadScore: 50,
     leadSaved: false,
     pendingLeadSave: false
   };
@@ -35,6 +37,9 @@
       state.clientName = sessionStorage.getItem(SESSION_NAME_KEY) || null;
       state.clientPhone = sessionStorage.getItem(SESSION_PHONE_KEY) || null;
       state.propertyType = sessionStorage.getItem(SESSION_PROPERTY_TYPE_KEY) || null;
+      state.storeInterest = sessionStorage.getItem('supreme_chat_store_interest') || null;
+      var storedScore = sessionStorage.getItem('supreme_chat_lead_score');
+      if (storedScore) { var p = parseInt(storedScore, 10); if (!isNaN(p)) state.leadScore = p; }
     } catch (_) {}
   }
 
@@ -43,6 +48,8 @@
       if (state.clientName) sessionStorage.setItem(SESSION_NAME_KEY, state.clientName);
       if (state.clientPhone) sessionStorage.setItem(SESSION_PHONE_KEY, state.clientPhone);
       if (state.propertyType) sessionStorage.setItem(SESSION_PROPERTY_TYPE_KEY, state.propertyType);
+      if (state.storeInterest) sessionStorage.setItem('supreme_chat_store_interest', state.storeInterest);
+      sessionStorage.setItem('supreme_chat_lead_score', String(state.leadScore));
       if (state.leadSaved) sessionStorage.setItem(SESSION_LEAD_KEY, 'true');
     } catch (_) {}
   }
@@ -403,38 +410,63 @@
     }
 
     // ============================================
-    // EXTRAÇÃO SILENCIOSA DE DADOS DO LEAD
+    // ANÁLISE DE SENTIMENTO
+    // ============================================
+    function analyzeSentiment(text) {
+      var lower = (text || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      var vp = ['quero comprar agora','fechar negocio','vou comprar','quero assinar','onde assino','pode fechar','fechado','vamos fechar','quero ja','excelente','perfeito','maravilhoso','amei','sensacional','quero agendar visita','quando posso visitar','vou visitar'];
+      var po = ['gostei','interessante','quero saber mais','me interessa','pode enviar','quero ver','bom','legal','otimo','bacana','show','top','massa','pode ser','tenho interesse','quanto custa','qual o valor','tem disponivel','aceita proposta'];
+      var ne = ['nao gostei','caro','muito caro','nao tenho interesse','nao quero','desisto','esquece','nao preciso','ruim','horrivel','pessimo','nao vale','absurdo'];
+      var vn = ['nunca mais','cancelar','reclamar','processo','denuncia','vergonha','fraude','golpe','enganacao','nao me ligue','pare de me','nao entre em contato'];
+      for (var i = 0; i < vp.length; i++) { if (lower.indexOf(vp[i]) !== -1) return 15; }
+      for (var i = 0; i < vn.length; i++) { if (lower.indexOf(vn[i]) !== -1) return -20; }
+      for (var i = 0; i < po.length; i++) { if (lower.indexOf(po[i]) !== -1) return 10; }
+      for (var i = 0; i < ne.length; i++) { if (lower.indexOf(ne[i]) !== -1) return -10; }
+      return 0;
+    }
+
+    function extractStoreInterestFromText(text) {
+      var lower = (text || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      var kws = ['loja', 'ponto comercial', 'espaco comercial', 'comercio'];
+      for (var i = 0; i < kws.length; i++) {
+        if (lower.indexOf(kws[i]) !== -1) return kws[i].charAt(0).toUpperCase() + kws[i].slice(1);
+      }
+      return null;
+    }
+
+    function updateScore(delta) {
+      if (delta === 0) return;
+      state.leadScore = Math.max(0, Math.min(100, state.leadScore + delta));
+      saveSessionData();
+      console.log('[Chat] 📊 Lead score: ' + state.leadScore + ' (' + (delta > 0 ? '+' : '') + delta + ')');
+    }
+
+    // ============================================
+    // EXTRAÇÃO SILENCIOSA + SCORING
     // ============================================
     function silentExtract(text) {
       try {
         if (!state.clientName) {
           var name = extractName(text);
-          if (name) {
-            state.clientName = name;
-            saveSessionData();
-            console.log('[Chat] 🔍 Nome extraído:', name);
-          }
+          if (name) { state.clientName = name; saveSessionData(); console.log('[Chat] 🔍 Nome extraído:', name); }
         }
-
         if (!state.clientPhone) {
           var phone = extractPhone(text);
-          if (phone) {
-            state.clientPhone = phone;
-            saveSessionData();
-            console.log('[Chat] 🔍 Telefone extraído:', phone);
-          }
+          if (phone) { state.clientPhone = phone; saveSessionData(); console.log('[Chat] 🔍 Telefone extraído:', phone); }
         }
-
         if (!state.propertyType) {
           var propType = extractPropertyType(text);
-          if (propType) {
-            state.propertyType = propType;
-            saveSessionData();
-            console.log('[Chat] 🔍 Tipo de imóvel extraído:', propType);
-          }
+          if (propType) { state.propertyType = propType; saveSessionData(); console.log('[Chat] 🔍 Tipo de imóvel extraído:', propType); }
+        }
+        if (!state.storeInterest) {
+          var si = extractStoreInterestFromText(text);
+          if (si) { state.storeInterest = si; saveSessionData(); console.log('[Chat] 🔍 Interesse em loja:', si); }
         }
 
-        // Salvar lead quando nome + telefone disponíveis
+        // Análise de sentimento → scoring
+        var delta = analyzeSentiment(text);
+        updateScore(delta);
+
         if (state.clientName && state.clientPhone && !state.leadSaved) {
           saveLeadAsync();
         }
