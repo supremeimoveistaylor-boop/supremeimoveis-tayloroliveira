@@ -469,8 +469,8 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
           id: "1",
           role: "assistant",
           content: propertyName
-            ? `Olá 😊 Vi que você está olhando o imóvel ${propertyName}. Posso te ajudar com alguma informação?`
-            : "Olá 😊 Seja bem-vindo(a)! Posso te ajudar a encontrar um imóvel ideal para você?",
+            ? `Olá 😊 Vi que você está olhando o imóvel ${propertyName}. Posso te ajudar com alguma informação?\n\nComo posso te chamar?`
+            : "Olá 😊 Seja bem-vindo(a) à Supreme Empreendimentos!\n\nComo posso te chamar?",
           timestamp: new Date(),
         },
       ]);
