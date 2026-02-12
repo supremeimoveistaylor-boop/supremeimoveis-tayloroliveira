@@ -509,7 +509,7 @@
 
       // Chat direto, sem formulário
       if (state.messages.length === 0) {
-        var greeting = 'Olá! 👋 Bem-vindo(a) à Supreme Empreendimentos.\n\nComo posso ajudar você hoje?';
+        var greeting = 'Olá! 👋 Bem-vindo(a) à Supreme Empreendimentos.\n\nComo posso te chamar?';
         addMessage('assistant', greeting);
       }
       input.focus();
