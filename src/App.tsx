@@ -23,6 +23,8 @@ import SearchResults from "./pages/SearchResults";
 import SuperAdminLogin from "./pages/SuperAdminLogin";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import FinancingAdmin from "./pages/FinancingAdmin";
+import PoliticaPrivacidade from "./pages/PoliticaPrivacidade";
+import TermosUso from "./pages/TermosUso";
 import NotFound from "./pages/NotFound";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ExitPopup } from "@/components/ExitPopup";
@@ -64,6 +66,8 @@ const App = () => (
                 <Route path="/super-admin" element={<SuperAdminDashboard />} />
                 {/* Financing Admin */}
                 <Route path="/financing-admin" element={<FinancingAdmin />} />
+                <Route path="/politica-privacidade" element={<PoliticaPrivacidade />} />
+                <Route path="/termos-uso" element={<TermosUso />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
