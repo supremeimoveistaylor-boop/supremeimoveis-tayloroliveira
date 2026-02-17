@@ -86,10 +86,10 @@ export const Footer = () => {
               © 2024 Supreme Negócios Imobiliários. Todos os direitos reservados.
             </p>
             <div className="flex space-x-6 text-sm">
-              <a href="#" className="text-gray-300 hover:text-accent transition-colors">
+              <a href="/#/politica-privacidade" className="text-gray-300 hover:text-accent transition-colors">
                 Política de Privacidade
               </a>
-              <a href="#" className="text-gray-300 hover:text-accent transition-colors">
+              <a href="/#/termos-uso" className="text-gray-300 hover:text-accent transition-colors">
                 Termos de Uso
               </a>
               <a href="#" className="text-gray-300 hover:text-accent transition-colors">
