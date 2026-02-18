@@ -6,3 +6,4 @@ export { CollaboratorsPanel } from './CollaboratorsPanel';
 export { KanbanColumnComponent } from './KanbanColumn';
 export { KanbanCardComponent } from './KanbanCard';
 export { CardFormDialog } from './CardFormDialog';
+export { AIAnalyticsPanel } from './AIAnalyticsPanel';
