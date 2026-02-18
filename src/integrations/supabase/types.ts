@@ -402,6 +402,143 @@ export type Database = {
           },
         ]
       }
+      crm_cards: {
+        Row: {
+          ai_last_analysis_at: string | null
+          ai_summary: string | null
+          classificacao: string | null
+          cliente: string
+          coluna: string
+          created_at: string
+          email: string | null
+          historico: Json | null
+          id: string
+          last_interaction_at: string | null
+          lead_id: string | null
+          lead_score: number | null
+          notas: string | null
+          origem_lead: string | null
+          prioridade: string | null
+          probabilidade_fechamento: number | null
+          proxima_acao: string | null
+          proximo_agendamento: string | null
+          responsavel: string | null
+          telefone: string | null
+          titulo: string
+          ultimo_followup_at: string | null
+          updated_at: string
+          valor_estimado: number | null
+        }
+        Insert: {
+          ai_last_analysis_at?: string | null
+          ai_summary?: string | null
+          classificacao?: string | null
+          cliente: string
+          coluna?: string
+          created_at?: string
+          email?: string | null
+          historico?: Json | null
+          id?: string
+          last_interaction_at?: string | null
+          lead_id?: string | null
+          lead_score?: number | null
+          notas?: string | null
+          origem_lead?: string | null
+          prioridade?: string | null
+          probabilidade_fechamento?: number | null
+          proxima_acao?: string | null
+          proximo_agendamento?: string | null
+          responsavel?: string | null
+          telefone?: string | null
+          titulo: string
+          ultimo_followup_at?: string | null
+          updated_at?: string
+          valor_estimado?: number | null
+        }
+        Update: {
+          ai_last_analysis_at?: string | null
+          ai_summary?: string | null
+          classificacao?: string | null
+          cliente?: string
+          coluna?: string
+          created_at?: string
+          email?: string | null
+          historico?: Json | null
+          id?: string
+          last_interaction_at?: string | null
+          lead_id?: string | null
+          lead_score?: number | null
+          notas?: string | null
+          origem_lead?: string | null
+          prioridade?: string | null
+          probabilidade_fechamento?: number | null
+          proxima_acao?: string | null
+          proximo_agendamento?: string | null
+          responsavel?: string | null
+          telefone?: string | null
+          titulo?: string
+          ultimo_followup_at?: string | null
+          updated_at?: string
+          valor_estimado?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_cards_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_events: {
+        Row: {
+          card_id: string | null
+          created_at: string
+          event_type: string
+          id: string
+          lead_id: string | null
+          metadata: Json | null
+          new_value: string | null
+          old_value: string | null
+        }
+        Insert: {
+          card_id?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          lead_id?: string | null
+          metadata?: Json | null
+          new_value?: string | null
+          old_value?: string | null
+        }
+        Update: {
+          card_id?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          lead_id?: string | null
+          metadata?: Json | null
+          new_value?: string | null
+          old_value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_events_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "crm_cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_events_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       general_chat_messages: {
         Row: {
           created_at: string

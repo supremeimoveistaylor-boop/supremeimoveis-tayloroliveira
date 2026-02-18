@@ -1,388 +1,336 @@
-import { useState, useCallback, useMemo } from 'react';
-import { KanbanCard, KanbanColumn, KanbanData, Collaborator, CRMMetrics, CollaboratorRole, ROLE_PERMISSIONS } from './types';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { CRMCard, KanbanColumn, KanbanData, Collaborator, CRMMetrics, CollaboratorRole, ROLE_PERMISSIONS, KANBAN_COLUMNS } from './types';
 
-const STORAGE_KEY = 'crm_kanban_data';
 const COLLABORATORS_KEY = 'crm_collaborators';
-
-// Helper to generate unique IDs
-const generateId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-// Helper to safely parse JSON
-const safeParseJSON = <T>(json: string | null, fallback: T): T => {
-  if (!json) return fallback;
-  try {
-    return JSON.parse(json) as T;
-  } catch {
-    return fallback;
-  }
-};
-
-// Initial empty state
-const initialKanbanData: KanbanData = {
-  leads: [],
-  contato: [],
-  proposta: [],
-  negociacao: [],
-  fechado: [],
-  sem_interesse: [],
+const EMPTY_KANBAN: KanbanData = {
+  leads: [], contato_iniciado: [], qualificado: [], agendamento: [],
+  visita_realizada: [], proposta: [], fechado: [], sem_interesse: [],
 };
 
 const initialCollaborators: Collaborator[] = [
   { id: 'admin-1', nome: 'Administrador', role: 'admin', ativo: true },
 ];
 
-export function useCRMStore(currentUserId?: string, currentUserRole: CollaboratorRole = 'corretor') {
-  // Load initial state from localStorage
-  const [kanbanData, setKanbanData] = useState<KanbanData>(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      return safeParseJSON(stored, initialKanbanData);
-    } catch {
-      return initialKanbanData;
-    }
-  });
+const safeParseJSON = <T>(json: string | null, fallback: T): T => {
+  if (!json) return fallback;
+  try { return JSON.parse(json) as T; } catch { return fallback; }
+};
 
+export function useCRMStore(currentUserId?: string, currentUserRole: CollaboratorRole = 'corretor') {
+  const [allCards, setAllCards] = useState<CRMCard[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [collaborators, setCollaborators] = useState<Collaborator[]>(() => {
     try {
-      const stored = localStorage.getItem(COLLABORATORS_KEY);
-      return safeParseJSON(stored, initialCollaborators);
-    } catch {
-      return initialCollaborators;
-    }
+      return safeParseJSON(localStorage.getItem(COLLABORATORS_KEY), initialCollaborators);
+    } catch { return initialCollaborators; }
   });
 
-  // Persist to localStorage
-  const persistKanban = useCallback((data: KanbanData) => {
+  const channelRef = useRef<any>(null);
+
+  // Load cards from Supabase
+  const loadCards = useCallback(async () => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      setIsLoading(true);
+      const { data, error } = await (supabase as any)
+        .from('crm_cards')
+        .select('*')
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error loading CRM cards:', error);
+        return;
+      }
+      setAllCards((data || []) as CRMCard[]);
     } catch (e) {
-      console.error('Failed to persist kanban data:', e);
+      console.error('Failed to load CRM cards:', e);
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
-  const persistCollaborators = useCallback((data: Collaborator[]) => {
-    try {
-      localStorage.setItem(COLLABORATORS_KEY, JSON.stringify(data));
-    } catch (e) {
-      console.error('Failed to persist collaborators:', e);
-    }
-  }, []);
+  // Subscribe to realtime
+  useEffect(() => {
+    loadCards();
 
-  // Get user permissions
+    const channel = supabase
+      .channel('crm_cards_realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'crm_cards' }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          setAllCards(prev => {
+            if (prev.some(c => c.id === (payload.new as CRMCard).id)) return prev;
+            return [...prev, payload.new as CRMCard];
+          });
+        } else if (payload.eventType === 'UPDATE') {
+          setAllCards(prev => prev.map(c => c.id === (payload.new as CRMCard).id ? payload.new as CRMCard : c));
+        } else if (payload.eventType === 'DELETE') {
+          setAllCards(prev => prev.filter(c => c.id !== (payload.old as { id: string }).id));
+        }
+      })
+      .subscribe();
+
+    channelRef.current = channel;
+    return () => { supabase.removeChannel(channel); };
+  }, [loadCards]);
+
   const permissions = useMemo(() => ROLE_PERMISSIONS[currentUserRole], [currentUserRole]);
 
-  // Filter cards based on user role
-  const getFilteredKanbanData = useCallback((): KanbanData => {
-    if (permissions.viewAll) {
-      return kanbanData;
+  // Build kanban data from flat card list
+  const kanbanData = useMemo((): KanbanData => {
+    const data = { ...EMPTY_KANBAN };
+    for (const key of Object.keys(data) as KanbanColumn[]) {
+      data[key] = [];
     }
-    // Corretores only see their own cards
-    return {
-      leads: kanbanData.leads.filter(c => c?.responsavel === currentUserId),
-      contato: kanbanData.contato.filter(c => c?.responsavel === currentUserId),
-      proposta: kanbanData.proposta.filter(c => c?.responsavel === currentUserId),
-      negociacao: kanbanData.negociacao.filter(c => c?.responsavel === currentUserId),
-      fechado: kanbanData.fechado.filter(c => c?.responsavel === currentUserId),
-      sem_interesse: kanbanData.sem_interesse.filter(c => c?.responsavel === currentUserId),
-    };
-  }, [kanbanData, permissions.viewAll, currentUserId]);
+    for (const card of allCards) {
+      if (!card) continue;
+      const col = card.coluna as KanbanColumn;
+      if (!permissions.viewAll && card.responsavel !== currentUserId) continue;
+      if (data[col]) {
+        data[col].push(card);
+      } else {
+        data.leads.push(card); // fallback
+      }
+    }
+    return data;
+  }, [allCards, permissions.viewAll, currentUserId]);
 
-  // Add card to a column
-  const addCard = useCallback((column: KanbanColumn, card: Omit<KanbanCard, 'id' | 'createdAt'>) => {
+  // Add card
+  const addCard = useCallback(async (column: KanbanColumn, cardData: Partial<CRMCard>) => {
     try {
-      const now = new Date().toISOString();
-      const newCard: KanbanCard = {
-        ...card,
-        id: generateId(),
-        createdAt: now,
-        lastInteractionAt: now,
+      const newCard = {
+        titulo: cardData.titulo || 'Novo Card',
+        cliente: cardData.cliente || 'Não informado',
+        telefone: cardData.telefone || null,
+        email: cardData.email || null,
+        coluna: column,
+        origem_lead: cardData.origem_lead || null,
+        responsavel: cardData.responsavel || null,
+        valor_estimado: cardData.valor_estimado || 0,
+        lead_score: cardData.lead_score || 0,
+        classificacao: cardData.classificacao || 'frio',
+        probabilidade_fechamento: cardData.probabilidade_fechamento || 0,
+        prioridade: cardData.prioridade || 'normal',
+        notas: cardData.notas || null,
+        lead_id: cardData.lead_id || null,
+        historico: JSON.stringify([]),
       };
-      setKanbanData(prev => {
-        const updated = {
-          ...prev,
-          [column]: [...(prev[column] || []), newCard],
-        };
-        persistKanban(updated);
-        return updated;
-      });
-      return newCard;
+
+      const { data, error } = await (supabase as any)
+        .from('crm_cards')
+        .insert(newCard)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error adding card:', error);
+        return null;
+      }
+      return data as CRMCard;
     } catch (e) {
       console.error('Failed to add card:', e);
       return null;
     }
-  }, [persistKanban]);
+  }, []);
 
-  // Update card (also updates lastInteractionAt)
-  const updateCard = useCallback((column: KanbanColumn, cardId: string, updates: Partial<KanbanCard>) => {
+  // Update card
+  const updateCard = useCallback(async (column: KanbanColumn, cardId: string, updates: Partial<CRMCard>) => {
     try {
-      const now = new Date().toISOString();
-      setKanbanData(prev => {
-        const updated = {
-          ...prev,
-          [column]: (prev[column] || []).map(card =>
-            card?.id === cardId ? { ...card, ...updates, updatedAt: now, lastInteractionAt: now } : card
-          ),
-        };
-        persistKanban(updated);
-        return updated;
-      });
+      const cleanUpdates: any = { ...updates };
+      delete cleanUpdates.id;
+      delete cleanUpdates.created_at;
+      if (cleanUpdates.historico && typeof cleanUpdates.historico !== 'string') {
+        cleanUpdates.historico = JSON.stringify(cleanUpdates.historico);
+      }
+      cleanUpdates.last_interaction_at = new Date().toISOString();
+
+      const { error } = await (supabase as any)
+        .from('crm_cards')
+        .update(cleanUpdates)
+        .eq('id', cardId);
+
+      if (error) console.error('Error updating card:', error);
     } catch (e) {
       console.error('Failed to update card:', e);
     }
-  }, [persistKanban]);
+  }, []);
 
   // Delete card
-  const deleteCard = useCallback((column: KanbanColumn, cardId: string) => {
-    if (!permissions.canDelete) {
-      console.warn('User does not have delete permission');
-      return false;
-    }
+  const deleteCard = useCallback(async (column: KanbanColumn, cardId: string) => {
+    if (!permissions.canDelete) return false;
     try {
-      setKanbanData(prev => {
-        const updated = {
-          ...prev,
-          [column]: (prev[column] || []).filter(card => card?.id !== cardId),
-        };
-        persistKanban(updated);
-        return updated;
-      });
+      const { error } = await (supabase as any)
+        .from('crm_cards')
+        .delete()
+        .eq('id', cardId);
+
+      if (error) {
+        console.error('Error deleting card:', error);
+        return false;
+      }
       return true;
     } catch (e) {
       console.error('Failed to delete card:', e);
       return false;
     }
-  }, [permissions.canDelete, persistKanban]);
+  }, [permissions.canDelete]);
 
-  // Move card between columns (updates lastInteractionAt and adds history)
-  const moveCard = useCallback((fromColumn: KanbanColumn, toColumn: KanbanColumn, cardId: string) => {
+  // Move card
+  const moveCard = useCallback(async (fromColumn: KanbanColumn, toColumn: KanbanColumn, cardId: string) => {
     try {
-      const now = new Date().toISOString();
-      setKanbanData(prev => {
-        const card = (prev[fromColumn] || []).find(c => c?.id === cardId);
-        if (!card) return prev;
+      const card = allCards.find(c => c.id === cardId);
+      if (!card) return;
 
-        const historyEntry = {
-          tipo: 'status' as const,
-          descricao: `Movido de "${fromColumn}" para "${toColumn}"`,
-          data: now,
-        };
+      const historico = Array.isArray(card.historico) ? card.historico : [];
+      const newHistorico = [...historico, {
+        tipo: 'status',
+        descricao: `Movido de "${fromColumn}" para "${toColumn}"`,
+        data: new Date().toISOString(),
+      }];
 
-        const updatedCard = {
-          ...card,
-          updatedAt: now,
-          lastInteractionAt: toColumn === 'sem_interesse' ? card.lastInteractionAt : now,
-          historico: [...(card?.historico || []), historyEntry],
-        };
+      const updates: any = {
+        coluna: toColumn,
+        historico: JSON.stringify(newHistorico),
+        last_interaction_at: toColumn === 'sem_interesse' ? card.last_interaction_at : new Date().toISOString(),
+      };
 
-        const updated = {
-          ...prev,
-          [fromColumn]: (prev[fromColumn] || []).filter(c => c?.id !== cardId),
-          [toColumn]: [...(prev[toColumn] || []), updatedCard],
-        };
-        persistKanban(updated);
-        return updated;
-      });
+      const { error } = await (supabase as any)
+        .from('crm_cards')
+        .update(updates)
+        .eq('id', cardId);
+
+      if (error) console.error('Error moving card:', error);
     } catch (e) {
       console.error('Failed to move card:', e);
     }
-  }, [persistKanban]);
+  }, [allCards]);
 
   // Add card from lead
-  const addCardFromLead = useCallback((lead: { id: string; name?: string; phone?: string; email?: string; origin?: string }) => {
-    try {
-      return addCard('leads', {
-        titulo: lead?.name ?? 'Novo Lead',
-        cliente: lead?.name ?? 'Não informado',
-        telefone: lead?.phone ?? '',
-        email: lead?.email ?? '',
-        origemLead: lead?.origin ?? 'Chat',
-        leadId: lead?.id ?? '',
-      });
-    } catch (e) {
-      console.error('Failed to add card from lead:', e);
-      return null;
-    }
+  const addCardFromLead = useCallback(async (lead: { id: string; name?: string; phone?: string; email?: string; origin?: string }) => {
+    return addCard('leads', {
+      titulo: lead.name || 'Novo Lead',
+      cliente: lead.name || 'Não informado',
+      telefone: lead.phone || null,
+      email: lead.email || null,
+      origem_lead: lead.origin || 'Chat',
+      lead_id: lead.id,
+    });
   }, [addCard]);
 
-  // Remove card by lead ID
-  const removeCardByLeadId = useCallback((leadId: string) => {
+  // Analyze lead with AI
+  const analyzeLeadWithAI = useCallback(async (cardId: string) => {
     try {
-      setKanbanData(prev => {
-        const updated = { ...prev };
-        Object.keys(updated).forEach(key => {
-          const column = key as KanbanColumn;
-          updated[column] = (prev[column] || []).filter(card => card?.leadId !== leadId);
-        });
-        persistKanban(updated);
-        return updated;
-      });
-    } catch (e) {
-      console.error('Failed to remove card by lead ID:', e);
-    }
-  }, [persistKanban]);
+      const card = allCards.find(c => c.id === cardId);
+      if (!card) return null;
 
-  // Link appointment to card
-  const linkAppointmentToCard = useCallback((cardId: string, appointmentDate: string) => {
-    try {
-      // Find which column contains the card
-      for (const column of Object.keys(kanbanData) as KanbanColumn[]) {
-        const card = (kanbanData[column] || []).find(c => c?.id === cardId);
-        if (card) {
-          updateCard(column, cardId, { proximoAgendamento: appointmentDate });
-          return true;
-        }
+      const { data, error } = await supabase.functions.invoke('analyze-lead', {
+        body: { card_id: cardId, lead_id: card.lead_id },
+      });
+
+      if (error) {
+        console.error('AI analysis error:', error);
+        return null;
       }
-      return false;
+      return data;
     } catch (e) {
-      console.error('Failed to link appointment:', e);
-      return false;
-    }
-  }, [kanbanData, updateCard]);
-
-  // Collaborator management
-  const addCollaborator = useCallback((collaborator: Omit<Collaborator, 'id'>) => {
-    try {
-      const newCollaborator: Collaborator = {
-        ...collaborator,
-        id: generateId(),
-      };
-      setCollaborators(prev => {
-        const updated = [...prev, newCollaborator];
-        persistCollaborators(updated);
-        return updated;
-      });
-      return newCollaborator;
-    } catch (e) {
-      console.error('Failed to add collaborator:', e);
+      console.error('Failed to analyze lead:', e);
       return null;
     }
+  }, [allCards]);
+
+  // Analyze all cards
+  const analyzeAllLeads = useCallback(async () => {
+    const activeCards = allCards.filter(c => c.coluna !== 'fechado' && c.coluna !== 'sem_interesse');
+    const results = [];
+    for (const card of activeCards) {
+      const result = await analyzeLeadWithAI(card.id);
+      if (result) results.push(result);
+      // Small delay to avoid rate limiting
+      await new Promise(r => setTimeout(r, 500));
+    }
+    await loadCards(); // Refresh after analysis
+    return results;
+  }, [allCards, analyzeLeadWithAI, loadCards]);
+
+  // Collaborator management (still localStorage)
+  const persistCollaborators = useCallback((data: Collaborator[]) => {
+    try { localStorage.setItem(COLLABORATORS_KEY, JSON.stringify(data)); } catch {}
+  }, []);
+
+  const addCollaborator = useCallback((collaborator: Omit<Collaborator, 'id'>) => {
+    const newCollab: Collaborator = { ...collaborator, id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}` };
+    setCollaborators(prev => { const u = [...prev, newCollab]; persistCollaborators(u); return u; });
+    return newCollab;
   }, [persistCollaborators]);
 
   const updateCollaborator = useCallback((id: string, updates: Partial<Collaborator>) => {
-    try {
-      setCollaborators(prev => {
-        const updated = prev.map(c => c?.id === id ? { ...c, ...updates } : c);
-        persistCollaborators(updated);
-        return updated;
-      });
-    } catch (e) {
-      console.error('Failed to update collaborator:', e);
-    }
+    setCollaborators(prev => { const u = prev.map(c => c.id === id ? { ...c, ...updates } : c); persistCollaborators(u); return u; });
   }, [persistCollaborators]);
 
   const deleteCollaborator = useCallback((id: string) => {
-    try {
-      setCollaborators(prev => {
-        const updated = prev.filter(c => c?.id !== id);
-        persistCollaborators(updated);
-        return updated;
-      });
-    } catch (e) {
-      console.error('Failed to delete collaborator:', e);
-    }
+    setCollaborators(prev => { const u = prev.filter(c => c.id !== id); persistCollaborators(u); return u; });
   }, [persistCollaborators]);
 
-  // Calculate metrics (sem_interesse excluded from funnel)
+  // Calculate metrics
   const metrics = useMemo((): CRMMetrics => {
-    try {
-      const data = getFilteredKanbanData();
-      const totalLeads = (data.leads?.length ?? 0);
-      const leadsEmContato = (data.contato?.length ?? 0);
-      const propostasEnviadas = (data.proposta?.length ?? 0);
-      const negociacoes = (data.negociacao?.length ?? 0);
-      const fechamentos = (data.fechado?.length ?? 0);
-      const semInteresse = (data.sem_interesse?.length ?? 0);
+    const d = kanbanData;
+    const totalLeads = d.leads.length;
+    const contatoIniciado = d.contato_iniciado.length;
+    const qualificados = d.qualificado.length;
+    const agendamentos = d.agendamento.length;
+    const visitasRealizadas = d.visita_realizada.length;
+    const propostas = d.proposta.length;
+    const fechamentos = d.fechado.length;
+    const semInteresse = d.sem_interesse.length;
+    const total = totalLeads + contatoIniciado + qualificados + agendamentos + visitasRealizadas + propostas + fechamentos;
 
-      // sem_interesse does NOT count for funnel metrics
-      const total = totalLeads + leadsEmContato + propostasEnviadas + negociacoes + fechamentos;
+    const valorTotalProposta = [...d.proposta, ...d.agendamento, ...d.visita_realizada].reduce((s, c) => s + (c.valor_estimado || 0), 0);
+    const valorTotalFechado = d.fechado.reduce((s, c) => s + (c.valor_estimado || 0), 0);
 
-      const valorTotalNegociacao = (data.negociacao || []).reduce((sum, card) => sum + (card?.valorEstimado ?? 0), 0);
-      const valorTotalFechado = (data.fechado || []).reduce((sum, card) => sum + (card?.valorEstimado ?? 0), 0);
-
-      // Count leads without interaction for 3+ days
-      const now = Date.now();
-      const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
-      const activeColumns: KanbanColumn[] = ['leads', 'contato', 'proposta', 'negociacao'];
-      let leadsSemAtendimento = 0;
-      for (const col of activeColumns) {
-        for (const card of (data[col] || [])) {
-          const lastInteraction = card?.lastInteractionAt || card?.createdAt;
-          if (lastInteraction) {
-            try {
-              const diff = now - new Date(lastInteraction).getTime();
-              if (diff >= threeDaysMs) leadsSemAtendimento++;
-            } catch { /* ignore */ }
-          }
-        }
+    const now = Date.now();
+    const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
+    const activeColumns: KanbanColumn[] = ['leads', 'contato_iniciado', 'qualificado', 'agendamento', 'visita_realizada', 'proposta'];
+    let leadsSemAtendimento = 0;
+    for (const col of activeColumns) {
+      for (const card of d[col]) {
+        const last = card.last_interaction_at || card.created_at;
+        if (last && (now - new Date(last).getTime()) >= threeDaysMs) leadsSemAtendimento++;
       }
-
-      return {
-        totalLeads,
-        leadsEmContato,
-        propostasEnviadas,
-        negociacoes,
-        fechamentos,
-        semInteresse,
-        taxaConversaoContato: total > 0 ? Math.round((leadsEmContato / total) * 100) : 0,
-        taxaConversaoProposta: total > 0 ? Math.round((propostasEnviadas / total) * 100) : 0,
-        taxaConversaoNegociacao: total > 0 ? Math.round((negociacoes / total) * 100) : 0,
-        taxaConversaoFechamento: total > 0 ? Math.round((fechamentos / total) * 100) : 0,
-        valorTotalNegociacao,
-        valorTotalFechado,
-        leadsSemAtendimento,
-      };
-    } catch {
-      return {
-        totalLeads: 0,
-        leadsEmContato: 0,
-        propostasEnviadas: 0,
-        negociacoes: 0,
-        fechamentos: 0,
-        semInteresse: 0,
-        taxaConversaoContato: 0,
-        taxaConversaoProposta: 0,
-        taxaConversaoNegociacao: 0,
-        taxaConversaoFechamento: 0,
-        valorTotalNegociacao: 0,
-        valorTotalFechado: 0,
-        leadsSemAtendimento: 0,
-      };
     }
-  }, [getFilteredKanbanData]);
 
-  // Get all cards flat list
-  const getAllCards = useCallback((): KanbanCard[] => {
-    try {
-      const data = getFilteredKanbanData();
-      return [
-        ...(data.leads || []),
-        ...(data.contato || []),
-        ...(data.proposta || []),
-        ...(data.negociacao || []),
-        ...(data.fechado || []),
-        ...(data.sem_interesse || []),
-      ].filter(Boolean);
-    } catch {
-      return [];
-    }
-  }, [getFilteredKanbanData]);
+    const leadsQuentes = allCards.filter(c => c.classificacao === 'quente' && c.coluna !== 'fechado' && c.coluna !== 'sem_interesse').length;
+    const activeCards = allCards.filter(c => c.coluna !== 'fechado' && c.coluna !== 'sem_interesse');
+    const probabilidadeMedia = activeCards.length > 0
+      ? Math.round(activeCards.reduce((s, c) => s + (c.probabilidade_fechamento || 0), 0) / activeCards.length)
+      : 0;
+
+    return {
+      totalLeads, contatoIniciado, qualificados, agendamentos, visitasRealizadas,
+      propostas, fechamentos, semInteresse,
+      taxaConversaoContato: total > 0 ? Math.round((contatoIniciado / total) * 100) : 0,
+      taxaConversaoQualificado: total > 0 ? Math.round((qualificados / total) * 100) : 0,
+      taxaConversaoAgendamento: total > 0 ? Math.round((agendamentos / total) * 100) : 0,
+      taxaConversaoFechamento: total > 0 ? Math.round((fechamentos / total) * 100) : 0,
+      valorTotalProposta, valorTotalFechado, leadsSemAtendimento, leadsQuentes, probabilidadeMedia,
+    };
+  }, [kanbanData, allCards]);
 
   return {
-    kanbanData: getFilteredKanbanData(),
-    rawKanbanData: kanbanData,
+    kanbanData,
+    allCards,
     collaborators,
     metrics,
     permissions,
+    isLoading,
     addCard,
     updateCard,
     deleteCard,
     moveCard,
     addCardFromLead,
-    removeCardByLeadId,
-    linkAppointmentToCard,
+    analyzeLeadWithAI,
+    analyzeAllLeads,
+    loadCards,
     addCollaborator,
     updateCollaborator,
     deleteCollaborator,
-    getAllCards,
   };
 }
