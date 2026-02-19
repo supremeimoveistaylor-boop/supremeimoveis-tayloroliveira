@@ -6,13 +6,54 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const WHATSAPP_API_VERSION = 'v22.0';
+const BROKER_PHONE = '5562999918353';
+
+async function sendLeadToWhatsApp(leadName: string, leadPhone: string, leadInterest: string) {
+  const PHONE_NUMBER_ID = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID');
+  const ACCESS_TOKEN = Deno.env.get('WHATSAPP_ACCESS_TOKEN');
+
+  if (!PHONE_NUMBER_ID || !ACCESS_TOKEN) {
+    console.error('[WhatsApp] Missing WHATSAPP_PHONE_NUMBER_ID or WHATSAPP_ACCESS_TOKEN');
+    return;
+  }
+
+  const message = `🚨 Novo Lead Recebido\n\nNome: ${leadName}\nTelefone: ${leadPhone}\nInteresse: ${leadInterest}\n\nEnviado automaticamente pelo sistema.`;
+
+  const payload = {
+    messaging_product: 'whatsapp',
+    to: BROKER_PHONE,
+    type: 'text',
+    text: { body: message },
+  };
+
+  try {
+    const url = `https://graph.facebook.com/${WHATSAPP_API_VERSION}/${PHONE_NUMBER_ID}/messages`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${ACCESS_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const result = await res.json();
+    if (!res.ok) {
+      console.error('[WhatsApp] API error:', JSON.stringify(result));
+    } else {
+      console.log('[WhatsApp] Message sent successfully:', result.messages?.[0]?.id);
+    }
+  } catch (err) {
+    console.error('[WhatsApp] Send failed:', err.message);
+  }
+}
+
 serve(async (req: Request): Promise<Response> => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Only allow POST
   if (req.method !== "POST") {
     return new Response(
       JSON.stringify({ success: false, error: "Method not allowed" }),
@@ -36,8 +77,7 @@ serve(async (req: Request): Promise<Response> => {
       auth: { persistSession: false }
     });
 
-    // Parse request body
-    let body: { clientName?: string; clientPhone?: string; origin?: string };
+    let body: { clientName?: string; clientPhone?: string; clientInterest?: string; origin?: string };
     try {
       body = await req.json();
     } catch {
@@ -47,9 +87,8 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    const { clientName, clientPhone, origin = "chat" } = body;
+    const { clientName, clientPhone, clientInterest, origin = "chat" } = body;
 
-    // Validate required fields
     if (!clientName || !clientPhone) {
       return new Response(
         JSON.stringify({ success: false, error: "clientName and clientPhone are required" }),
@@ -57,10 +96,8 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    // Sanitize phone (only digits)
     const sanitizedPhone = clientPhone.replace(/\D/g, "");
 
-    // Check if lead already exists by phone
     const { data: existingLead } = await supabase
       .from("leads")
       .select("id")
@@ -70,12 +107,12 @@ serve(async (req: Request): Promise<Response> => {
     let leadId: string;
 
     if (existingLead) {
-      // Update existing lead
       const { error: updateError } = await supabase
         .from("leads")
         .update({
           name: clientName,
-          origin: origin,
+          intent: clientInterest || null,
+          origin,
           last_interaction_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
@@ -92,13 +129,13 @@ serve(async (req: Request): Promise<Response> => {
       leadId = existingLead.id;
       console.log("[real_estate_leads] Updated lead:", leadId);
     } else {
-      // Create new lead
       const { data: newLead, error: insertError } = await supabase
         .from("leads")
         .insert({
           name: clientName,
           phone: sanitizedPhone,
-          origin: origin,
+          intent: clientInterest || null,
+          origin,
           status: "novo",
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
@@ -117,6 +154,12 @@ serve(async (req: Request): Promise<Response> => {
       leadId = newLead.id;
       console.log("[real_estate_leads] Created lead:", leadId);
     }
+
+    // 🔥 Disparo assíncrono do WhatsApp — não bloqueia a resposta
+    const interest = clientInterest || "Não informado";
+    sendLeadToWhatsApp(clientName, sanitizedPhone, interest).catch(err => {
+      console.error("[real_estate_leads] WhatsApp async error:", err.message);
+    });
 
     return new Response(
       JSON.stringify({ success: true, leadId }),
