@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const VERIFY_TOKEN = "webhook_whatsapp_joerlin_2026";
+const VERIFY_TOKEN = "supreme2026";
 
 serve(async (req) => {
   // Handle CORS preflight
