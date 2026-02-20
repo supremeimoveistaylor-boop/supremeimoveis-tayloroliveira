@@ -18,8 +18,21 @@
     <script>
       (function () {
         try {
-          var hasHash = window.location.hash && window.location.hash.length > 1;
           var path = window.location.pathname || "/";
+          // Meta OAuth callback handler — intercept before HashRouter redirect
+          if (path === "/api/meta/oauth/callback") {
+            var params = new URLSearchParams(window.location.search);
+            var code = params.get("code");
+            if (code && window.opener) {
+              window.opener.postMessage({ type: "META_OAUTH_CALLBACK", code: code }, "*");
+              document.title = "Conectando WhatsApp...";
+              document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;background:#111;color:#fff"><div style="text-align:center"><p style="font-size:1.2rem">✅ Conectando WhatsApp...</p><p style="color:#888;margin-top:8px">Esta janela fechará automaticamente.</p></div></div>';
+              setTimeout(function(){ window.close(); }, 2000);
+              return; // stop — don't redirect to hash route
+            }
+          }
+          // HashRouter fallback: convert direct deep links (/buscar) into hash routes (/#/buscar)
+          var hasHash = window.location.hash && window.location.hash.length > 1;
           if (!hasHash && path !== "/") {
             var newUrl = window.location.origin + "/#" + path + (window.location.search || "");
             window.location.replace(newUrl);
