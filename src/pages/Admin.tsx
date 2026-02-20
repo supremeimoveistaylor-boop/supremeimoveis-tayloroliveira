@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, Home, Edit, Trash2, ArrowLeft, Users, UserCheck, MessageSquare, Headphones, MessageCircle, BarChart3, TrendingUp, LayoutDashboard, CalendarCheck, Kanban, Wallet } from 'lucide-react';
+import { Plus, Home, Edit, Trash2, ArrowLeft, Users, UserCheck, MessageSquare, Headphones, MessageCircle, BarChart3, TrendingUp, LayoutDashboard, CalendarCheck, Kanban, Wallet, Phone } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LeadsImobiliariosPanel } from '@/components/admin/LeadsImobiliariosPanel';
@@ -17,6 +17,7 @@ import { AdminDashboardPanel } from '@/components/admin/AdminDashboardPanel';
 import { VisitSchedulingPanel } from '@/components/admin/VisitSchedulingPanel';
 import { CRMKanbanPanel } from '@/components/admin/crm';
 import { FinancialControlPanel } from '@/components/admin/financial';
+import { WhatsAppConnectionPanel } from '@/components/admin/WhatsAppConnectionPanel';
 import { useLeadNotification } from '@/hooks/useLeadNotification';
 
 interface Property {
@@ -54,7 +55,7 @@ const Admin = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'properties' | 'users' | 'leads' | 'attendants' | 'sessions' | 'metrics' | 'conversions' | 'visits' | 'crm' | 'financial'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'properties' | 'users' | 'leads' | 'attendants' | 'sessions' | 'metrics' | 'conversions' | 'visits' | 'crm' | 'financial' | 'whatsapp'>('dashboard');
   const [accessDenied, setAccessDenied] = useState(false);
 
   // Enable real-time lead notifications with sound
@@ -349,6 +350,13 @@ const Admin = () => {
             <Wallet className="mr-2 h-4 w-4" />
             Financeiro
           </Button>
+          <Button
+            variant={activeTab === 'whatsapp' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('whatsapp')}
+          >
+            <Phone className="mr-2 h-4 w-4" />
+            WhatsApp
+          </Button>
         </div>
 
         {/* Dashboard Tab */}
@@ -367,6 +375,11 @@ const Admin = () => {
         {/* Financial Control Tab */}
         {activeTab === 'financial' && (
           <FinancialControlPanel />
+        )}
+
+        {/* WhatsApp Connection Tab */}
+        {activeTab === 'whatsapp' && (
+          <WhatsAppConnectionPanel />
         )}
 
         {/* Visits Tab */}
