@@ -19,21 +19,16 @@
       (function () {
         try {
           var path = window.location.pathname || "/";
+
           // Meta OAuth callback handler — intercept before HashRouter redirect
           if (path === "/api/meta/oauth/callback" || path === "/api/meta/webhook") {
             var params = new URLSearchParams(window.location.search);
             var code = params.get("code");
             if (code) {
-              // CRITICAL: Use document.write to completely replace the page
-              // This prevents React from loading and showing 404
-              var supabaseUrl = "https://ypkmorgcpooygsvhcpvo.supabase.co";
-              var anonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlwa21vcmdjcG9veWdzdmhjcHZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY5ODY1MjAsImV4cCI6MjA3MjU2MjUyMH0.A8MoJFe_ACtVDl7l0crAyU7ZxxOhdWJ8NShaqSHBxQc";
-              
               // For popup: post message back to opener and close
               if (window.opener) {
                 try {
                   window.opener.postMessage({ type: "META_OAUTH_CALLBACK", code: code }, "*");
-                  // Don't document.write - just close the popup
                   setTimeout(function(){ window.close(); }, 1500);
                   document.title = "Conectando WhatsApp...";
                   document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif"><p>✅ Conectando... Esta janela fechará automaticamente.</p></div>';
@@ -43,8 +38,12 @@
               // Not a popup - redirect to admin panel with code as hash param
               window.location.replace(window.location.origin + "/#/admin-master-login?oauth_code=" + encodeURIComponent(code));
               return;
-              
+            }
+            // No code param — just redirect to home
+            window.location.replace(window.location.origin + "/");
+            return;
           }
+
           // HashRouter fallback: convert direct deep links (/buscar) into hash routes (/#/buscar)
           var hasHash = window.location.hash && window.location.hash.length > 1;
           if (!hasHash && path !== "/") {
