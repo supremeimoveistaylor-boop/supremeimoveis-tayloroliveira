@@ -7,6 +7,7 @@ import { Bed, Bath, Car, MapPin, Heart, Edit, MessageCircle, Play, Camera, Share
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
+import { trackWhatsAppClick, trackViewDetails } from "@/lib/analytics";
 
 import { ImageModal } from "@/components/ImageModal";
 
@@ -305,7 +306,7 @@ export const FeaturedProperties = ({ filterPurpose }: { filterPurpose?: 'sale' |
                         <Button
                           size="sm"
                           className="rounded-full p-2 bg-green-500 hover:bg-green-600 text-white border-none"
-                          onClick={() => window.open(property.whatsapp_link, '_blank')}
+                          onClick={() => { trackWhatsAppClick('property_card', property.id, property.title); window.open(property.whatsapp_link, '_blank'); }}
                         >
                           <MessageCircle className="h-4 w-4" />
                         </Button>
@@ -415,7 +416,7 @@ export const FeaturedProperties = ({ filterPurpose }: { filterPurpose?: 'sale' |
 
               <Button 
                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-4"
-                onClick={() => navigate(`/property/${property.id}`)}
+                onClick={() => { trackViewDetails(property.id, property.title); navigate(`/property/${property.id}`); }}
               >
                 Ver Detalhes
               </Button>

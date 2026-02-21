@@ -102,7 +102,7 @@ export const Hero = () => {
                 size="lg" 
                 variant="outline" 
                 className="border-accent text-accent hover:bg-accent hover:text-accent-foreground"
-                onClick={() => window.open('https://wa.me/5562999918353', '_blank')}
+                onClick={() => { if (typeof window.gtag === 'function') window.gtag('event', 'whatsapp_click', { event_category: 'engagement', event_label: 'hero' }); window.open('https://wa.me/5562999918353', '_blank'); }}
               >
                 Falar com Especialista
               </Button>

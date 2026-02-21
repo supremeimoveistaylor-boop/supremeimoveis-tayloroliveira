@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Calculator, Building, Percent, Clock, TrendingUp, AlertCircle, DollarSign } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { trackSimulatorStarted, trackSimulatorCompleted } from "@/lib/analytics";
 import { FinancingResult } from "./FinancingResult";
 import { BankComparison } from "./BankComparison";
 import type { UserData } from "./FinancingUserModal";
@@ -117,6 +118,7 @@ export const FinancingSimulator = ({ userData }: FinancingSimulatorProps) => {
 
     setIsLoading(true);
     setBankResults(null);
+    trackSimulatorStarted();
 
     try {
       const rendaValue = parseCurrency(formData.renda_mensal);
@@ -202,6 +204,7 @@ export const FinancingSimulator = ({ userData }: FinancingSimulatorProps) => {
         status: percentualRenda <= 30 ? "aprovável" : "renda_insuficiente",
         banco: BANCOS.find(b => b.id === bancoId)?.nome,
       });
+      trackSimulatorCompleted(BANCOS.find(b => b.id === bancoId)?.nome, valorImovelValue);
     } finally {
       setIsLoading(false);
     }
