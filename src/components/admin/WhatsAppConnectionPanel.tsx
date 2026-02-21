@@ -7,11 +7,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
 import { MessageSquare, ExternalLink, RefreshCw, CheckCircle2, XCircle, Phone, Trash2, Instagram } from 'lucide-react';
 
-const WHATSAPP_APP_ID = '1594744215047248';
-const INSTAGRAM_APP_ID = '1448676544456069';
+// Single Meta App for both WhatsApp and Instagram
+const META_APP_ID = '1594744215047248';
 const META_REDIRECT_URI = 'https://ypkmorgcpooygsvhcpvo.supabase.co/functions/v1/meta-oauth-callback';
 const WHATSAPP_SCOPES = 'whatsapp_business_management,whatsapp_business_messaging,business_management';
-const INSTAGRAM_SCOPES = 'instagram_business_basic,instagram_business_manage_messages,pages_show_list,pages_manage_metadata';
+const INSTAGRAM_SCOPES = 'instagram_business_basic,instagram_business_manage_messages,pages_show_list,pages_manage_metadata,pages_read_engagement';
 
 interface ChannelConnection {
   id: string;
@@ -130,14 +130,14 @@ export const WhatsAppConnectionPanel = () => {
   const handleConnectWhatsApp = () => {
     if (!user) return;
     const state = btoa(JSON.stringify({ user_id: user.id, channel: 'whatsapp', redirect_uri: META_REDIRECT_URI }));
-    const oauthUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${WHATSAPP_APP_ID}&redirect_uri=${encodeURIComponent(META_REDIRECT_URI)}&scope=${WHATSAPP_SCOPES}&response_type=code&state=${state}`;
+    const oauthUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${META_APP_ID}&redirect_uri=${encodeURIComponent(META_REDIRECT_URI)}&scope=${WHATSAPP_SCOPES}&response_type=code&state=${state}`;
     window.location.href = oauthUrl;
   };
 
   const handleConnectInstagram = () => {
     if (!user) return;
-    const state = btoa(JSON.stringify({ user_id: user.id, channel: 'instagram', app_id: INSTAGRAM_APP_ID, redirect_uri: META_REDIRECT_URI }));
-    const oauthUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${INSTAGRAM_APP_ID}&redirect_uri=${encodeURIComponent(META_REDIRECT_URI)}&scope=${INSTAGRAM_SCOPES}&response_type=code&state=${state}`;
+    const state = btoa(JSON.stringify({ user_id: user.id, channel: 'instagram', redirect_uri: META_REDIRECT_URI }));
+    const oauthUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${META_APP_ID}&redirect_uri=${encodeURIComponent(META_REDIRECT_URI)}&scope=${INSTAGRAM_SCOPES}&response_type=code&state=${state}`;
     window.location.href = oauthUrl;
   };
 

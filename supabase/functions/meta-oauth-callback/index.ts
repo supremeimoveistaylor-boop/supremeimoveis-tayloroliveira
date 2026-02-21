@@ -6,8 +6,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const WHATSAPP_APP_ID = '1594744215047248';
-const INSTAGRAM_APP_ID = '1448676544456069';
+// Single Meta App ID for both WhatsApp and Instagram
+const META_APP_ID = '1594744215047248';
 const GRAPH_API_VERSION = 'v19.0';
 
 serve(async (req) => {
@@ -51,7 +51,7 @@ serve(async (req) => {
 
       if (error) {
         console.error('[Meta OAuth] Authorization denied:', error, errorReason);
-        const redirectUrl = 'https://supremeempreendimentos.com/admin?tab=omnichat&error=auth_denied';
+        const redirectUrl = 'https://supremeempreendimentos.com/#/super-admin?tab=omnichat&error=auth_denied';
         return new Response(null, { status: 302, headers: { 'Location': redirectUrl } });
       }
 
@@ -74,7 +74,7 @@ serve(async (req) => {
 
       if (!code || !user_id) {
         console.error('[Meta OAuth] GET missing code or user_id');
-        const redirectUrl = 'https://supremeempreendimentos.com/admin?tab=omnichat&error=missing_params';
+        const redirectUrl = 'https://supremeempreendimentos.com/#/super-admin?tab=omnichat&error=missing_params';
         return new Response(null, { status: 302, headers: { 'Location': redirectUrl } });
       }
     } else {
@@ -97,10 +97,9 @@ serve(async (req) => {
     const callbackUri = redirect_uri || 'https://ypkmorgcpooygsvhcpvo.supabase.co/functions/v1/meta-oauth-callback';
     const isGetRequest = req.method === 'GET';
 
-    // Determine correct App ID and Secret based on channel
-    const META_INSTAGRAM_APP_SECRET = Deno.env.get('META_INSTAGRAM_APP_SECRET');
-    const appId = stateAppId || (requestedChannel === 'instagram' ? INSTAGRAM_APP_ID : WHATSAPP_APP_ID);
-    const appSecret = (requestedChannel === 'instagram' && META_INSTAGRAM_APP_SECRET) ? META_INSTAGRAM_APP_SECRET : META_APP_SECRET;
+    // Single app — same ID and secret for both channels
+    const appId = stateAppId || META_APP_ID;
+    const appSecret = META_APP_SECRET;
 
     console.log('[Meta OAuth] Using App ID:', appId, 'for channel:', requestedChannel);
 
@@ -241,7 +240,7 @@ serve(async (req) => {
 
     if (connections.length === 0) {
       if (isGetRequest) {
-        const redirectUrl = 'https://supremeempreendimentos.com/admin?tab=omnichat&error=no_accounts';
+        const redirectUrl = 'https://supremeempreendimentos.com/#/super-admin?tab=omnichat&error=no_accounts';
         return new Response(null, { status: 302, headers: { 'Location': redirectUrl } });
       }
       return new Response(JSON.stringify({ 
@@ -258,7 +257,7 @@ serve(async (req) => {
     // For GET requests (browser redirect from Meta), redirect back to admin panel
     if (isGetRequest) {
       const channelNames = connections.map((c: any) => c.channel_type).join(',');
-      const redirectUrl = `https://supremeempreendimentos.com/admin?tab=omnichat&success=true&channels=${channelNames}`;
+      const redirectUrl = `https://supremeempreendimentos.com/#/super-admin?tab=omnichat&success=true&channels=${channelNames}`;
       return new Response(null, { status: 302, headers: { 'Location': redirectUrl } });
     }
 
@@ -274,7 +273,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('[Meta OAuth] Error:', error);
     if (req.method === 'GET') {
-      const redirectUrl = 'https://supremeempreendimentos.com/admin?tab=omnichat&error=internal';
+      const redirectUrl = 'https://supremeempreendimentos.com/#/super-admin?tab=omnichat&error=internal';
       return new Response(null, { status: 302, headers: { 'Location': redirectUrl } });
     }
     return new Response(JSON.stringify({ error: 'Internal server error', message: error.message }), {
