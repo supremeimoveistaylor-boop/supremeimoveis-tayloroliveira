@@ -27,7 +27,61 @@ serve(async (req) => {
       });
     }
 
-    const { code, user_id, redirect_uri, channel } = await req.json();
+    let code: string | null = null;
+    let user_id: string | null = null;
+    let redirect_uri: string | null = null;
+    let channel: string | null = null;
+
+    // ========== GET — Instagram/Meta redirect callback ==========
+    if (req.method === 'GET') {
+      const url = new URL(req.url);
+      code = url.searchParams.get('code');
+      const state = url.searchParams.get('state');
+      const error = url.searchParams.get('error');
+      const errorReason = url.searchParams.get('error_reason');
+
+      console.log('[Meta OAuth] GET callback received:', { 
+        hasCode: !!code, 
+        hasState: !!state, 
+        error, 
+        errorReason 
+      });
+
+      if (error) {
+        console.error('[Meta OAuth] Authorization denied:', error, errorReason);
+        const redirectUrl = 'https://supremeempreendimentos.com/admin?tab=omnichat&error=auth_denied';
+        return new Response(null, { status: 302, headers: { 'Location': redirectUrl } });
+      }
+
+      // Parse state (expected: JSON with user_id and channel)
+      if (state) {
+        try {
+          const stateData = JSON.parse(atob(state));
+          user_id = stateData.user_id || null;
+          channel = stateData.channel || 'instagram';
+          redirect_uri = stateData.redirect_uri || null;
+          console.log('[Meta OAuth] State parsed:', { user_id, channel });
+        } catch (e) {
+          // If state is just user_id string
+          user_id = state;
+          channel = 'instagram';
+          console.log('[Meta OAuth] State used as user_id:', user_id);
+        }
+      }
+
+      if (!code || !user_id) {
+        console.error('[Meta OAuth] GET missing code or user_id');
+        const redirectUrl = 'https://supremeempreendimentos.com/admin?tab=omnichat&error=missing_params';
+        return new Response(null, { status: 302, headers: { 'Location': redirectUrl } });
+      }
+    } else {
+      // ========== POST — API call from frontend ==========
+      const body = await req.json();
+      code = body.code;
+      user_id = body.user_id;
+      redirect_uri = body.redirect_uri;
+      channel = body.channel;
+    }
 
     if (!code || !user_id) {
       return new Response(JSON.stringify({ error: 'Missing code or user_id' }), {
@@ -36,8 +90,9 @@ serve(async (req) => {
       });
     }
 
-    const requestedChannel = channel || 'whatsapp'; // 'whatsapp' | 'instagram' | 'both'
-    const callbackUri = redirect_uri || 'https://supremeempreendimentos.com/api/meta/oauth/callback';
+    const requestedChannel = channel || 'instagram';
+    const callbackUri = redirect_uri || 'https://ypkmorgcpooygsvhcpvo.supabase.co/functions/v1/meta-oauth-callback';
+    const isGetRequest = req.method === 'GET';
 
     // Step 1: Exchange code for access_token
     console.log('[Meta OAuth] Exchanging code for token...');
@@ -175,6 +230,10 @@ serve(async (req) => {
     }
 
     if (connections.length === 0) {
+      if (isGetRequest) {
+        const redirectUrl = 'https://supremeempreendimentos.com/admin?tab=omnichat&error=no_accounts';
+        return new Response(null, { status: 302, headers: { 'Location': redirectUrl } });
+      }
       return new Response(JSON.stringify({ 
         error: 'No accounts found', 
         message: 'Nenhuma conta business foi encontrada. Certifique-se de ter uma conta WhatsApp Business ou Instagram Business vinculada.' 
@@ -186,10 +245,16 @@ serve(async (req) => {
 
     console.log('[Meta OAuth] Connections saved successfully:', connections.length);
 
+    // For GET requests (browser redirect from Meta), redirect back to admin panel
+    if (isGetRequest) {
+      const channelNames = connections.map((c: any) => c.channel_type).join(',');
+      const redirectUrl = `https://supremeempreendimentos.com/admin?tab=omnichat&success=true&channels=${channelNames}`;
+      return new Response(null, { status: 302, headers: { 'Location': redirectUrl } });
+    }
+
     return new Response(JSON.stringify({
       success: true,
       connections,
-      // Backward compatibility: return first connection as "connection"
       connection: connections[0],
     }), {
       status: 200,
@@ -198,6 +263,10 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('[Meta OAuth] Error:', error);
+    if (req.method === 'GET') {
+      const redirectUrl = 'https://supremeempreendimentos.com/admin?tab=omnichat&error=internal';
+      return new Response(null, { status: 302, headers: { 'Location': redirectUrl } });
+    }
     return new Response(JSON.stringify({ error: 'Internal server error', message: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
