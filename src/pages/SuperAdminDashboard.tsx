@@ -132,6 +132,65 @@ const SuperAdminDashboard = () => {
   const [connections, setConnections] = useState<ChannelConnection[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
+
+  // Read tab from URL params (for OAuth redirects like ?tab=omnichat)
+  // Supports both standard query params and hash-based query params (/#/super-admin?tab=omnichat)
+  useEffect(() => {
+    let tabParam: string | null = null;
+    let successParam: string | null = null;
+    let errorParam: string | null = null;
+    let channelsParam: string | null = null;
+
+    // Check standard query params first
+    const searchParams = new URLSearchParams(window.location.search);
+    tabParam = searchParams.get('tab');
+    successParam = searchParams.get('success');
+    errorParam = searchParams.get('error');
+    channelsParam = searchParams.get('channels');
+
+    // Also check hash-based query params (e.g. /#/super-admin?tab=omnichat)
+    if (!tabParam && window.location.hash.includes('?')) {
+      const hashQuery = window.location.hash.split('?')[1];
+      if (hashQuery) {
+        const hashParams = new URLSearchParams(hashQuery);
+        tabParam = hashParams.get('tab') || tabParam;
+        successParam = hashParams.get('success') || successParam;
+        errorParam = hashParams.get('error') || errorParam;
+        channelsParam = hashParams.get('channels') || channelsParam;
+      }
+    }
+
+    if (tabParam) {
+      setActiveTab(tabParam);
+    }
+
+    if (successParam === 'true') {
+      toast({
+        title: '✅ Conexão realizada!',
+        description: `Canal(is) ${channelsParam || ''} conectado(s) com sucesso.`,
+      });
+    }
+
+    if (errorParam) {
+      const errorMessages: Record<string, string> = {
+        auth_denied: 'Autorização negada pelo usuário.',
+        missing_params: 'Parâmetros de autenticação ausentes.',
+        no_accounts: 'Nenhuma conta Business encontrada.',
+        internal: 'Erro interno. Tente novamente.',
+      };
+      toast({
+        title: 'Erro na conexão',
+        description: errorMessages[errorParam] || `Erro: ${errorParam}`,
+        variant: 'destructive',
+      });
+    }
+
+    // Clean up URL
+    if (tabParam || successParam || errorParam) {
+      const cleanHash = window.location.hash.split('?')[0];
+      window.history.replaceState(null, '', window.location.pathname + cleanHash);
+    }
+  }, []);
   const [serverValidated, setServerValidated] = useState(false);
   const [validationFailed, setValidationFailed] = useState(false);
   const { canInstall, isInstalled, install } = usePWAInstall();
@@ -456,9 +515,9 @@ const SuperAdminDashboard = () => {
               <Wallet className="w-4 h-4 mr-2" />
               Financeiro
             </TabsTrigger>
-            <TabsTrigger value="whatsapp" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+            <TabsTrigger value="omnichat" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
               <Phone className="w-4 h-4 mr-2" />
-              WhatsApp
+              Omnichat
             </TabsTrigger>
             <TabsTrigger value="followup-alerts" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
               <BellRing className="w-4 h-4 mr-2" />
@@ -575,8 +634,8 @@ const SuperAdminDashboard = () => {
             <FinancialControlPanel />
           </TabsContent>
 
-          {/* WhatsApp Tab */}
-          <TabsContent value="whatsapp" className="space-y-4">
+          {/* Omnichat Tab */}
+          <TabsContent value="omnichat" className="space-y-4">
             <WhatsAppConnectionPanel />
           </TabsContent>
 
