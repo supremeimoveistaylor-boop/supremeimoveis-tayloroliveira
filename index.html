@@ -29,42 +29,21 @@
               var supabaseUrl = "https://ypkmorgcpooygsvhcpvo.supabase.co";
               var anonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlwa21vcmdjcG9veWdzdmhjcHZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY5ODY1MjAsImV4cCI6MjA3MjU2MjUyMH0.A8MoJFe_ACtVDl7l0crAyU7ZxxOhdWJ8NShaqSHBxQc";
               
-              var callbackHtml = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Conectando WhatsApp...</title></head><body style="margin:0;display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;background:#111;color:#fff"><div style="text-align:center"><p id="status" style="font-size:1.2rem">✅ Conectando WhatsApp...</p><p id="detail" style="color:#888;margin-top:8px">Processando autenticação...</p></div><script>'
-                + 'var code = ' + JSON.stringify(code) + ';'
-                + 'var hasOpener = !!window.opener;'
-                + 'if (hasOpener) {'
-                + '  try {'
-                + '    window.opener.postMessage({ type: "META_OAUTH_CALLBACK", code: code }, "*");'
-                + '    document.getElementById("detail").textContent = "Esta janela fechará automaticamente.";'
-                + '    setTimeout(function(){ window.close(); }, 2000);'
-                + '  } catch(e) { hasOpener = false; }'
-                + '}'
-                + 'if (!hasOpener) {'
-                + '  document.getElementById("detail").textContent = "Finalizando conexão...";'
-                + '  fetch("' + supabaseUrl + '/functions/v1/meta-oauth-callback", {'
-                + '    method: "POST",'
-                + '    headers: { "Content-Type": "application/json", "apikey": "' + anonKey + '", "Authorization": "Bearer ' + anonKey + '" },'
-                + '    body: JSON.stringify({ code: code, redirect_uri: "https://supremeempreendimentos.com/api/meta/oauth/callback" })'
-                + '  }).then(function(r){ return r.json(); }).then(function(data){'
-                + '    if (data.success) {'
-                + '      document.getElementById("status").textContent = "✅ WhatsApp conectado com sucesso!";'
-                + '      document.getElementById("detail").textContent = "Você pode fechar esta janela.";'
-                + '    } else {'
-                + '      document.getElementById("status").textContent = "❌ Erro na conexão";'
-                + '      document.getElementById("detail").textContent = data.error || "Tente novamente.";'
-                + '    }'
-                + '  }).catch(function(err){'
-                + '    document.getElementById("status").textContent = "❌ Erro de conexão";'
-                + '    document.getElementById("detail").textContent = err.message;'
-                + '  });'
-                + '}'
-                + '<\/script></body></html>';
-              
-              document.open();
-              document.write(callbackHtml);
-              document.close();
+              // For popup: post message back to opener and close
+              if (window.opener) {
+                try {
+                  window.opener.postMessage({ type: "META_OAUTH_CALLBACK", code: code }, "*");
+                  // Don't document.write - just close the popup
+                  setTimeout(function(){ window.close(); }, 1500);
+                  document.title = "Conectando WhatsApp...";
+                  document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif"><p>✅ Conectando... Esta janela fechará automaticamente.</p></div>';
+                  return;
+                } catch(e) { /* fall through */ }
+              }
+              // Not a popup - redirect to admin panel with code as hash param
+              window.location.replace(window.location.origin + "/#/admin-master-login?oauth_code=" + encodeURIComponent(code));
               return;
-            }
+              
           }
           // HashRouter fallback: convert direct deep links (/buscar) into hash routes (/#/buscar)
           var hasHash = window.location.hash && window.location.hash.length > 1;
