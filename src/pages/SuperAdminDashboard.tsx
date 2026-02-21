@@ -42,9 +42,59 @@ import {
   Phone,
    BellRing,
   Zap,
-  Search
+  Search,
+  Download,
+  Smartphone
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+
+// PWA install hook
+function usePWAInstall() {
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstalled, setIsInstalled] = useState(false);
+
+  useEffect(() => {
+    // Switch manifest to admin-specific one
+    const manifestLink = document.querySelector('link[rel="manifest"]');
+    const originalHref = manifestLink?.getAttribute('href');
+    if (manifestLink) {
+      manifestLink.setAttribute('href', '/manifest-admin.json');
+    }
+
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+
+    // Check if already installed
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setIsInstalled(true);
+    }
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler);
+      // Restore original manifest
+      if (manifestLink && originalHref) {
+        manifestLink.setAttribute('href', originalHref);
+      }
+    };
+  }, []);
+
+  const install = async () => {
+    if (!deferredPrompt) return false;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    setDeferredPrompt(null);
+    if (outcome === 'accepted') {
+      setIsInstalled(true);
+      return true;
+    }
+    return false;
+  };
+
+  return { canInstall: !!deferredPrompt, isInstalled, install };
+}
 
 interface AuditLog {
   id: string;
@@ -84,6 +134,7 @@ const SuperAdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [serverValidated, setServerValidated] = useState(false);
   const [validationFailed, setValidationFailed] = useState(false);
+  const { canInstall, isInstalled, install } = usePWAInstall();
 
   // Server-side validation via RPC before rendering
   useEffect(() => {
@@ -257,7 +308,27 @@ const SuperAdminDashboard = () => {
               <p className="text-xs text-slate-400">{user?.email}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {canInstall && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  const ok = await install();
+                  if (ok) toast({ title: "✅ App instalado!", description: "Acesse pelo ícone na tela inicial." });
+                }}
+                className="border-amber-500/50 text-amber-400 hover:bg-amber-500/20"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Instalar App
+              </Button>
+            )}
+            {isInstalled && (
+              <Badge variant="outline" className="border-green-500/50 text-green-400 text-xs">
+                <Smartphone className="w-3 h-3 mr-1" />
+                App Instalado
+              </Badge>
+            )}
             <Button
               variant="outline"
               size="sm"
