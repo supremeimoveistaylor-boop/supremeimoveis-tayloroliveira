@@ -24,44 +24,46 @@
             var params = new URLSearchParams(window.location.search);
             var code = params.get("code");
             if (code) {
-              // Show connecting UI immediately
-              document.title = "Conectando WhatsApp...";
-              document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;background:#111;color:#fff"><div style="text-align:center"><p style="font-size:1.2rem">✅ Conectando WhatsApp...</p><p style="color:#888;margin-top:8px">Processando autenticação...</p></div></div>';
+              // CRITICAL: Use document.write to completely replace the page
+              // This prevents React from loading and showing 404
+              var supabaseUrl = "https://ypkmorgcpooygsvhcpvo.supabase.co";
+              var anonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlwa21vcmdjcG9veWdzdmhjcHZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY5ODY1MjAsImV4cCI6MjA3MjU2MjUyMH0.A8MoJFe_ACtVDl7l0crAyU7ZxxOhdWJ8NShaqSHBxQc";
               
-              // Try postMessage to opener (popup flow)
-              if (window.opener) {
-                try {
-                  window.opener.postMessage({ type: "META_OAUTH_CALLBACK", code: code }, "*");
-                  document.querySelector("p:last-child").textContent = "Esta janela fechará automaticamente.";
-                  setTimeout(function(){ window.close(); }, 2000);
-                } catch(e) {
-                  // opener blocked by cross-origin, fall through to direct API call
-                }
-              }
+              var callbackHtml = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Conectando WhatsApp...</title></head><body style="margin:0;display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;background:#111;color:#fff"><div style="text-align:center"><p id="status" style="font-size:1.2rem">✅ Conectando WhatsApp...</p><p id="detail" style="color:#888;margin-top:8px">Processando autenticação...</p></div><script>'
+                + 'var code = ' + JSON.stringify(code) + ';'
+                + 'var hasOpener = !!window.opener;'
+                + 'if (hasOpener) {'
+                + '  try {'
+                + '    window.opener.postMessage({ type: "META_OAUTH_CALLBACK", code: code }, "*");'
+                + '    document.getElementById("detail").textContent = "Esta janela fechará automaticamente.";'
+                + '    setTimeout(function(){ window.close(); }, 2000);'
+                + '  } catch(e) { hasOpener = false; }'
+                + '}'
+                + 'if (!hasOpener) {'
+                + '  document.getElementById("detail").textContent = "Finalizando conexão...";'
+                + '  fetch("' + supabaseUrl + '/functions/v1/meta-oauth-callback", {'
+                + '    method: "POST",'
+                + '    headers: { "Content-Type": "application/json", "apikey": "' + anonKey + '", "Authorization": "Bearer ' + anonKey + '" },'
+                + '    body: JSON.stringify({ code: code, redirect_uri: "https://supremeempreendimentos.com/api/meta/oauth/callback" })'
+                + '  }).then(function(r){ return r.json(); }).then(function(data){'
+                + '    if (data.success) {'
+                + '      document.getElementById("status").textContent = "✅ WhatsApp conectado com sucesso!";'
+                + '      document.getElementById("detail").textContent = "Você pode fechar esta janela.";'
+                + '    } else {'
+                + '      document.getElementById("status").textContent = "❌ Erro na conexão";'
+                + '      document.getElementById("detail").textContent = data.error || "Tente novamente.";'
+                + '    }'
+                + '  }).catch(function(err){'
+                + '    document.getElementById("status").textContent = "❌ Erro de conexão";'
+                + '    document.getElementById("detail").textContent = err.message;'
+                + '  });'
+                + '}'
+                + '<\/script></body></html>';
               
-              // Fallback: call the edge function directly if no opener or cross-origin blocked
-              if (!window.opener) {
-                var supabaseUrl = "https://ypkmorgcpooygsvhcpvo.supabase.co";
-                var anonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlwa21vcmdjcG9veWdzdmhjcHZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY5ODY1MjAsImV4cCI6MjA3MjU2MjUyMH0.A8MoJFe_ACtVDl7l0crAyU7ZxxOhdWJ8NShaqSHBxQc";
-                document.querySelector("p:last-child").textContent = "Finalizando conexão...";
-                fetch(supabaseUrl + "/functions/v1/meta-oauth-callback", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json", "apikey": anonKey, "Authorization": "Bearer " + anonKey },
-                  body: JSON.stringify({ code: code, redirect_uri: "https://supremeempreendimentos.com/api/meta/oauth/callback" })
-                }).then(function(r){ return r.json(); }).then(function(data){
-                  if (data.success) {
-                    document.querySelector("p").textContent = "✅ WhatsApp conectado com sucesso!";
-                    document.querySelector("p:last-child").textContent = "Você pode fechar esta janela.";
-                  } else {
-                    document.querySelector("p").textContent = "❌ Erro na conexão";
-                    document.querySelector("p:last-child").textContent = data.error || "Tente novamente.";
-                  }
-                }).catch(function(err){
-                  document.querySelector("p").textContent = "❌ Erro de conexão";
-                  document.querySelector("p:last-child").textContent = err.message;
-                });
-              }
-              return; // stop — don't redirect to hash route
+              document.open();
+              document.write(callbackHtml);
+              document.close();
+              return;
             }
           }
           // HashRouter fallback: convert direct deep links (/buscar) into hash routes (/#/buscar)
