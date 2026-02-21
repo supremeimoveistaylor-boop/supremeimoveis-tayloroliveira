@@ -19,6 +19,7 @@ import { CRMKanbanPanel } from "@/components/admin/crm";
 import { FinancialControlPanel } from "@/components/admin/financial";
 import { WhatsAppConnectionPanel } from "@/components/admin/WhatsAppConnectionPanel";
 import { FollowupAlertsPanel } from "@/components/admin/FollowupAlertsPanel";
+import { ChatPerformancePanel } from "@/components/admin/ChatPerformancePanel";
 import { 
   Shield, 
   Users, 
@@ -38,7 +39,8 @@ import {
   Kanban,
   Wallet,
   Phone,
-  BellRing
+   BellRing,
+  Zap
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
@@ -389,6 +391,10 @@ const SuperAdminDashboard = () => {
               <BellRing className="w-4 h-4 mr-2" />
               Follow-ups
             </TabsTrigger>
+            <TabsTrigger value="chat-performance" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+              <Zap className="w-4 h-4 mr-2" />
+              💰 Performance Chat
+            </TabsTrigger>
             <TabsTrigger value="users" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
               <UserCog className="w-4 h-4 mr-2" />
               Usuários
@@ -500,6 +506,11 @@ const SuperAdminDashboard = () => {
           {/* Follow-up Alerts Tab */}
           <TabsContent value="followup-alerts" className="space-y-4">
             <FollowupAlertsPanel />
+          </TabsContent>
+
+          {/* Chat Performance Tab */}
+          <TabsContent value="chat-performance" className="space-y-4">
+            <ChatPerformancePanel />
           </TabsContent>
 
           {/* Users Tab */}

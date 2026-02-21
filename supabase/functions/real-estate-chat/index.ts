@@ -599,6 +599,49 @@ Acesse o painel para mais detalhes.`;
         // Registrar conversões
         const conversions: { type: string; metadata?: Record<string, unknown> }[] = [];
 
+        // =====================================================
+        // CLASSIFICAÇÃO AUTOMÁTICA DO LEAD POR ORÇAMENTO
+        // =====================================================
+        let leadCategory: string | null = null;
+        let budgetRange: string | null = null;
+
+        if (extractedBudget) {
+          if (extractedBudget >= 2000000) {
+            leadCategory = 'alto_padrao';
+            budgetRange = 'acima_2m';
+          } else if (extractedBudget >= 800000) {
+            leadCategory = 'medio_padrao';
+            budgetRange = '800k_2m';
+          } else {
+            leadCategory = 'economico';
+            budgetRange = 'ate_800k';
+          }
+        }
+
+        // Classificação por palavras-chave
+        if (!leadCategory) {
+          if (content.match(/\b(luxo|alto padr[aã]o|premium|exclusiv|milh[oõ]es|3 milh|4 milh|5 milh|mansão|mans[aã]o)\b/)) {
+            leadCategory = 'alto_padrao';
+          } else if (content.match(/\b(investir|investimento|investidor|rentabilidade|renda|retorno)\b/)) {
+            leadCategory = 'investidor';
+          } else if (content.match(/\b(avaliar|avalia[çc][aã]o|quanto vale|valor do meu|precificar)\b/)) {
+            leadCategory = 'avaliacao';
+          } else if (content.match(/\b(curiosidade|s[oó] olhando|apenas olhando|pesquisando|comparando)\b/)) {
+            leadCategory = 'curioso';
+          } else if (content.match(/\b(condom[ií]nio fechado|condominio)\b/)) {
+            leadCategory = leadCategory || 'medio_padrao';
+          }
+        }
+
+        // Salvar classificação
+        if (leadCategory) {
+          updates.lead_category = leadCategory;
+          if (budgetRange) updates.budget_range = budgetRange;
+          imobUpdates.lead_category = leadCategory;
+          if (budgetRange) imobUpdates.budget_range = budgetRange;
+          console.log(`🏷️ Lead classificado: ${leadCategory} (budget: ${budgetRange || 'N/A'})`);
+        }
+
         // Agendamento
         const agendamentoPatterns = [
           /agendar/i, /marcar/i, /visita/i, /conhecer/i, /ver o imóvel/i,

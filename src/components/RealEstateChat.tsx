@@ -18,6 +18,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
+import { trackChatOpened, trackChatFirstMessage, trackChatNameCaptured, trackChatPhoneCaptured, trackChatLeadInterest, trackChatFinished } from "@/lib/analytics";
 // Lead capture removido - extração silenciosa ativa
 
 // Notification sound using Web Audio API
@@ -385,6 +386,8 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
     try {
       let currentName = clientName;
       let currentPhone = clientPhone;
+      const hadName = !!currentName;
+      const hadPhone = !!currentPhone;
 
       if (!currentName) {
         const name = extractNameFromText(text);
@@ -402,6 +405,17 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
         const si = extractStoreInterest(text);
         if (si) setStoreInterest(si);
       }
+
+      // Track name/phone capture
+      if (!hadName && currentName) trackChatNameCaptured();
+      if (!hadPhone && currentPhone) trackChatPhoneCaptured();
+
+      // Track interests
+      const lower = text.toLowerCase();
+      if (lower.match(/\b(luxo|alto padr[aã]o|acima de 2|milh[oõ]es)\b/)) trackChatLeadInterest('luxo');
+      else if (lower.match(/\b(condom[ií]nio fechado|condominio)\b/)) trackChatLeadInterest('condominio_fechado');
+      else if (lower.match(/\b(financ|parcela|entrada|fgts)\b/)) trackChatLeadInterest('financiamento');
+      else if (lower.match(/\b(at[eé] 800|500 mil|600 mil|700 mil)\b/)) trackChatLeadInterest('economico');
 
       // Análise de sentimento → atualizar score
       const scoreDelta = analyzeSentiment(text);
@@ -480,6 +494,7 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
   }, [hasStarted, leadId, loadChatHistory, propertyId, propertyName, origin, pageProperties, pageContext, clientName, clientPhone]);
   useEffect(() => {
     if (isOpen && !hasStarted) {
+      trackChatOpened('react_component');
       startConversation();
     }
   }, [isOpen, hasStarted, startConversation]);
@@ -716,6 +731,11 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
 
   const handleSendMessage = async () => {
     if ((!inputMessage.trim() && !pendingAttachment) || isLoading) return;
+
+    // Track first user message
+    if (messages.filter(m => m.role === 'user').length === 0) {
+      trackChatFirstMessage();
+    }
 
     // Extração silenciosa de dados do lead
     if (inputMessage.trim()) {

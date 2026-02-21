@@ -613,6 +613,7 @@ export type Database = {
       leads: {
         Row: {
           broker_id: string | null
+          budget_range: string | null
           conversion_count: number | null
           created_at: string
           email: string | null
@@ -624,6 +625,7 @@ export type Database = {
           last_conversion_at: string | null
           last_followup_at: string | null
           last_interaction_at: string | null
+          lead_category: string | null
           lead_score: number | null
           lead_segment: string | null
           lead_temperature: string | null
@@ -645,6 +647,7 @@ export type Database = {
         }
         Insert: {
           broker_id?: string | null
+          budget_range?: string | null
           conversion_count?: number | null
           created_at?: string
           email?: string | null
@@ -656,6 +659,7 @@ export type Database = {
           last_conversion_at?: string | null
           last_followup_at?: string | null
           last_interaction_at?: string | null
+          lead_category?: string | null
           lead_score?: number | null
           lead_segment?: string | null
           lead_temperature?: string | null
@@ -677,6 +681,7 @@ export type Database = {
         }
         Update: {
           broker_id?: string | null
+          budget_range?: string | null
           conversion_count?: number | null
           created_at?: string
           email?: string | null
@@ -688,6 +693,7 @@ export type Database = {
           last_conversion_at?: string | null
           last_followup_at?: string | null
           last_interaction_at?: string | null
+          lead_category?: string | null
           lead_score?: number | null
           lead_segment?: string | null
           lead_temperature?: string | null
@@ -733,11 +739,13 @@ export type Database = {
       }
       leads_imobiliarios: {
         Row: {
+          budget_range: string | null
           created_at: string
           descricao: string | null
           email: string | null
           finalidade: string | null
           id: string
+          lead_category: string | null
           nome: string
           origem: string | null
           pagina_origem: string | null
@@ -747,11 +755,13 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          budget_range?: string | null
           created_at?: string
           descricao?: string | null
           email?: string | null
           finalidade?: string | null
           id?: string
+          lead_category?: string | null
           nome: string
           origem?: string | null
           pagina_origem?: string | null
@@ -761,11 +771,13 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          budget_range?: string | null
           created_at?: string
           descricao?: string | null
           email?: string | null
           finalidade?: string | null
           id?: string
+          lead_category?: string | null
           nome?: string
           origem?: string | null
           pagina_origem?: string | null

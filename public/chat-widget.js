@@ -446,6 +446,9 @@
     // ============================================
     function silentExtract(text) {
       try {
+        var hadName = !!state.clientName;
+        var hadPhone = !!state.clientPhone;
+
         if (!state.clientName) {
           var name = extractName(text);
           if (name) { state.clientName = name; saveSessionData(); console.log('[Chat] 🔍 Nome extraído:', name); }
@@ -463,6 +466,30 @@
           if (si) { state.storeInterest = si; saveSessionData(); console.log('[Chat] 🔍 Interesse em loja:', si); }
         }
 
+        // GA4 tracking for name/phone capture
+        try {
+          if (!hadName && state.clientName && typeof window.gtag === 'function') {
+            window.gtag('event', 'chat_name_captured', { event_category: 'chat_conversion' });
+          }
+          if (!hadPhone && state.clientPhone && typeof window.gtag === 'function') {
+            window.gtag('event', 'chat_phone_captured', { event_category: 'chat_conversion' });
+          }
+        } catch(_){}
+
+        // Budget classification from text
+        try {
+          var lower = (text || '').toLowerCase();
+          if (lower.match(/\b(luxo|alto padr[aã]o|acima de 2|milh[oõ]es|3 milh|4 milh|5 milh)\b/)) {
+            if (typeof window.gtag === 'function') window.gtag('event', 'chat_lead_interest', { event_category: 'chat_conversion', interest_type: 'luxo' });
+          } else if (lower.match(/\b(condom[ií]nio fechado|condominio)\b/)) {
+            if (typeof window.gtag === 'function') window.gtag('event', 'chat_lead_interest', { event_category: 'chat_conversion', interest_type: 'condominio_fechado' });
+          } else if (lower.match(/\b(financ|parcela|entrada|fgts)\b/)) {
+            if (typeof window.gtag === 'function') window.gtag('event', 'chat_lead_interest', { event_category: 'chat_conversion', interest_type: 'financiamento' });
+          } else if (lower.match(/\b(at[eé] 800|500 mil|600 mil|700 mil|populares?)\b/)) {
+            if (typeof window.gtag === 'function') window.gtag('event', 'chat_lead_interest', { event_category: 'chat_conversion', interest_type: 'economico' });
+          }
+        } catch(_){}
+
         // Análise de sentimento → scoring
         var delta = analyzeSentiment(text);
         updateScore(delta);
@@ -479,6 +506,15 @@
     async function processUserMessage(text) {
       addMessage('user', text);
       setLoading(true);
+
+      // Track first message
+      var userMsgs = state.messages.filter(function(m) { return m.role === 'user'; });
+      if (userMsgs.length <= 1) {
+        try {
+          if (typeof window.gtag === 'function') window.gtag('event', 'chat_first_message', { event_category: 'chat' });
+          if (typeof window.fbq === 'function') window.fbq('trackCustom', 'chat_first_message');
+        } catch(_){}
+      }
 
       // Extração silenciosa em background
       silentExtract(text);
@@ -506,6 +542,12 @@
       state.isOpen = true;
       panel.classList.add('open');
       fab.classList.add('no-bounce');
+
+      // GA4 + Meta Pixel tracking
+      try {
+        if (typeof window.gtag === 'function') window.gtag('event', 'chat_opened', { event_category: 'chat', source: 'widget' });
+        if (typeof window.fbq === 'function') window.fbq('trackCustom', 'chat_opened', { source: 'widget' });
+      } catch(_){}
 
       // Chat direto, sem formulário
       if (state.messages.length === 0) {
