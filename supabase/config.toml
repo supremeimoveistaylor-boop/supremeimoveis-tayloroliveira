@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.meta-oauth-callback]
 verify_jwt = false
+
+[functions.lead-followup]
+verify_jwt = false
