@@ -1113,7 +1113,7 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
   }
 
   return (
-    <div className="fixed bottom-6 right-6 w-[380px] max-w-[calc(100vw-48px)] h-[520px] max-h-[calc(100vh-40px)] rounded-[20px] flex flex-col z-[9999] animate-scale-in" style={{ background: '#111111', boxShadow: '0 24px 80px rgba(0,0,0,0.55)', border: '1px solid rgba(255,255,255,0.08)' }}>
+    <div className="fixed bottom-6 right-6 w-[380px] max-w-[calc(100vw-48px)] h-[520px] max-h-[calc(100vh-40px)] rounded-[20px] flex flex-col z-[9999] animate-[chatSlideUp_0.4s_cubic-bezier(0.16,1,0.3,1)_forwards]" style={{ background: '#111111', boxShadow: '0 24px 80px rgba(0,0,0,0.55)', border: '1px solid rgba(255,255,255,0.08)' }}>
       {/* Header */}
       <div className="p-4 rounded-t-[20px] flex items-center justify-between" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.04), transparent)', borderBottom: '1px solid #C6A85B' }}>
         <div className="flex items-center gap-3">
