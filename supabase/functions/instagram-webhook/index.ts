@@ -11,31 +11,38 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const VERIFY_TOKEN = Deno.env.get('INSTAGRAM_WEBHOOK_VERIFY_TOKEN');
-
-  if (!VERIFY_TOKEN) {
-    console.error('[Instagram Webhook] INSTAGRAM_WEBHOOK_VERIFY_TOKEN not configured');
-    return new Response('Server configuration error', { status: 500 });
-  }
+  const VERIFY_TOKEN = (Deno.env.get('INSTAGRAM_WEBHOOK_VERIFY_TOKEN') || '').trim();
 
   // ========== GET — Webhook Verification (Meta hub.challenge) ==========
   if (req.method === 'GET') {
     const url = new URL(req.url);
     const mode = url.searchParams.get('hub.mode');
-    const token = url.searchParams.get('hub.verify_token');
-    const challenge = url.searchParams.get('hub.challenge');
+    const token = url.searchParams.get('hub.verify_token') || '';
+    const challenge = url.searchParams.get('hub.challenge') || '';
 
-    console.log('[Instagram Webhook] Verification request:', { mode, token: token ? '***' : null, challenge });
+    console.log('[Instagram Webhook] GET verification:', {
+      mode,
+      tokenLength: token.length,
+      secretLength: VERIFY_TOKEN.length,
+      secretConfigured: VERIFY_TOKEN.length > 0,
+      match: token === VERIFY_TOKEN,
+      challenge,
+    });
+
+    if (!VERIFY_TOKEN) {
+      console.error('[Instagram Webhook] INSTAGRAM_WEBHOOK_VERIFY_TOKEN not configured');
+      return new Response('Server configuration error', { status: 500 });
+    }
 
     if (mode === 'subscribe' && token === VERIFY_TOKEN) {
-      console.log('[Instagram Webhook] ✅ Verification successful');
+      console.log('[Instagram Webhook] ✅ Verification successful, returning challenge');
       return new Response(challenge, {
         status: 200,
         headers: { 'Content-Type': 'text/plain' },
       });
     }
 
-    console.log('[Instagram Webhook] ❌ Verification failed');
+    console.log('[Instagram Webhook] ❌ Verification failed - token mismatch');
     return new Response('Forbidden', { status: 403 });
   }
 
