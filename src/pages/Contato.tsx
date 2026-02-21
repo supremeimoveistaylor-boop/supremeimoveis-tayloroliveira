@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Phone, Mail, MapPin, Clock, MessageSquare, Instagram, Loader2, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { RealEstateChat } from "@/components/RealEstateChat";
 import { toast } from "@/hooks/use-toast";
 
 const Contato = () => {
@@ -337,6 +338,7 @@ const Contato = () => {
 
       <Footer />
       <FloatingWhatsApp />
+      <RealEstateChat origin="contato" pageContext="Página de Contato" />
     </div>
   );
 };
