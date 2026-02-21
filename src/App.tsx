@@ -27,7 +27,7 @@ import PoliticaPrivacidade from "./pages/PoliticaPrivacidade";
 import TermosUso from "./pages/TermosUso";
 import NotFound from "./pages/NotFound";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { ExitPopup } from "@/components/ExitPopup";
+
 // Chat agora é injetado via script no <head> (index.html), não via React
 
 const queryClient = new QueryClient();
@@ -41,7 +41,7 @@ const App = () => (
         {/* Error boundary to avoid blank screens */}
           <ErrorBoundary>
             <HashRouter>
-              <ExitPopup />
+              
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/comprar" element={<Comprar />} />
