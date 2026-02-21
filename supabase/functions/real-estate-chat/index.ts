@@ -577,6 +577,25 @@ Acesse o painel para mais detalhes.`;
           imobUpdates.tipo_imovel = "comercial";
         }
 
+        // Extrair orçamento
+        const budgetPatterns = [
+          /(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?)\s*(?:mil|k)/i,
+          /R\$\s*(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?)/i,
+          /(\d{3,})(?:\s*(?:reais|mil|k|milhão|milhões))/i,
+        ];
+        let extractedBudget: number | null = null;
+        for (const bp of budgetPatterns) {
+          const bMatch = textContent.match(bp);
+          if (bMatch) {
+            let val = bMatch[1].replace(/\./g, "").replace(",", ".");
+            extractedBudget = parseFloat(val);
+            if (/mil|k/i.test(textContent.substring(bMatch.index || 0, (bMatch.index || 0) + bMatch[0].length + 5))) {
+              extractedBudget *= 1000;
+            }
+            break;
+          }
+        }
+
         // Registrar conversões
         const conversions: { type: string; metadata?: Record<string, unknown> }[] = [];
 
@@ -691,7 +710,226 @@ Entre em contato o quanto antes.`;
     }
 
     // =====================================================
-    // BUSCAR NOME DO CLIENTE (usa clientName do request OU busca no DB)
+    // PIPELINE INVISÍVEL: SCORING + CRM + DISTRIBUIÇÃO
+    // =====================================================
+    if (currentLeadId && messages.length >= 2) {
+      try {
+        // Concatenar todas as mensagens do usuário para análise
+        const allUserText = messages
+          .filter((m: ChatMessage) => m.role === "user")
+          .map((m: ChatMessage) => typeof m.content === "string" ? m.content : 
+            Array.isArray(m.content) ? m.content.find(c => c.type === "text")?.text || "" : "")
+          .join(" ")
+          .toLowerCase();
+
+        // --- LEAD SCORING (quente/morno/frio) ---
+        let leadScore: "quente" | "morno" | "frio" = "frio";
+        let leadScoreNum = 0;
+        let urgencia = "baixa";
+
+        const hotPatterns = [
+          /agendar/i, /visitar/i, /visita/i, /quero comprar/i, /vou comprar/i,
+          /fechar/i, /contrato/i, /escritura/i, /quando posso ir/i,
+          /marcar horário/i, /documentação/i, /financiamento/i,
+          /entrada/i, /parcela/i, /sinal/i, /proposta/i,
+          /meu telefone/i, /whatsapp/i, /me liga/i, /pode ligar/i,
+        ];
+
+        const warmPatterns = [
+          /quanto custa/i, /qual o valor/i, /preço/i, /interesse/i,
+          /gostei/i, /bonito/i, /bom/i, /legal/i, /bacana/i,
+          /metragem/i, /quartos/i, /suíte/i, /garagem/i, /vagas/i,
+          /localização/i, /bairro/i, /região/i, /condomínio/i,
+          /pesquisando/i, /procurando/i, /opções/i, /alternativas/i,
+        ];
+
+        const urgentPatterns = [
+          /urgente/i, /rápido/i, /hoje/i, /amanhã/i, /essa semana/i,
+          /preciso mudar/i, /preciso sair/i, /o mais rápido/i,
+          /imediato/i, /logo/i,
+        ];
+
+        const hotCount = hotPatterns.filter(p => p.test(allUserText)).length;
+        const warmCount = warmPatterns.filter(p => p.test(allUserText)).length;
+        const urgentCount = urgentPatterns.filter(p => p.test(allUserText)).length;
+
+        // Verificar se forneceu telefone
+        const hasPhone = /(\d{2}[\s.-]?\d{4,5}[\s.-]?\d{4})/.test(allUserText);
+
+        if (hotCount >= 2 || (hotCount >= 1 && hasPhone) || urgentCount >= 1) {
+          leadScore = "quente";
+          leadScoreNum = Math.min(90 + hotCount * 3, 100);
+        } else if (warmCount >= 2 || hotCount >= 1) {
+          leadScore = "morno";
+          leadScoreNum = Math.min(40 + warmCount * 5 + hotCount * 10, 70);
+        } else {
+          leadScore = "frio";
+          leadScoreNum = Math.min(10 + warmCount * 5 + messages.length * 2, 35);
+        }
+
+        if (urgentCount >= 1) urgencia = "alta";
+        else if (hotCount >= 1) urgencia = "media";
+
+        // Extrair interesse resumido
+        const { data: leadDataForCRM } = await supabase
+          .from("leads")
+          .select("name, phone, intent, property_id")
+          .eq("id", currentLeadId)
+          .single();
+
+        const leadName = leadDataForCRM?.name || clientName || "Visitante";
+        const leadPhone = leadDataForCRM?.phone || clientPhone || "";
+
+        // Buscar nome do imóvel se houver
+        let propertyInterest = "Não especificado";
+        const propId = leadDataForCRM?.property_id || propertyId;
+        if (propId) {
+          const { data: propData } = await supabase
+            .from("properties")
+            .select("title, location")
+            .eq("id", propId)
+            .single();
+          if (propData) propertyInterest = `${propData.title}${propData.location ? ` - ${propData.location}` : ""}`;
+        }
+
+        // --- AUTO CRM CARD CREATION ---
+        // Só criar card se tem nome real (não "Visitante") e pelo menos score morno
+        if (leadName && leadName !== "Visitante do Chat" && leadName !== "Visitante") {
+          // Verificar se já existe card para este lead
+          const { data: existingCard } = await supabase
+            .from("crm_cards")
+            .select("id, lead_score, classificacao")
+            .eq("lead_id", currentLeadId)
+            .limit(1)
+            .single();
+
+          if (existingCard) {
+            // Atualizar card existente se score mudou
+            const cardUpdate: Record<string, unknown> = {
+              lead_score: leadScoreNum,
+              classificacao: leadScore,
+              last_interaction_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            };
+            if (leadPhone) cardUpdate.telefone = leadPhone;
+            if (leadDataForCRM?.intent) cardUpdate.notas = `Intenção: ${leadDataForCRM.intent}`;
+
+            await supabase.from("crm_cards").update(cardUpdate).eq("id", existingCard.id);
+            console.log(`✅ CRM card atualizado: ${existingCard.id} → ${leadScore} (${leadScoreNum})`);
+          } else {
+            // Criar novo card no Kanban
+            const coluna = leadScore === "quente" ? "qualificado" : leadScore === "morno" ? "contato_iniciado" : "leads";
+
+            const { data: newCard, error: cardErr } = await supabase
+              .from("crm_cards")
+              .insert({
+                lead_id: currentLeadId,
+                titulo: `Lead Chat - ${leadName}`,
+                cliente: leadName,
+                telefone: leadPhone || null,
+                email: null,
+                coluna,
+                origem_lead: origin || "chat_ia",
+                lead_score: leadScoreNum,
+                classificacao: leadScore,
+                probabilidade_fechamento: leadScore === "quente" ? 60 : leadScore === "morno" ? 30 : 10,
+                prioridade: urgencia === "alta" ? "urgente" : urgencia === "media" ? "alta" : "normal",
+                notas: `Imóvel: ${propertyInterest}\nIntenção: ${leadDataForCRM?.intent || "Não informada"}\nOrigem: ${origin || "chat"}`,
+                historico: JSON.stringify([{
+                  tipo: "sistema",
+                  descricao: `Lead capturado automaticamente via chat. Classificação: ${leadScore}`,
+                  data: new Date().toISOString(),
+                }]),
+              })
+              .select("id")
+              .single();
+
+            if (cardErr) {
+              console.error("❌ Erro ao criar CRM card:", cardErr);
+            } else {
+              console.log(`✅ CRM card criado: ${newCard?.id} | ${leadName} | ${leadScore} | coluna: ${coluna}`);
+
+              // Registrar evento CRM
+              await supabase.from("crm_events").insert({
+                card_id: newCard?.id,
+                lead_id: currentLeadId,
+                event_type: leadScore === "quente" ? "HOT_LEAD_TRIGGERED" : "LEAD_CAPTURED",
+                new_value: leadScore,
+                metadata: {
+                  score: leadScoreNum,
+                  origem: origin || "chat_ia",
+                  interesse: propertyInterest,
+                  urgencia,
+                },
+              });
+            }
+          }
+        }
+
+        // --- DISTRIBUIÇÃO ROUND ROBIN PARA CORRETORES ---
+        // Só distribuir se lead qualificado (morno ou quente) e tem telefone
+        if ((leadScore === "quente" || leadScore === "morno") && leadPhone) {
+          // Verificar se já tem corretor atribuído
+          const { data: currentLead } = await supabase
+            .from("leads")
+            .select("broker_id")
+            .eq("id", currentLeadId)
+            .single();
+
+          if (!currentLead?.broker_id) {
+            const { data: brokerId } = await supabase.rpc("assign_lead_to_broker", {
+              p_lead_id: currentLeadId,
+              p_property_id: propId || null,
+            });
+
+            if (brokerId) {
+              console.log(`✅ Corretor atribuído via round-robin: ${brokerId}`);
+
+              // Buscar dados do corretor para notificação
+              const { data: broker } = await supabase
+                .from("brokers")
+                .select("name, whatsapp, phone")
+                .eq("id", brokerId)
+                .single();
+
+              if (broker?.whatsapp || broker?.phone) {
+                const brokerPhone = broker.whatsapp || broker.phone || "";
+                const scoreEmoji = leadScore === "quente" ? "🔥" : "🌤️";
+                const scoreLabel = leadScore === "quente" ? "QUENTE" : "MORNO";
+
+                const brokerMessage = `🚨 *Novo Lead Recebido*
+
+${scoreEmoji} *Classificação: ${scoreLabel}*
+
+👤 *Nome:* ${leadName}
+📞 *Telefone:* ${leadPhone}
+🏡 *Interesse:* ${propertyInterest}
+🎯 *Intenção:* ${leadDataForCRM?.intent || "Não informada"}
+📊 *Score:* ${leadScoreNum}/100
+${urgencia === "alta" ? "⚡ *URGENTE* - Entre em contato IMEDIATAMENTE" : ""}
+
+Entre em contato imediatamente.`;
+
+                const sendWhatsappUrl = `${SUPABASE_URL}/functions/v1/send-whatsapp`;
+                fetch(sendWhatsappUrl, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ to: brokerPhone, message: brokerMessage }),
+                }).then(r => {
+                  if (r.ok) console.log(`✅ WhatsApp enviado ao corretor ${broker.name}`);
+                  else console.error(`❌ Falha WhatsApp ao corretor ${broker.name}`);
+                }).catch(err => console.error("WhatsApp broker error:", err));
+              }
+            }
+          }
+        }
+
+        console.log(`📊 Pipeline invisível: ${leadName} → ${leadScore} (${leadScoreNum}) | urgência: ${urgencia}`);
+      } catch (pipelineError) {
+        // Pipeline silencioso - nunca bloqueia o chat
+        console.error("Pipeline error (non-blocking):", pipelineError);
+      }
+    }
     // =====================================================
     let resolvedClientName: string | null = clientName || null;
     if (!resolvedClientName && currentLeadId) {
