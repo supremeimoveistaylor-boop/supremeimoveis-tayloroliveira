@@ -8,8 +8,7 @@ import { toast } from '@/hooks/use-toast';
 import { MessageSquare, ExternalLink, RefreshCw, CheckCircle2, XCircle, Phone, Trash2, Instagram } from 'lucide-react';
 
 const META_APP_ID = '1594744215047248';
-const WHATSAPP_REDIRECT_URI = 'https://supremeempreendimentos.com/api/meta/oauth/callback';
-const INSTAGRAM_REDIRECT_URI = 'https://ypkmorgcpooygsvhcpvo.supabase.co/functions/v1/meta-oauth-callback';
+const META_REDIRECT_URI = 'https://ypkmorgcpooygsvhcpvo.supabase.co/functions/v1/meta-oauth-callback';
 const WHATSAPP_SCOPES = 'whatsapp_business_management,whatsapp_business_messaging,business_management';
 const INSTAGRAM_SCOPES = 'instagram_business_basic,instagram_business_manage_messages,pages_show_list,pages_manage_metadata';
 
@@ -67,7 +66,7 @@ export const WhatsAppConnectionPanel = () => {
           body: {
             code,
             user_id: user?.id,
-            redirect_uri: channel === 'instagram' ? INSTAGRAM_REDIRECT_URI : WHATSAPP_REDIRECT_URI,
+            redirect_uri: META_REDIRECT_URI,
             channel,
           },
         });
@@ -128,16 +127,16 @@ export const WhatsAppConnectionPanel = () => {
   }, [user, fetchConnections]);
 
   const handleConnectWhatsApp = () => {
-    const oauthUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${META_APP_ID}&redirect_uri=${encodeURIComponent(WHATSAPP_REDIRECT_URI)}&scope=${WHATSAPP_SCOPES}&response_type=code`;
-    openOAuthPopup(oauthUrl);
+    if (!user) return;
+    const state = btoa(JSON.stringify({ user_id: user.id, channel: 'whatsapp' }));
+    const oauthUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${META_APP_ID}&redirect_uri=${encodeURIComponent(META_REDIRECT_URI)}&scope=${WHATSAPP_SCOPES}&response_type=code&state=${state}`;
+    window.location.href = oauthUrl;
   };
 
   const handleConnectInstagram = () => {
     if (!user) return;
     const state = btoa(JSON.stringify({ user_id: user.id, channel: 'instagram' }));
-    const oauthUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${META_APP_ID}&redirect_uri=${encodeURIComponent(INSTAGRAM_REDIRECT_URI)}&scope=${INSTAGRAM_SCOPES}&response_type=code&state=${state}`;
-    
-    // Instagram uses direct redirect (not popup) because state is handled server-side
+    const oauthUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${META_APP_ID}&redirect_uri=${encodeURIComponent(META_REDIRECT_URI)}&scope=${INSTAGRAM_SCOPES}&response_type=code&state=${state}`;
     window.location.href = oauthUrl;
   };
 
