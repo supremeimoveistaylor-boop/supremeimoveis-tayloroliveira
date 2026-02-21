@@ -5,7 +5,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const VERIFY_TOKEN = "supreme2026";
+const VERIFY_TOKEN = Deno.env.get('WHATSAPP_WEBHOOK_VERIFY_TOKEN') || Deno.env.get('INSTAGRAM_WEBHOOK_VERIFY_TOKEN');
+
+if (!VERIFY_TOKEN) {
+  console.error('[WhatsApp Webhook] WHATSAPP_WEBHOOK_VERIFY_TOKEN not configured');
+}
 
 serve(async (req) => {
   // Handle CORS preflight
