@@ -25,6 +25,7 @@ import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import FinancingAdmin from "./pages/FinancingAdmin";
 import PoliticaPrivacidade from "./pages/PoliticaPrivacidade";
 import TermosUso from "./pages/TermosUso";
+import SEOLanding from "./pages/SEOLanding";
 import NotFound from "./pages/NotFound";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
@@ -68,7 +69,9 @@ const App = () => (
                 <Route path="/financing-admin" element={<FinancingAdmin />} />
                 <Route path="/politica-privacidade" element={<PoliticaPrivacidade />} />
                 <Route path="/termos-uso" element={<TermosUso />} />
+                <Route path="/seo/:slug" element={<SEOLanding />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </HashRouter>
