@@ -52,41 +52,56 @@ export const WhatsAppConnectionPanel = () => {
     fetchConnection();
   }, [fetchConnection]);
 
-  // Listen for OAuth callback message from popup
+  // Listen for OAuth callback message from popup OR URL param fallback
   useEffect(() => {
-    const handleMessage = async (event: MessageEvent) => {
-      if (event.data?.type === 'META_OAUTH_CALLBACK' && event.data?.code) {
-        setIsConnecting(true);
-        try {
-          const { data, error } = await supabase.functions.invoke('meta-oauth-callback', {
-            body: {
-              code: event.data.code,
-              user_id: user?.id,
-              redirect_uri: REDIRECT_URI,
-            },
-          });
+    const processOAuthCode = async (code: string) => {
+      setIsConnecting(true);
+      try {
+        const { data, error } = await supabase.functions.invoke('meta-oauth-callback', {
+          body: {
+            code,
+            user_id: user?.id,
+            redirect_uri: REDIRECT_URI,
+          },
+        });
 
-          if (error) throw error;
+        if (error) throw error;
 
-          if (data?.success) {
-            toast({
-              title: '✅ WhatsApp Conectado!',
-              description: `Conta "${data.connection.account_name}" conectada com sucesso.`,
-            });
-            fetchConnection();
-          } else {
-            throw new Error(data?.error || 'Falha na conexão');
-          }
-        } catch (error: any) {
-          console.error('OAuth callback error:', error);
+        if (data?.success) {
           toast({
-            title: 'Erro na conexão',
-            description: error.message || 'Falha ao conectar WhatsApp.',
-            variant: 'destructive',
+            title: '✅ WhatsApp Conectado!',
+            description: `Conta "${data.connection.account_name}" conectada com sucesso.`,
           });
-        } finally {
-          setIsConnecting(false);
+          fetchConnection();
+        } else {
+          throw new Error(data?.error || 'Falha na conexão');
         }
+      } catch (error: any) {
+        console.error('OAuth callback error:', error);
+        toast({
+          title: 'Erro na conexão',
+          description: error.message || 'Falha ao conectar WhatsApp.',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsConnecting(false);
+      }
+    };
+
+    // Check URL for oauth_code (fallback when not opened as popup)
+    const hashParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
+    const urlCode = hashParams.get('oauth_code');
+    if (urlCode) {
+      // Clean the URL
+      const cleanHash = window.location.hash.split('?')[0];
+      window.history.replaceState(null, '', window.location.pathname + cleanHash);
+      processOAuthCode(urlCode);
+    }
+
+    // Listen for postMessage from popup
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'META_OAUTH_CALLBACK' && event.data?.code) {
+        processOAuthCode(event.data.code);
       }
     };
 
