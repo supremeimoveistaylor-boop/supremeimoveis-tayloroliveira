@@ -1202,6 +1202,33 @@ export type Database = {
         }
         Relationships: []
       }
+      seo_configs: {
+        Row: {
+          config_data: Json
+          config_key: string
+          config_type: string
+          created_at: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          config_data?: Json
+          config_key: string
+          config_type: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          config_data?: Json
+          config_key?: string
+          config_type?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       super_admin_logs: {
         Row: {
           action: string
