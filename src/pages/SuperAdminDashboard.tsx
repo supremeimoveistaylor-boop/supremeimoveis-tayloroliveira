@@ -20,6 +20,7 @@ import { FinancialControlPanel } from "@/components/admin/financial";
 import { WhatsAppConnectionPanel } from "@/components/admin/WhatsAppConnectionPanel";
 import { FollowupAlertsPanel } from "@/components/admin/FollowupAlertsPanel";
 import { ChatPerformancePanel } from "@/components/admin/ChatPerformancePanel";
+import { SEOPanel } from "@/components/admin/seo";
 import { 
   Shield, 
   Users, 
@@ -40,7 +41,8 @@ import {
   Wallet,
   Phone,
    BellRing,
-  Zap
+  Zap,
+  Search
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
@@ -399,6 +401,10 @@ const SuperAdminDashboard = () => {
               <UserCog className="w-4 h-4 mr-2" />
               Usuários
             </TabsTrigger>
+            <TabsTrigger value="seo" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+              <Search className="w-4 h-4 mr-2" />
+              🔎 SEO Inteligente
+            </TabsTrigger>
             <TabsTrigger value="connections" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
               <MessageSquare className="w-4 h-4 mr-2" />
               Conexões Meta
@@ -511,6 +517,11 @@ const SuperAdminDashboard = () => {
           {/* Chat Performance Tab */}
           <TabsContent value="chat-performance" className="space-y-4">
             <ChatPerformancePanel />
+          </TabsContent>
+
+          {/* SEO Inteligente Tab */}
+          <TabsContent value="seo" className="space-y-4">
+            <SEOPanel />
           </TabsContent>
 
           {/* Users Tab */}
