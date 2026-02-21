@@ -144,6 +144,17 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 
+  @keyframes chatSlideUp {
+    0% {
+      opacity: 0;
+      transform: translateY(20px) scale(0.97);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
   /* Hide scrollbar for mobile image gallery */
   .scrollbar-hide {
     -ms-overflow-style: none;
