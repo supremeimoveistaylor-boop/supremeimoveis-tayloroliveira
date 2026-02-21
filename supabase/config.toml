@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.lead-followup]
 verify_jwt = false
+
+[functions.property-campaigns]
+verify_jwt = false

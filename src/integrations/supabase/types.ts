@@ -949,6 +949,7 @@ export type Database = {
           location: string
           longitude: number | null
           parking_spaces: number | null
+          previous_price: number | null
           price: number
           property_code: string
           property_type: string
@@ -977,6 +978,7 @@ export type Database = {
           location: string
           longitude?: number | null
           parking_spaces?: number | null
+          previous_price?: number | null
           price: number
           property_code: string
           property_type: string
@@ -1005,6 +1007,7 @@ export type Database = {
           location?: string
           longitude?: number | null
           parking_spaces?: number | null
+          previous_price?: number | null
           price?: number
           property_code?: string
           property_type?: string
@@ -1022,6 +1025,73 @@ export type Database = {
             columns: ["exclusive_broker_id"]
             isOneToOne: false
             referencedRelation: "brokers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_campaigns: {
+        Row: {
+          campaign_type: string
+          channel: string | null
+          created_at: string
+          id: string
+          lead_id: string | null
+          message_sent: string | null
+          metadata: Json | null
+          new_price: number | null
+          old_price: number | null
+          property_id: string | null
+          status: string | null
+          whatsapp_message_id: string | null
+        }
+        Insert: {
+          campaign_type: string
+          channel?: string | null
+          created_at?: string
+          id?: string
+          lead_id?: string | null
+          message_sent?: string | null
+          metadata?: Json | null
+          new_price?: number | null
+          old_price?: number | null
+          property_id?: string | null
+          status?: string | null
+          whatsapp_message_id?: string | null
+        }
+        Update: {
+          campaign_type?: string
+          channel?: string | null
+          created_at?: string
+          id?: string
+          lead_id?: string | null
+          message_sent?: string | null
+          metadata?: Json | null
+          new_price?: number | null
+          old_price?: number | null
+          property_id?: string | null
+          status?: string | null
+          whatsapp_message_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_campaigns_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_campaigns_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_campaigns_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "public_properties"
             referencedColumns: ["id"]
           },
         ]

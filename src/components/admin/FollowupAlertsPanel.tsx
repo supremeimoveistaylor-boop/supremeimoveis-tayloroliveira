@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { RefreshCw, Bell, UserCheck, MessageSquare, CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react';
+import { RefreshCw, Bell, UserCheck, MessageSquare, CheckCircle, XCircle, Clock, AlertTriangle, Megaphone } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 interface FollowupAlert {
@@ -22,30 +22,62 @@ interface FollowupAlert {
   created_at: string;
 }
 
+interface PropertyCampaign {
+  id: string;
+  property_id: string | null;
+  lead_id: string | null;
+  campaign_type: string;
+  message_sent: string | null;
+  status: string | null;
+  old_price: number | null;
+  new_price: number | null;
+  metadata: any;
+  created_at: string;
+}
+
 export function FollowupAlertsPanel() {
   const [alerts, setAlerts] = useState<FollowupAlert[]>([]);
+  const [campaigns, setCampaigns] = useState<PropertyCampaign[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'lead_followup' | 'broker_reminder' | 'nurturing'>('all');
+  const [filter, setFilter] = useState<'all' | 'lead_followup' | 'broker_reminder' | 'nurturing' | 'campaigns'>('all');
 
   const fetchAlerts = async () => {
     setIsLoading(true);
     try {
-      let query = supabase
-        .from('followup_alerts')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(100);
+      if (filter === 'campaigns') {
+        const { data, error } = await supabase
+          .from('property_campaigns')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(100);
+        if (error) throw error;
+        setCampaigns(data || []);
+        setAlerts([]);
+      } else {
+        let query = supabase
+          .from('followup_alerts')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(100);
 
-      if (filter !== 'all') {
-        query = query.eq('alert_type', filter);
+        if (filter !== 'all') {
+          query = query.eq('alert_type', filter);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+        setAlerts(data || []);
+
+        // Also fetch campaigns count
+        const { data: campData } = await supabase
+          .from('property_campaigns')
+          .select('id, campaign_type, status')
+          .limit(500);
+        setCampaigns(campData as any || []);
       }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      setAlerts(data || []);
     } catch (error) {
-      console.error('Error fetching followup alerts:', error);
-      toast({ title: 'Erro', description: 'Erro ao carregar alertas de follow-up', variant: 'destructive' });
+      console.error('Error fetching alerts:', error);
+      toast({ title: 'Erro', description: 'Erro ao carregar dados', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
@@ -58,8 +90,9 @@ export function FollowupAlertsPanel() {
   const leadFollowups = alerts.filter(a => a.alert_type === 'lead_followup');
   const brokerReminders = alerts.filter(a => a.alert_type === 'broker_reminder');
   const nurturingAlerts = alerts.filter(a => a.alert_type === 'nurturing');
-  const sentCount = alerts.filter(a => a.status === 'sent').length;
-  const failedCount = alerts.filter(a => a.status === 'failed').length;
+  const campaignCount = campaigns.length;
+  const sentCount = alerts.filter(a => a.status === 'sent').length + campaigns.filter(c => c.status === 'sent').length;
+  const failedCount = alerts.filter(a => a.status === 'failed').length + campaigns.filter(c => c.status === 'failed').length;
 
   const getStageLabel = (alert: FollowupAlert) => {
     if (alert.alert_type === 'lead_followup') {
@@ -175,77 +208,153 @@ export function FollowupAlertsPanel() {
               <TabsTrigger value="lead_followup" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">Follow-ups Lead</TabsTrigger>
               <TabsTrigger value="broker_reminder" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">Cobranças Corretor</TabsTrigger>
               <TabsTrigger value="nurturing" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">Nutrição</TabsTrigger>
+              <TabsTrigger value="campaigns" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">Campanhas</TabsTrigger>
             </TabsList>
 
-            <TabsContent value={filter}>
-              {alerts.length === 0 ? (
-                <div className="text-center py-12 text-slate-400">
-                  <Bell className="w-10 h-10 mx-auto mb-3 opacity-30" />
-                  <p>Nenhum alerta encontrado.</p>
-                  <p className="text-xs mt-1">Os follow-ups automáticos aparecerão aqui quando forem executados.</p>
-                </div>
-              ) : (
-                <ScrollArea className="max-h-[600px]">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="border-slate-700">
-                        <TableHead className="text-slate-300">Tipo</TableHead>
-                        <TableHead className="text-slate-300">Estágio</TableHead>
-                        <TableHead className="text-slate-300">Destinatário</TableHead>
-                        <TableHead className="text-slate-300">Status</TableHead>
-                        <TableHead className="text-slate-300">Mensagem</TableHead>
-                        <TableHead className="text-slate-300">Data</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {alerts.map((alert) => (
-                        <TableRow key={alert.id} className="border-slate-700">
-                          <TableCell>
-                            <Badge variant="outline" className={
-                              alert.alert_type === 'lead_followup' ? 'border-purple-500/50 text-purple-400' 
-                              : alert.alert_type === 'nurturing' ? 'border-green-500/50 text-green-400'
-                              : 'border-amber-500/50 text-amber-400'
-                            }>
-                              {alert.alert_type === 'lead_followup' ? 'Lead' : alert.alert_type === 'nurturing' ? 'Nutrição' : 'Corretor'}
-                             </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={getStageBadgeClass(alert)}>
-                              {getStageLabel(alert)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-slate-300 text-sm">
-                            <div>
-                              <span className="font-medium">{alert.metadata?.lead_name || alert.metadata?.broker_name || '—'}</span>
-                              <br />
-                              <span className="text-xs text-slate-500">{alert.metadata?.lead_phone || alert.metadata?.broker_phone || ''}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {alert.status === 'sent' ? (
-                              <Badge className="bg-green-500/20 text-green-400"><CheckCircle className="w-3 h-3 mr-1" />Enviado</Badge>
-                            ) : (
-                              <Badge className="bg-red-500/20 text-red-400"><XCircle className="w-3 h-3 mr-1" />Falhou</Badge>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-slate-400 text-xs max-w-[250px]">
-                            <p className="truncate" title={alert.message_sent || ''}>
-                              {alert.message_sent?.slice(0, 80) || '—'}{(alert.message_sent?.length || 0) > 80 ? '...' : ''}
-                            </p>
-                          </TableCell>
-                          <TableCell className="text-slate-300 text-xs whitespace-nowrap">
-                            <div className="flex items-center gap-1">
-                              <Clock className="w-3 h-3 text-slate-500" />
-                              {new Date(alert.created_at).toLocaleString('pt-BR')}
-                            </div>
-                          </TableCell>
+            {/* Campaigns Tab */}
+            {filter === 'campaigns' ? (
+              <TabsContent value="campaigns">
+                {campaigns.length === 0 ? (
+                  <div className="text-center py-12 text-slate-400">
+                    <Megaphone className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                    <p>Nenhuma campanha enviada ainda.</p>
+                    <p className="text-xs mt-1">Campanhas são disparadas automaticamente ao cadastrar imóveis ou reduzir preços.</p>
+                  </div>
+                ) : (
+                  <ScrollArea className="max-h-[600px]">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="border-slate-700">
+                          <TableHead className="text-slate-300">Tipo</TableHead>
+                          <TableHead className="text-slate-300">Imóvel</TableHead>
+                          <TableHead className="text-slate-300">Lead</TableHead>
+                          <TableHead className="text-slate-300">Preço</TableHead>
+                          <TableHead className="text-slate-300">Status</TableHead>
+                          <TableHead className="text-slate-300">Data</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </ScrollArea>
-              )}
-            </TabsContent>
+                      </TableHeader>
+                      <TableBody>
+                        {campaigns.map((camp) => (
+                          <TableRow key={camp.id} className="border-slate-700">
+                            <TableCell>
+                              <Badge variant="outline" className={camp.campaign_type === 'novo_imovel' ? 'border-blue-500/50 text-blue-400' : 'border-orange-500/50 text-orange-400'}>
+                                {camp.campaign_type === 'novo_imovel' ? '🏠 Novo' : '📉 Queda'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-slate-300 text-sm truncate max-w-[150px]">
+                              {camp.metadata?.property_title || '—'}
+                            </TableCell>
+                            <TableCell className="text-slate-300 text-sm">
+                              <div>
+                                <span className="font-medium">{camp.metadata?.lead_name || '—'}</span>
+                                <br />
+                                <span className="text-xs text-slate-500">{camp.metadata?.lead_phone || ''}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-slate-300 text-xs">
+                              {camp.old_price && camp.new_price ? (
+                                <div>
+                                  <span className="line-through text-slate-500">R$ {Number(camp.old_price).toLocaleString('pt-BR')}</span>
+                                  <br />
+                                  <span className="text-green-400 font-medium">R$ {Number(camp.new_price).toLocaleString('pt-BR')}</span>
+                                  {camp.metadata?.discount_percent && <span className="text-orange-400 ml-1">-{camp.metadata.discount_percent}%</span>}
+                                </div>
+                              ) : camp.new_price ? (
+                                <span>R$ {Number(camp.new_price).toLocaleString('pt-BR')}</span>
+                              ) : '—'}
+                            </TableCell>
+                            <TableCell>
+                              {camp.status === 'sent' ? (
+                                <Badge className="bg-green-500/20 text-green-400"><CheckCircle className="w-3 h-3 mr-1" />Enviado</Badge>
+                              ) : (
+                                <Badge className="bg-red-500/20 text-red-400"><XCircle className="w-3 h-3 mr-1" />Falhou</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-slate-300 text-xs whitespace-nowrap">
+                              <div className="flex items-center gap-1">
+                                <Clock className="w-3 h-3 text-slate-500" />
+                                {new Date(camp.created_at).toLocaleString('pt-BR')}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </ScrollArea>
+                )}
+              </TabsContent>
+            ) : (
+              /* Follow-ups/Broker/Nurturing Tab */
+              <TabsContent value={filter}>
+                {alerts.length === 0 ? (
+                  <div className="text-center py-12 text-slate-400">
+                    <Bell className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                    <p>Nenhum alerta encontrado.</p>
+                    <p className="text-xs mt-1">Os follow-ups automáticos aparecerão aqui quando forem executados.</p>
+                  </div>
+                ) : (
+                  <ScrollArea className="max-h-[600px]">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="border-slate-700">
+                          <TableHead className="text-slate-300">Tipo</TableHead>
+                          <TableHead className="text-slate-300">Estágio</TableHead>
+                          <TableHead className="text-slate-300">Destinatário</TableHead>
+                          <TableHead className="text-slate-300">Status</TableHead>
+                          <TableHead className="text-slate-300">Mensagem</TableHead>
+                          <TableHead className="text-slate-300">Data</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {alerts.map((alert) => (
+                          <TableRow key={alert.id} className="border-slate-700">
+                            <TableCell>
+                              <Badge variant="outline" className={
+                                alert.alert_type === 'lead_followup' ? 'border-purple-500/50 text-purple-400' 
+                                : alert.alert_type === 'nurturing' ? 'border-green-500/50 text-green-400'
+                                : 'border-amber-500/50 text-amber-400'
+                              }>
+                                {alert.alert_type === 'lead_followup' ? 'Lead' : alert.alert_type === 'nurturing' ? 'Nutrição' : 'Corretor'}
+                               </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={getStageBadgeClass(alert)}>
+                                {getStageLabel(alert)}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-slate-300 text-sm">
+                              <div>
+                                <span className="font-medium">{alert.metadata?.lead_name || alert.metadata?.broker_name || '—'}</span>
+                                <br />
+                                <span className="text-xs text-slate-500">{alert.metadata?.lead_phone || alert.metadata?.broker_phone || ''}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {alert.status === 'sent' ? (
+                                <Badge className="bg-green-500/20 text-green-400"><CheckCircle className="w-3 h-3 mr-1" />Enviado</Badge>
+                              ) : (
+                                <Badge className="bg-red-500/20 text-red-400"><XCircle className="w-3 h-3 mr-1" />Falhou</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-slate-400 text-xs max-w-[250px]">
+                              <p className="truncate" title={alert.message_sent || ''}>
+                                {alert.message_sent?.slice(0, 80) || '—'}{(alert.message_sent?.length || 0) > 80 ? '...' : ''}
+                              </p>
+                            </TableCell>
+                            <TableCell className="text-slate-300 text-xs whitespace-nowrap">
+                              <div className="flex items-center gap-1">
+                                <Clock className="w-3 h-3 text-slate-500" />
+                                {new Date(alert.created_at).toLocaleString('pt-BR')}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </ScrollArea>
+                )}
+              </TabsContent>
+            )}
           </Tabs>
         </CardContent>
       </Card>
