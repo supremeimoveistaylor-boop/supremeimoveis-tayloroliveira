@@ -55,7 +55,7 @@ const Admin = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'properties' | 'users' | 'leads' | 'attendants' | 'sessions' | 'metrics' | 'conversions' | 'visits' | 'crm' | 'financial' | 'whatsapp'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'properties' | 'users' | 'leads' | 'attendants' | 'sessions' | 'metrics' | 'conversions' | 'visits' | 'crm' | 'financial' | 'omnichat'>('dashboard');
   const [accessDenied, setAccessDenied] = useState(false);
 
   // Enable real-time lead notifications with sound
@@ -109,17 +109,24 @@ const Admin = () => {
     }
   };
 
+  // Read tab from URL params (for OAuth redirects)
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'omnichat') {
+      setActiveTab('omnichat');
+    }
+  }, []);
+
   // ALL useEffects MUST come before any conditional returns
   useEffect(() => {
     // Check access after loading completes
     if (!loading && !user) {
-      // Not authenticated - redirect handled below
       setIsLoading(false);
       return;
     }
     
     if (!loading && user && !isAdmin) {
-      // User is authenticated but not admin
       setAccessDenied(true);
       setIsLoading(false);
       toast({
@@ -131,7 +138,6 @@ const Admin = () => {
     }
     
     if (!loading && isAdmin) {
-      // User is admin - fetch data
       setIsLoading(true);
       Promise.all([fetchAllProperties(), fetchAllProfiles()])
         .catch(err => console.error('Error loading admin data:', err))
@@ -351,11 +357,11 @@ const Admin = () => {
             Financeiro
           </Button>
           <Button
-            variant={activeTab === 'whatsapp' ? 'default' : 'outline'}
-            onClick={() => setActiveTab('whatsapp')}
+            variant={activeTab === 'omnichat' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('omnichat')}
           >
             <Phone className="mr-2 h-4 w-4" />
-            WhatsApp
+            Omnichat
           </Button>
         </div>
 
@@ -377,8 +383,8 @@ const Admin = () => {
           <FinancialControlPanel />
         )}
 
-        {/* WhatsApp Connection Tab */}
-        {activeTab === 'whatsapp' && (
+        {/* Omnichat Connection Tab */}
+        {activeTab === 'omnichat' && (
           <WhatsAppConnectionPanel />
         )}
 
