@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
@@ -13,6 +13,12 @@ import { RealEstateChat } from "@/components/RealEstateChat";
 import { toast } from "@/hooks/use-toast";
 
 const Contato = () => {
+  useEffect(() => {
+    document.title = "Contato Supreme Negócios Imobiliários Goiânia | Fale Conosco";
+    const meta = document.querySelector('meta[name="description"]');
+    if (meta) meta.setAttribute("content", "Entre em contato com a Supreme Negócios Imobiliários em Goiânia. Atendimento personalizado para compra, venda e aluguel de imóveis de alto padrão.");
+  }, []);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [formData, setFormData] = useState({
@@ -109,7 +115,7 @@ const Contato = () => {
         <section className="py-12 bg-gradient-to-br from-primary via-black-soft to-primary">
           <div className="container mx-auto px-4 text-center">
             <h1 className="text-3xl md:text-4xl font-bold text-white-soft mb-4">
-              Entre em <span className="text-accent">Contato</span>
+              Contato Supreme Imobiliária em <span className="text-accent">Goiânia</span>
             </h1>
             <p className="text-lg text-gray-300 max-w-2xl mx-auto">
               Nossos especialistas estão prontos para ajudar você a encontrar o imóvel perfeito

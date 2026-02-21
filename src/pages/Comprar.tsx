@@ -122,6 +122,12 @@ const Comprar = () => {
 
   const hasActiveFilters = propertyType || neighborhood || minPrice || maxPrice || searchQuery;
 
+  useEffect(() => {
+    document.title = "Imóveis à Venda em Goiânia | Casas, Apartamentos e Coberturas - Supreme";
+    const meta = document.querySelector('meta[name="description"]');
+    if (meta) meta.setAttribute("content", "Encontre imóveis à venda em Goiânia: casas em condomínio fechado, apartamentos e coberturas de alto padrão. Atendimento personalizado e segurança na compra.");
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
@@ -131,7 +137,7 @@ const Comprar = () => {
         <section className="py-12 bg-gradient-to-br from-primary via-black-soft to-primary">
           <div className="container mx-auto px-4 text-center">
             <h1 className="text-3xl md:text-4xl font-bold text-white-soft mb-4">
-              Imóveis à <span className="text-accent">Venda</span>
+              Imóveis à <span className="text-accent">Venda em Goiânia</span>
             </h1>
             <p className="text-lg text-gray-300 max-w-2xl mx-auto">
               Encontre o imóvel dos seus sonhos em Goiânia e região
