@@ -551,7 +551,7 @@
 
       // Chat direto, sem formulário
       if (state.messages.length === 0) {
-        var greeting = 'Olá! 👋 Bem-vindo(a) à Supreme Empreendimentos.\n\nComo posso te chamar?';
+        var greeting = 'Olá 👋 Sou o consultor virtual especializado em imóveis estratégicos em Goiânia.\n\nVocê busca:\n\n🏡 Morar\n💰 Investir\n📊 Avaliar seu imóvel';
         addMessage('assistant', greeting);
       }
       input.focus();
