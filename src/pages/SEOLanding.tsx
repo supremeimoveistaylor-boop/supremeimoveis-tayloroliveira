@@ -8,6 +8,46 @@ import { Phone, MapPin, Home, TrendingUp, Shield, ChevronRight } from "lucide-re
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
+// Fallback data for when DB has no data yet
+const FALLBACK_GLOBAL: SEOGlobalConfig = {
+  siteName: "Supreme Empreendimentos",
+  defaultTitle: "Supreme Empreendimentos - Imóveis de Alto Padrão em Goiânia",
+  defaultDescription: "Encontre imóveis de alto padrão em Goiânia.",
+  keywords: ["imóveis goiânia", "alto padrão goiânia"],
+  city: "Goiânia",
+  state: "GO",
+  phone: "(62) 99999-9999",
+  companyName: "Supreme Empreendimentos",
+  canonicalBase: "https://supremeimoveis.com.br",
+};
+
+const FALLBACK_PAGES: SEOPageConfig[] = [
+  {
+    id: "casa-alto-padrao",
+    slug: "/casa-alto-padrao-goiania",
+    metaTitle: "Casa Alto Padrão em Goiânia | Condomínios Fechados Exclusivos",
+    metaDescription: "Encontre casa alto padrão em Goiânia nos melhores condomínios fechados. Segurança, exclusividade e alto potencial de valorização.",
+    h1: "Casa Alto Padrão em Goiânia nos Melhores Condomínios Fechados",
+    h2List: [
+      "Melhores Regiões para Alto Padrão em Goiânia",
+      "Por que investir em imóvel de alto padrão em Goiânia?",
+      "Condomínios Fechados Mais Procurados",
+    ],
+    bodyText: "Goiânia se destaca como uma das capitais com maior crescimento imobiliário do Brasil. O mercado de alto padrão na cidade oferece oportunidades exclusivas em condomínios horizontais fechados, com segurança 24h, infraestrutura completa e alto potencial de valorização.\n\nO perfil do comprador de alto padrão em Goiânia é exigente: busca qualidade de vida, privacidade e um endereço que reflita seu status. Os condomínios fechados da cidade oferecem exatamente isso, com lotes amplos, áreas verdes e infraestrutura de lazer completa.\n\nA valorização imobiliária na capital goiana tem superado a média nacional nos últimos anos, tornando o investimento em imóveis de luxo uma decisão estratégica e segura.",
+    faqItems: [
+      { question: "Qual o valor médio de uma casa alto padrão em Goiânia?", answer: "O valor médio varia entre R$ 2 milhões e R$ 8 milhões, dependendo da localização e metragem." },
+      { question: "Quais bairros são mais valorizados?", answer: "Setor Marista, Jardins Munique, Alphaville Goiânia e Aldeia do Vale são os mais procurados." },
+      { question: "Vale a pena investir em condomínio fechado?", answer: "Sim. Condomínios fechados em Goiânia apresentam valorização constante de 8-15% ao ano." },
+      { question: "Goiânia é segura para morar em alto padrão?", answer: "Sim, especialmente em condomínios fechados que oferecem segurança 24h com monitoramento avançado." },
+    ],
+    neighborhood: "Setor Marista",
+    region: "Região Sul",
+    propertyType: "Casa Alto Padrão",
+    priceRange: "Acima de R$ 2 milhões",
+    focusKeyword: "casa alto padrão goiânia",
+  },
+];
+
 const SEOLanding = () => {
   const { slug } = useParams<{ slug: string }>();
   const [page, setPage] = useState<SEOPageConfig | null>(null);
@@ -23,23 +63,29 @@ const SEOLanding = () => {
           .from("seo_configs")
           .select("*");
 
-        if (error) {
-          console.error("Error loading SEO data:", error);
-          setNotFound(true);
+        const targetSlug = `/${slug}`;
+
+        if (error || !data || data.length === 0) {
+          // Fall back to built-in defaults
+          console.log("Using fallback SEO data");
+          setGlobalConfig(FALLBACK_GLOBAL);
+          const fallbackPage = FALLBACK_PAGES.find((p) => p.slug === targetSlug);
+          if (fallbackPage) {
+            setPage(fallbackPage);
+          } else {
+            setNotFound(true);
+          }
           return;
         }
 
         // Find global config
-        const globalRow = data?.find(
+        const globalRow = data.find(
           (r: any) => r.config_type === "global" && r.config_key === "global"
         );
-        if (globalRow) {
-          setGlobalConfig(globalRow.config_data as SEOGlobalConfig);
-        }
+        setGlobalConfig(globalRow ? (globalRow.config_data as SEOGlobalConfig) : FALLBACK_GLOBAL);
 
         // Find matching page by slug
-        const targetSlug = `/${slug}`;
-        const pageRow = data?.find(
+        const pageRow = data.find(
           (r: any) =>
             r.config_type === "page" &&
             (r.config_data as SEOPageConfig).slug === targetSlug
@@ -48,11 +94,25 @@ const SEOLanding = () => {
         if (pageRow) {
           setPage(pageRow.config_data as SEOPageConfig);
         } else {
-          setNotFound(true);
+          // Try fallback
+          const fallbackPage = FALLBACK_PAGES.find((p) => p.slug === targetSlug);
+          if (fallbackPage) {
+            setPage(fallbackPage);
+          } else {
+            setNotFound(true);
+          }
         }
       } catch (e) {
         console.error("Failed to load SEO data:", e);
-        setNotFound(true);
+        // Fall back to defaults on error too
+        const targetSlug = `/${slug}`;
+        setGlobalConfig(FALLBACK_GLOBAL);
+        const fallbackPage = FALLBACK_PAGES.find((p) => p.slug === targetSlug);
+        if (fallbackPage) {
+          setPage(fallbackPage);
+        } else {
+          setNotFound(true);
+        }
       } finally {
         setIsLoading(false);
       }
