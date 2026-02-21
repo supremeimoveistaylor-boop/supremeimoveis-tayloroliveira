@@ -8,6 +8,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SuperAdminUsersPanel } from "@/components/admin/SuperAdminUsersPanel";
+import { AdminDashboardPanel } from "@/components/admin/AdminDashboardPanel";
+import { LeadsImobiliariosPanel } from "@/components/admin/LeadsImobiliariosPanel";
+import { ChatAttendantsPanel } from "@/components/admin/ChatAttendantsPanel";
+import { ChatSessionsPanel } from "@/components/admin/ChatSessionsPanel";
+import { ChatFlowMetricsPanel } from "@/components/admin/ChatFlowMetricsPanel";
+import { ChatConversionsPanel } from "@/components/admin/ChatConversionsPanel";
+import { VisitSchedulingPanel } from "@/components/admin/VisitSchedulingPanel";
+import { CRMKanbanPanel } from "@/components/admin/crm";
+import { FinancialControlPanel } from "@/components/admin/financial";
+import { WhatsAppConnectionPanel } from "@/components/admin/WhatsAppConnectionPanel";
 import { 
   Shield, 
   Users, 
@@ -17,7 +27,16 @@ import {
   RefreshCw,
   UserCog,
   FileText,
-  MessageSquare
+  MessageSquare,
+  LayoutDashboard,
+  Headphones,
+  MessageCircle,
+  BarChart3,
+  TrendingUp,
+  CalendarCheck,
+  Kanban,
+  Wallet,
+  Phone
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
@@ -319,10 +338,50 @@ const SuperAdminDashboard = () => {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="bg-slate-800/50 border border-slate-700">
+          <TabsList className="bg-slate-800/50 border border-slate-700 flex-wrap h-auto gap-1 p-1">
             <TabsTrigger value="overview" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
               <Database className="w-4 h-4 mr-2" />
               Visão Geral
+            </TabsTrigger>
+            <TabsTrigger value="admin-dashboard" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+              <LayoutDashboard className="w-4 h-4 mr-2" />
+              Dashboard
+            </TabsTrigger>
+            <TabsTrigger value="crm" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+              <Kanban className="w-4 h-4 mr-2" />
+              CRM Kanban
+            </TabsTrigger>
+            <TabsTrigger value="leads" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Leads
+            </TabsTrigger>
+            <TabsTrigger value="attendants" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+              <Headphones className="w-4 h-4 mr-2" />
+              Atendentes
+            </TabsTrigger>
+            <TabsTrigger value="sessions" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+              <MessageCircle className="w-4 h-4 mr-2" />
+              Sessões
+            </TabsTrigger>
+            <TabsTrigger value="metrics" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+              <BarChart3 className="w-4 h-4 mr-2" />
+              Métricas
+            </TabsTrigger>
+            <TabsTrigger value="conversions" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+              <TrendingUp className="w-4 h-4 mr-2" />
+              Conversões
+            </TabsTrigger>
+            <TabsTrigger value="visits" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+              <CalendarCheck className="w-4 h-4 mr-2" />
+              Agendamentos
+            </TabsTrigger>
+            <TabsTrigger value="financial" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+              <Wallet className="w-4 h-4 mr-2" />
+              Financeiro
+            </TabsTrigger>
+            <TabsTrigger value="whatsapp" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+              <Phone className="w-4 h-4 mr-2" />
+              WhatsApp
             </TabsTrigger>
             <TabsTrigger value="users" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
               <UserCog className="w-4 h-4 mr-2" />
@@ -377,6 +436,59 @@ const SuperAdminDashboard = () => {
                 </Table>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Admin Dashboard Tab */}
+          <TabsContent value="admin-dashboard" className="space-y-4">
+            <AdminDashboardPanel />
+          </TabsContent>
+
+          {/* CRM Kanban Tab */}
+          <TabsContent value="crm" className="space-y-4">
+            <CRMKanbanPanel 
+              currentUserId={user?.id}
+              currentUserRole="admin"
+            />
+          </TabsContent>
+
+          {/* Leads Tab */}
+          <TabsContent value="leads" className="space-y-4">
+            <LeadsImobiliariosPanel />
+          </TabsContent>
+
+          {/* Attendants Tab */}
+          <TabsContent value="attendants" className="space-y-4">
+            <ChatAttendantsPanel />
+          </TabsContent>
+
+          {/* Sessions Tab */}
+          <TabsContent value="sessions" className="space-y-4">
+            <ChatSessionsPanel />
+          </TabsContent>
+
+          {/* Metrics Tab */}
+          <TabsContent value="metrics" className="space-y-4">
+            <ChatFlowMetricsPanel />
+          </TabsContent>
+
+          {/* Conversions Tab */}
+          <TabsContent value="conversions" className="space-y-4">
+            <ChatConversionsPanel />
+          </TabsContent>
+
+          {/* Visits Tab */}
+          <TabsContent value="visits" className="space-y-4">
+            <VisitSchedulingPanel />
+          </TabsContent>
+
+          {/* Financial Tab */}
+          <TabsContent value="financial" className="space-y-4">
+            <FinancialControlPanel />
+          </TabsContent>
+
+          {/* WhatsApp Tab */}
+          <TabsContent value="whatsapp" className="space-y-4">
+            <WhatsAppConnectionPanel />
           </TabsContent>
 
           {/* Users Tab */}
