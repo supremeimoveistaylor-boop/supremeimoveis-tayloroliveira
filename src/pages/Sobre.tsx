@@ -1,5 +1,6 @@
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { RealEstateChat } from "@/components/RealEstateChat";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -166,7 +167,7 @@ const Sobre = () => {
       </main>
 
       <Footer />
-      
+      <RealEstateChat origin="sobre" pageContext="Página Sobre" />
     </div>
   );
 };
