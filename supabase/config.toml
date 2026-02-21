@@ -32,3 +32,9 @@ verify_jwt = false
 
 [functions.property-campaigns]
 verify_jwt = false
+
+[functions.instagram-webhook]
+verify_jwt = false
+
+[functions.send-instagram-message]
+verify_jwt = false
