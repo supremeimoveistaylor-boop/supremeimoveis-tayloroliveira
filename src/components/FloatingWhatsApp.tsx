@@ -1,9 +1,10 @@
 import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { trackWhatsAppClick } from "@/lib/analytics";
 
 export const FloatingWhatsApp = () => {
   const handleWhatsAppClick = () => {
-    // Link editável do WhatsApp - substitua pelo seu link personalizado
+    trackWhatsAppClick('floating_button');
     window.open('https://wa.me/5562999918353', '_blank');
   };
 

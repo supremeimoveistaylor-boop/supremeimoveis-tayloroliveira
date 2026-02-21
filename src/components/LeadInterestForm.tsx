@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { trackFormSubmit } from "@/lib/analytics";
 import { Loader2, CheckCircle } from "lucide-react";
 
 interface LeadInterestFormProps {
@@ -74,6 +75,7 @@ export const LeadInterestForm = ({ variant = "default" }: LeadInterestFormProps)
       if (error) throw error;
 
       setIsSuccess(true);
+      trackFormSubmit('lead_interest', { tipo_imovel: formData.tipo_imovel, finalidade: formData.finalidade });
       setFormData({
         nome: "",
         telefone: "",

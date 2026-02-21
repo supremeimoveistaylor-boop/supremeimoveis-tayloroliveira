@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Loader2, User, Phone, Mail, Building2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { trackSimulatorRegistration } from "@/lib/analytics";
 
 interface FinancingUserModalProps {
   open: boolean;
@@ -89,6 +90,7 @@ export const FinancingUserModal = ({ open, onSuccess, onClose }: FinancingUserMo
       };
       sessionStorage.setItem("financing_user", JSON.stringify(userData));
 
+      trackSimulatorRegistration();
       toast({
         title: "Cadastro realizado!",
         description: "Agora você pode acessar o simulador.",

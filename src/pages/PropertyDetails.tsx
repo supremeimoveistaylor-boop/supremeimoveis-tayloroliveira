@@ -9,6 +9,7 @@ import {
   Play, Share2, Home, Maximize, CheckCircle, ExternalLink
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { trackWhatsAppClick, trackViewDetails } from "@/lib/analytics";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { ImageModal } from "@/components/ImageModal";
@@ -71,6 +72,7 @@ const PropertyDetails = () => {
   // Atualizar meta tags dinâmicas para SEO completo
   useEffect(() => {
     if (id && property) {
+      trackViewDetails(property.id, property.title);
       const canonicalUrl = getCanonicalUrl(id);
       const priceFormatted = formatPrice(property.price, property.purpose);
       const propertyTypeTranslated = translatePropertyType(property.property_type);
@@ -737,7 +739,7 @@ const PropertyDetails = () => {
                     {property.whatsapp_link && (
                       <Button 
                         className="w-full bg-green-500 hover:bg-green-600 text-white"
-                        onClick={() => window.open(property.whatsapp_link, '_blank')}
+                        onClick={() => { trackWhatsAppClick('property_details', property.id, property.title); window.open(property.whatsapp_link, '_blank'); }}
                       >
                         <MessageCircle className="mr-2 h-4 w-4" />
                         Entrar em Contato

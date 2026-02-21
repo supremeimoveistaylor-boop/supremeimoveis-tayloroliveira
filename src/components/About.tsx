@@ -79,7 +79,7 @@ export const About = () => {
               <Button 
                 size="lg" 
                 className="bg-accent text-accent-foreground hover:bg-accent/90 font-semibold"
-                onClick={() => window.open('https://wa.me/5562999918353', '_blank')}
+                onClick={() => { if (typeof window.gtag === 'function') window.gtag('event', 'whatsapp_click', { event_category: 'engagement', event_label: 'about' }); window.open('https://wa.me/5562999918353', '_blank'); }}
               >
                 Fale com Taylor
               </Button>
