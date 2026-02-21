@@ -1,0 +1,25 @@
+{
+  "name": "Supreme Admin Panel",
+  "short_name": "Supreme Admin",
+  "description": "Painel Administrativo Supreme Empreendimentos",
+  "start_url": "/#/super-admin",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#d4af37",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/supreme-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/supreme-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
