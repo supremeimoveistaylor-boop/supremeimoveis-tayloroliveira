@@ -50,11 +50,12 @@ const TypingWaveAnimation = () => (
     {[...Array(5)].map((_, i) => (
       <div
         key={i}
-        className="w-1 bg-primary rounded-full animate-pulse"
+        className="w-1 rounded-full animate-pulse"
         style={{
           height: `${Math.random() * 12 + 8}px`,
           animationDelay: `${i * 0.1}s`,
           animationDuration: "0.6s",
+          background: '#C6A85B',
         }}
       />
     ))}
@@ -1075,27 +1076,35 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
 
   if (!isOpen) {
     return (
-      <Button
+      <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-24 right-6 h-14 w-14 rounded-full shadow-lg z-[9999] bg-primary hover:bg-primary/90 animate-bounce"
-        size="icon"
-        title="Assistente Online"
+        className="fixed bottom-6 right-6 h-[56px] w-[56px] rounded-[18px] z-[9999] flex items-center justify-center transition-all duration-500 ease-out hover:scale-105 hover:shadow-[0_8px_30px_rgba(198,165,91,0.5)]"
+        style={{
+          background: 'linear-gradient(135deg, #C6A85B, #D4B86A)',
+          boxShadow: '0 6px 24px rgba(198,165,91,0.4)',
+        }}
+        title="Especialista Imobiliário"
       >
-        <MessageCircle className="h-6 w-6" />
-      </Button>
+        <MessageCircle className="h-6 w-6 text-[#111]" strokeWidth={2.2} />
+      </button>
     );
   }
 
   if (isMinimized) {
     return (
       <div 
-        className="fixed bottom-24 right-6 bg-primary text-primary-foreground rounded-full px-4 py-3 shadow-lg cursor-pointer z-[9999] flex items-center gap-2"
+        className="fixed bottom-6 right-6 rounded-[16px] px-4 py-3 cursor-pointer z-[9999] flex items-center gap-2 transition-all duration-300 hover:scale-105"
+        style={{
+          background: 'linear-gradient(135deg, #C6A85B, #D4B86A)',
+          color: '#111',
+          boxShadow: '0 6px 24px rgba(198,165,91,0.4)',
+        }}
         onClick={() => setIsMinimized(false)}
       >
         <MessageCircle className="h-5 w-5" />
         <span className="text-sm font-medium">Chat</span>
         {messages.length > 0 && (
-          <span className="bg-primary-foreground/20 rounded-full px-2 py-0.5 text-xs">
+          <span className="rounded-full px-2 py-0.5 text-xs" style={{ background: 'rgba(0,0,0,0.2)' }}>
             {messages.length}
           </span>
         )}
@@ -1104,20 +1113,19 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
   }
 
   return (
-    <div className="fixed bottom-24 right-6 w-[380px] max-w-[calc(100vw-48px)] h-[500px] max-h-[calc(100vh-100px)] bg-background rounded-2xl shadow-2xl flex flex-col z-[9999] border">
+    <div className="fixed bottom-6 right-6 w-[380px] max-w-[calc(100vw-48px)] h-[520px] max-h-[calc(100vh-40px)] rounded-[20px] flex flex-col z-[9999] animate-scale-in" style={{ background: '#111111', boxShadow: '0 24px 80px rgba(0,0,0,0.55)', border: '1px solid rgba(255,255,255,0.08)' }}>
       {/* Header */}
-      <div className="bg-primary text-primary-foreground p-4 rounded-t-2xl flex items-center justify-between">
+      <div className="p-4 rounded-t-[20px] flex items-center justify-between" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.04), transparent)', borderBottom: '1px solid #C6A85B' }}>
         <div className="flex items-center gap-3">
-          <div className="relative w-10 h-10 rounded-full overflow-hidden bg-slate-900 flex items-center justify-center">
+          <div className="relative w-10 h-10 rounded-full overflow-hidden flex items-center justify-center" style={{ background: '#0f172a' }}>
             <img src="/images/chat-avatar.png" alt="Supreme" className="w-full h-full object-contain" />
-            {/* Indicador Online Verde */}
-            <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-primary animate-pulse" />
+            <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full animate-pulse" style={{ background: '#22c55e', border: '2px solid #C6A85B' }} />
           </div>
           <div>
-            <h3 className="font-semibold text-sm">Assistente Online</h3>
-            <p className="text-xs opacity-80 flex items-center gap-1.5">
-              <span className="w-2 h-2 bg-green-400 rounded-full" />
-              {isLoading ? "Digitando..." : isLoadingHistory ? "Carregando..." : hasHistory ? "Conversa retomada" : "Online agora"}
+            <h3 className="font-semibold text-sm" style={{ color: '#f5f5f5', letterSpacing: '0.3px' }}>Especialista Imobiliário</h3>
+            <p className="text-xs flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.6)' }}>
+              <span className="w-2 h-2 rounded-full" style={{ background: '#4ade80' }} />
+              {isLoading ? "Digitando..." : isLoadingHistory ? "Carregando..." : hasHistory ? "Conversa retomada" : "Atendimento Exclusivo"}
             </p>
           </div>
         </div>
@@ -1125,7 +1133,8 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 text-primary-foreground hover:bg-primary-foreground/20"
+            className="h-8 w-8 hover:bg-white/10"
+            style={{ color: '#f5f5f5' }}
             onClick={() => setSoundEnabled(!soundEnabled)}
             title={soundEnabled ? "Desativar som" : "Ativar som"}
           >
@@ -1135,7 +1144,8 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-primary-foreground hover:bg-green-500/80"
+              className="h-8 w-8 hover:bg-green-500/30"
+              style={{ color: '#4ade80' }}
               onClick={() => setShowFinishDialog(true)}
               title="Finalizar Atendimento"
             >
@@ -1146,7 +1156,8 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-primary-foreground hover:bg-primary-foreground/20"
+              className="h-8 w-8 hover:bg-white/10"
+              style={{ color: '#f5f5f5' }}
               onClick={handleNewConversation}
               title="Nova conversa"
             >
@@ -1156,7 +1167,8 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 text-primary-foreground hover:bg-primary-foreground/20"
+            className="h-8 w-8 hover:bg-white/10"
+            style={{ color: '#f5f5f5' }}
             onClick={() => setIsMinimized(true)}
           >
             <Minimize2 className="h-4 w-4" />
@@ -1164,7 +1176,8 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 text-primary-foreground hover:bg-primary-foreground/20"
+            className="h-8 w-8 hover:bg-white/10"
+            style={{ color: '#f5f5f5' }}
             onClick={() => setIsOpen(false)}
           >
             <X className="h-4 w-4" />
@@ -1173,13 +1186,13 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
       </div>
 
       {hasHistory && (
-        <div className="bg-muted/50 px-4 py-2 text-xs text-muted-foreground text-center border-b">
+        <div className="px-4 py-2 text-xs text-center" style={{ background: 'rgba(255,255,255,0.03)', color: 'rgba(255,255,255,0.5)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
           📜 Histórico carregado
         </div>
       )}
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-muted/30">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3" style={{ background: '#0b0b0c' }}>
         {isLoadingHistory ? (
           <div className="flex justify-center items-center h-full">
             <div className="text-center">
@@ -1195,12 +1208,13 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
                 className={`flex flex-col ${message.role === "user" ? "items-end" : "items-start"}`}
               >
                 <div className="relative group">
-                  <Card
-                    className={`max-w-[85%] p-3 ${
+                  <div
+                    className="max-w-[85%] p-3 rounded-[14px] text-sm leading-relaxed"
+                    style={
                       message.role === "user"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-card"
-                    }`}
+                        ? { background: 'linear-gradient(135deg, #C6A85B, #D4B86A)', color: '#111', borderBottomRightRadius: '6px' }
+                        : { background: '#1C1C1C', color: '#f0f0f0', borderBottomLeftRadius: '6px' }
+                    }
                     onDoubleClick={() => setActiveReactionMsgId(activeReactionMsgId === message.id ? null : message.id)}
                   >
                     {message.attachment && renderAttachment(message.attachment)}
@@ -1208,15 +1222,12 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
                       {typeof message.content === "string" ? message.content : getTextContent(message.content)}
                     </p>
                     <span
-                      className={`text-xs mt-1 block ${
-                        message.role === "user"
-                          ? "text-primary-foreground/70"
-                          : "text-muted-foreground"
-                      }`}
+                      className="text-xs mt-1 block"
+                      style={{ color: message.role === "user" ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.4)' }}
                     >
                       {formatTime(message.timestamp)}
                     </span>
-                  </Card>
+                  </div>
                   
                   {/* Reaction trigger button */}
                   <button
@@ -1252,10 +1263,10 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
             ))}
             {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
               <div className="flex justify-start">
-                <Card className="bg-card p-3 flex items-center gap-2">
+                <div className="p-3 flex items-center gap-2 rounded-[14px]" style={{ background: '#1C1C1C' }}>
                   <TypingWaveAnimation />
-                  <span className="text-xs text-muted-foreground">Digitando...</span>
-                </Card>
+                  <span className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>Digitando...</span>
+                </div>
               </div>
             )}
           </>
@@ -1344,7 +1355,7 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
       )}
 
       {/* Input */}
-      <div className="p-3 border-t bg-background rounded-b-2xl">
+      <div className="p-3 rounded-b-[20px]" style={{ background: '#111111', borderTop: '1px solid rgba(198,165,91,0.3)' }}>
         <div className="flex gap-2">
           <input
             ref={fileInputRef}
@@ -1359,7 +1370,8 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
             size="icon"
             onClick={() => fileInputRef.current?.click()}
             disabled={isLoading || isLoadingHistory || isUploading || isRecording}
-            className="shrink-0"
+            className="shrink-0 hover:bg-white/10"
+            style={{ color: '#C6A85B' }}
             title="Enviar arquivo"
           >
             {isUploading ? (
@@ -1374,7 +1386,8 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
             size="icon"
             onClick={startRecording}
             disabled={isLoading || isLoadingHistory || isUploading || isRecording}
-            className="shrink-0"
+            className="shrink-0 hover:bg-white/10"
+            style={{ color: '#C6A85B' }}
             title="Gravar áudio"
           >
             <Mic className="h-4 w-4" />
@@ -1386,7 +1399,8 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
                 variant="ghost"
                 size="icon"
                 disabled={isLoading || isLoadingHistory || isRecording}
-                className="shrink-0"
+                className="shrink-0 hover:bg-white/10"
+                style={{ color: '#C6A85B' }}
                 title="Emojis"
               >
                 <Smile className="h-4 w-4" />
@@ -1397,23 +1411,25 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
             </PopoverContent>
           </Popover>
 
-          <Input
+          <input
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
             placeholder={pendingAttachment ? "Adicione uma legenda..." : "Digite sua mensagem..."}
             disabled={isLoading || isLoadingHistory || isRecording}
-            className="flex-1"
+            className="flex-1 rounded-[12px] px-3 py-2 text-sm outline-none"
+            style={{ background: '#0b0b0c', border: '1px solid rgba(198,165,91,0.3)', color: '#f5f5f5' }}
           />
-          <Button
+          <button
             onClick={handleSendMessage}
             disabled={(!inputMessage.trim() && !pendingAttachment) || isLoading || isLoadingHistory || isRecording}
-            size="icon"
+            className="rounded-[12px] px-3 flex items-center justify-center disabled:opacity-40 transition-opacity"
+            style={{ background: 'linear-gradient(135deg, #C6A85B, #D4B86A)', color: '#111' }}
           >
             <Send className="h-4 w-4" />
-          </Button>
+          </button>
         </div>
-        <p className="text-xs text-muted-foreground text-center mt-2">
+        <p className="text-xs text-center mt-2" style={{ color: 'rgba(255,255,255,0.35)' }}>
           📎 Arquivos • 🎤 Áudio • 😊 Emojis • 2x toque para reagir
         </p>
       </div>
