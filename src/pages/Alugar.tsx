@@ -122,6 +122,12 @@ const Alugar = () => {
 
   const hasActiveFilters = propertyType || neighborhood || minPrice || maxPrice || searchQuery;
 
+  useEffect(() => {
+    document.title = "Imóveis para Alugar em Goiânia | Casas e Apartamentos - Supreme";
+    const meta = document.querySelector('meta[name="description"]');
+    if (meta) meta.setAttribute("content", "Alugue imóveis em Goiânia: casas, apartamentos e coberturas nos melhores bairros. Atendimento especializado Supreme Negócios Imobiliários.");
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
@@ -131,7 +137,7 @@ const Alugar = () => {
         <section className="py-12 bg-gradient-to-br from-primary via-black-soft to-primary">
           <div className="container mx-auto px-4 text-center">
             <h1 className="text-3xl md:text-4xl font-bold text-white-soft mb-4">
-              Imóveis para <span className="text-accent">Alugar</span>
+              Imóveis para <span className="text-accent">Alugar em Goiânia</span>
             </h1>
             <p className="text-lg text-gray-300 max-w-2xl mx-auto">
               Encontre o imóvel ideal para alugar em Goiânia e região

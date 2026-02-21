@@ -2,8 +2,33 @@ import { Facebook, Instagram, Linkedin, Phone, Mail, MapPin } from "lucide-react
 const supremeLogo = "/lovable-uploads/04663de4-8269-49df-b13d-565420c29dd2.png";
 
 export const Footer = () => {
+  const schemaLocalBusiness = {
+    "@context": "https://schema.org",
+    "@type": "RealEstateAgent",
+    "name": "Supreme Negócios Imobiliários",
+    "telephone": "+55 62 99999-9999",
+    "url": "https://supremeempreendimentos.com",
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "Goiânia",
+      "addressRegion": "GO",
+      "addressCountry": "BR"
+    },
+    "areaServed": {
+      "@type": "City",
+      "name": "Goiânia"
+    },
+    "description": "Imobiliária especializada em imóveis de alto padrão em Goiânia. Casas em condomínio fechado, apartamentos e coberturas.",
+    "priceRange": "$$$$"
+  };
+
   return (
-    <footer className="bg-primary text-primary-foreground">
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaLocalBusiness) }}
+      />
+      <footer className="bg-primary text-primary-foreground">
       <div className="container mx-auto px-4 py-12">
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Company Info */}
@@ -100,5 +125,6 @@ export const Footer = () => {
         </div>
       </div>
     </footer>
+    </>
   );
 };

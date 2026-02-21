@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { RealEstateChat } from "@/components/RealEstateChat";
@@ -8,6 +9,12 @@ import { Shield, Users, Award, TrendingUp } from "lucide-react";
 import taylorPhoto from "@/assets/taylor-photo.png";
 
 const Sobre = () => {
+  useEffect(() => {
+    document.title = "Sobre a Supreme Negócios Imobiliários em Goiânia | Quem Somos";
+    const meta = document.querySelector('meta[name="description"]');
+    if (meta) meta.setAttribute("content", "Conheça a Supreme Negócios Imobiliários: mais de 15 anos de experiência no mercado imobiliário de Goiânia. Especialistas em imóveis de alto padrão.");
+  }, []);
+
   const features = [
     {
       icon: Shield,
@@ -59,7 +66,7 @@ const Sobre = () => {
                 </div>
 
                 <h1 className="text-3xl md:text-4xl font-bold text-white-soft mb-6">
-                  Conheça <span className="text-accent">Taylor Oliveira</span>
+                  Sobre a Supreme Negócios Imobiliários em <span className="text-accent">Goiânia</span>
                 </h1>
                 <p className="text-lg text-gray-300 mb-8 leading-relaxed">
                   Taylor Oliveira, especialista em imóveis de médio e alto padrão, atuando por 13 anos em coordenação 
