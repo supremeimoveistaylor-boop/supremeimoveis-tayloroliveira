@@ -6,7 +6,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const META_APP_ID = '1594744215047248';
+const WHATSAPP_APP_ID = '1594744215047248';
+const INSTAGRAM_APP_ID = '1448676544456069';
 const GRAPH_API_VERSION = 'v19.0';
 
 serve(async (req) => {
@@ -31,6 +32,7 @@ serve(async (req) => {
     let user_id: string | null = null;
     let redirect_uri: string | null = null;
     let channel: string | null = null;
+    let stateAppId: string | null = null;
 
     // ========== GET — Instagram/Meta redirect callback ==========
     if (req.method === 'GET') {
@@ -60,7 +62,8 @@ serve(async (req) => {
           user_id = stateData.user_id || null;
           channel = stateData.channel || 'instagram';
           redirect_uri = stateData.redirect_uri || null;
-          console.log('[Meta OAuth] State parsed:', { user_id, channel });
+          stateAppId = stateData.app_id || null;
+          console.log('[Meta OAuth] State parsed:', { user_id, channel, stateAppId });
         } catch (e) {
           // If state is just user_id string
           user_id = state;
@@ -94,11 +97,18 @@ serve(async (req) => {
     const callbackUri = redirect_uri || 'https://ypkmorgcpooygsvhcpvo.supabase.co/functions/v1/meta-oauth-callback';
     const isGetRequest = req.method === 'GET';
 
+    // Determine correct App ID and Secret based on channel
+    const META_INSTAGRAM_APP_SECRET = Deno.env.get('META_INSTAGRAM_APP_SECRET');
+    const appId = stateAppId || (requestedChannel === 'instagram' ? INSTAGRAM_APP_ID : WHATSAPP_APP_ID);
+    const appSecret = (requestedChannel === 'instagram' && META_INSTAGRAM_APP_SECRET) ? META_INSTAGRAM_APP_SECRET : META_APP_SECRET;
+
+    console.log('[Meta OAuth] Using App ID:', appId, 'for channel:', requestedChannel);
+
     // Step 1: Exchange code for access_token
     console.log('[Meta OAuth] Exchanging code for token...');
     const tokenUrl = `https://graph.facebook.com/${GRAPH_API_VERSION}/oauth/access_token?` +
-      `client_id=${META_APP_ID}` +
-      `&client_secret=${META_APP_SECRET}` +
+      `client_id=${appId}` +
+      `&client_secret=${appSecret}` +
       `&code=${encodeURIComponent(code)}` +
       `&redirect_uri=${encodeURIComponent(callbackUri)}`;
 
