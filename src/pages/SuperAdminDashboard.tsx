@@ -18,6 +18,7 @@ import { VisitSchedulingPanel } from "@/components/admin/VisitSchedulingPanel";
 import { CRMKanbanPanel } from "@/components/admin/crm";
 import { FinancialControlPanel } from "@/components/admin/financial";
 import { WhatsAppConnectionPanel } from "@/components/admin/WhatsAppConnectionPanel";
+import { FollowupAlertsPanel } from "@/components/admin/FollowupAlertsPanel";
 import { 
   Shield, 
   Users, 
@@ -36,7 +37,8 @@ import {
   CalendarCheck,
   Kanban,
   Wallet,
-  Phone
+  Phone,
+  BellRing
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
@@ -383,6 +385,10 @@ const SuperAdminDashboard = () => {
               <Phone className="w-4 h-4 mr-2" />
               WhatsApp
             </TabsTrigger>
+            <TabsTrigger value="followup-alerts" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+              <BellRing className="w-4 h-4 mr-2" />
+              Follow-ups
+            </TabsTrigger>
             <TabsTrigger value="users" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
               <UserCog className="w-4 h-4 mr-2" />
               Usuários
@@ -489,6 +495,11 @@ const SuperAdminDashboard = () => {
           {/* WhatsApp Tab */}
           <TabsContent value="whatsapp" className="space-y-4">
             <WhatsAppConnectionPanel />
+          </TabsContent>
+
+          {/* Follow-up Alerts Tab */}
+          <TabsContent value="followup-alerts" className="space-y-4">
+            <FollowupAlertsPanel />
           </TabsContent>
 
           {/* Users Tab */}
