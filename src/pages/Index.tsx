@@ -6,6 +6,7 @@ import { About } from "@/components/About";
 import { Contact } from "@/components/Contact";
 import { Footer } from "@/components/Footer";
 import { FinancingSection } from "@/components/financing";
+import { RealEstateChat } from "@/components/RealEstateChat";
 
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -105,7 +106,7 @@ const Index = () => {
       <About />
       <Contact />
       <Footer />
-      
+      <RealEstateChat origin="home" pageContext="Página inicial" />
     </div>
   );
 };
