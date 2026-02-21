@@ -25,7 +25,7 @@ interface FollowupAlert {
 export function FollowupAlertsPanel() {
   const [alerts, setAlerts] = useState<FollowupAlert[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'lead_followup' | 'broker_reminder'>('all');
+  const [filter, setFilter] = useState<'all' | 'lead_followup' | 'broker_reminder' | 'nurturing'>('all');
 
   const fetchAlerts = async () => {
     setIsLoading(true);
@@ -57,6 +57,7 @@ export function FollowupAlertsPanel() {
 
   const leadFollowups = alerts.filter(a => a.alert_type === 'lead_followup');
   const brokerReminders = alerts.filter(a => a.alert_type === 'broker_reminder');
+  const nurturingAlerts = alerts.filter(a => a.alert_type === 'nurturing');
   const sentCount = alerts.filter(a => a.status === 'sent').length;
   const failedCount = alerts.filter(a => a.status === 'failed').length;
 
@@ -90,7 +91,7 @@ export function FollowupAlertsPanel() {
   return (
     <div className="space-y-4">
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <Card className="bg-slate-800/50 border-slate-700">
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center gap-3">
@@ -120,6 +121,17 @@ export function FollowupAlertsPanel() {
               <div>
                 <p className="text-xl font-bold text-white">{brokerReminders.length}</p>
                 <p className="text-xs text-slate-400">Cobranças Corretor</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-slate-800/50 border-slate-700">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center gap-3">
+              <Clock className="w-5 h-5 text-green-400" />
+              <div>
+                <p className="text-xl font-bold text-white">{nurturingAlerts.length}</p>
+                <p className="text-xs text-slate-400">Nutrição Frios</p>
               </div>
             </div>
           </CardContent>
@@ -162,6 +174,7 @@ export function FollowupAlertsPanel() {
               <TabsTrigger value="all" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">Todos</TabsTrigger>
               <TabsTrigger value="lead_followup" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">Follow-ups Lead</TabsTrigger>
               <TabsTrigger value="broker_reminder" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">Cobranças Corretor</TabsTrigger>
+              <TabsTrigger value="nurturing" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">Nutrição</TabsTrigger>
             </TabsList>
 
             <TabsContent value={filter}>
@@ -188,9 +201,13 @@ export function FollowupAlertsPanel() {
                       {alerts.map((alert) => (
                         <TableRow key={alert.id} className="border-slate-700">
                           <TableCell>
-                            <Badge variant="outline" className={alert.alert_type === 'lead_followup' ? 'border-purple-500/50 text-purple-400' : 'border-amber-500/50 text-amber-400'}>
-                              {alert.alert_type === 'lead_followup' ? 'Lead' : 'Corretor'}
-                            </Badge>
+                            <Badge variant="outline" className={
+                              alert.alert_type === 'lead_followup' ? 'border-purple-500/50 text-purple-400' 
+                              : alert.alert_type === 'nurturing' ? 'border-green-500/50 text-green-400'
+                              : 'border-amber-500/50 text-amber-400'
+                            }>
+                              {alert.alert_type === 'lead_followup' ? 'Lead' : alert.alert_type === 'nurturing' ? 'Nutrição' : 'Corretor'}
+                             </Badge>
                           </TableCell>
                           <TableCell>
                             <Badge className={getStageBadgeClass(alert)}>

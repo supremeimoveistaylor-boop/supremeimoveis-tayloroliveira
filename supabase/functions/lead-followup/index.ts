@@ -21,6 +21,18 @@ const BROKER_STAGES = [
   { delayMinutes: 240, type: 'sem_atendimento', description: 'Marcado como sem atendimento' },
 ];
 
+// Nurturing content topics for cold leads (rotating every 5 days)
+const NURTURING_TOPICS = [
+  { topic: 'dicas_compra', description: '5 dicas essenciais para comprar seu primeiro imóvel' },
+  { topic: 'financiamento', description: 'Como funciona o financiamento imobiliário em 2026' },
+  { topic: 'valorizacao', description: 'Bairros que mais valorizam em Goiânia' },
+  { topic: 'documentacao', description: 'Documentos necessários para comprar um imóvel' },
+  { topic: 'investimento', description: 'Imóveis como investimento: por que vale a pena' },
+  { topic: 'tendencias', description: 'Tendências do mercado imobiliário atual' },
+  { topic: 'custos_ocultos', description: 'Custos além do preço do imóvel que você precisa conhecer' },
+  { topic: 'decoracao', description: 'Dicas de decoração para valorizar seu imóvel' },
+];
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -38,6 +50,7 @@ serve(async (req) => {
     const results = {
       followups_sent: 0,
       broker_reminders_sent: 0,
+      nurturing_sent: 0,
       errors: [] as string[],
     };
 
@@ -249,6 +262,98 @@ serve(async (req) => {
       }
     }
 
+    // ===== 3. COLD LEAD NURTURING (every 5 days) =====
+    const NURTURING_INTERVAL_DAYS = 5;
+    const { data: coldLeads, error: coldError } = await supabase
+      .from('leads')
+      .select('*')
+      .not('phone', 'is', null)
+      .in('qualification', ['frio', 'morno'])
+      .gte('followup_stage', 4) // completed all follow-ups
+      .not('nurturing_flow_status', 'eq', 'completed')
+      .not('status', 'in', '("convertido","perdido")');
+
+    if (coldError) {
+      console.error('[Nurturing] Error fetching cold leads:', coldError);
+      results.errors.push(`Cold leads fetch: ${coldError.message}`);
+    }
+
+    for (const lead of (coldLeads || [])) {
+      try {
+        // Check time since last nurturing or last follow-up
+        const lastNurturing = lead.last_followup_at || lead.updated_at;
+        const daysSince = (now.getTime() - new Date(lastNurturing).getTime()) / (1000 * 60 * 60 * 24);
+
+        if (daysSince < NURTURING_INTERVAL_DAYS) continue;
+
+        // Determine which topic to send (rotate through topics)
+        const nurturingCount = lead.followup_stage - 4; // stages beyond 4 = nurturing count
+        const topicIndex = nurturingCount % NURTURING_TOPICS.length;
+        const topic = NURTURING_TOPICS[topicIndex];
+
+        // Check if all topics exhausted (full cycle done)
+        if (nurturingCount >= NURTURING_TOPICS.length) {
+          await supabase.from('leads').update({ nurturing_flow_status: 'completed' }).eq('id', lead.id);
+          continue;
+        }
+
+        // Generate nurturing message via AI
+        const nurturingMessage = await generateNurturingMessage({
+          leadName: lead.name || 'Cliente',
+          topic: topic.description,
+          apiKey: LOVABLE_API_KEY,
+        });
+
+        if (!nurturingMessage) {
+          results.errors.push(`Nurturing AI failed for lead ${lead.id}`);
+          continue;
+        }
+
+        // Send via WhatsApp
+        let whatsappMessageId: string | null = null;
+        if (lead.phone && WHATSAPP_PHONE_NUMBER_ID && WHATSAPP_ACCESS_TOKEN) {
+          const sendResult = await sendWhatsAppMessage({
+            to: lead.phone,
+            message: nurturingMessage,
+            phoneNumberId: WHATSAPP_PHONE_NUMBER_ID,
+            accessToken: WHATSAPP_ACCESS_TOKEN,
+          });
+          whatsappMessageId = sendResult?.messageId || null;
+        }
+
+        // Update lead
+        await supabase.from('leads').update({
+          followup_stage: lead.followup_stage + 1,
+          last_followup_at: now.toISOString(),
+          nurturing_flow_status: 'active',
+        }).eq('id', lead.id);
+
+        // Log alert
+        await supabase.from('followup_alerts').insert({
+          lead_id: lead.id,
+          alert_type: 'nurturing',
+          stage: nurturingCount,
+          message_sent: nurturingMessage,
+          channel: 'whatsapp',
+          status: whatsappMessageId ? 'sent' : 'failed',
+          whatsapp_message_id: whatsappMessageId,
+          metadata: {
+            lead_name: lead.name,
+            lead_phone: lead.phone,
+            topic: topic.topic,
+            topic_description: topic.description,
+            days_since_last: Math.round(daysSince),
+          },
+        });
+
+        results.nurturing_sent++;
+        console.log(`[Nurturing] Topic "${topic.topic}" sent to lead ${lead.id} (${lead.name})`);
+      } catch (e) {
+        console.error(`[Nurturing] Error for lead ${lead.id}:`, e);
+        results.errors.push(`Nurturing ${lead.id}: ${e.message}`);
+      }
+    }
+
     console.log('[Follow-up] Completed:', results);
 
     return new Response(JSON.stringify(results), {
@@ -332,6 +437,51 @@ function getDefaultMessage(name: string, interest: string, stage: string): strin
     ultima: `${name}, essa é minha última mensagem sobre ${interest}. Quando precisar, estarei à disposição! Desejo tudo de melhor. 🙏`,
   };
   return messages[stage] || messages.suave;
+}
+
+// Generate nurturing content message
+async function generateNurturingMessage({
+  leadName,
+  topic,
+  apiKey,
+}: {
+  leadName: string;
+  topic: string;
+  apiKey: string | undefined;
+}): Promise<string | null> {
+  const defaultMsg = `Olá ${leadName}! 📚 Preparamos um conteúdo especial para você: ${topic}. Quer saber mais? Estamos à disposição! 🏠`;
+
+  if (!apiKey) return defaultMsg;
+
+  try {
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-3-flash-preview',
+        messages: [
+          {
+            role: 'system',
+            content: `Você é Taylor, consultora imobiliária da Supreme Imóveis em Goiânia. Gere mensagens educativas de WhatsApp sobre mercado imobiliário. O objetivo é manter o lead engajado com conteúdo de valor, sem pressão de venda. Seja informativa, amigável e profissional. Use emojis com moderação. Máximo 6 linhas.`,
+          },
+          {
+            role: 'user',
+            content: `Gere uma mensagem educativa para ${leadName} sobre o tema: "${topic}". Inclua 2-3 dicas práticas e relevantes. Finalize convidando para tirar dúvidas. Não mencione que é automático.`,
+          },
+        ],
+      }),
+    });
+
+    if (!response.ok) return defaultMsg;
+    const data = await response.json();
+    return data.choices?.[0]?.message?.content?.trim() || defaultMsg;
+  } catch (e) {
+    console.error('[Nurturing] AI error:', e);
+    return defaultMsg;
+  }
 }
 
 // Send WhatsApp message
