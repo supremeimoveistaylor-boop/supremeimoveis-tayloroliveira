@@ -110,7 +110,7 @@ serve(async (req) => {
       phone_number_id: phoneNumberId,
       meta_business_id: wabaId,
       account_name: accountName,
-      status: 'active',
+      status: 'connected',
       last_activity_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -152,7 +152,7 @@ serve(async (req) => {
         phone_number_id: phoneNumberId,
         phone_display: phoneDisplay,
         waba_id: wabaId,
-        status: 'active',
+        status: 'connected',
       },
     }), {
       status: 200,

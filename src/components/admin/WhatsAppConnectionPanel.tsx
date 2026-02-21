@@ -172,7 +172,7 @@ export const WhatsAppConnectionPanel = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {connection && connection.status === 'active' ? (
+          {connection && connection.status === 'connected' ? (
             /* Connected State */
             <div className="space-y-4">
               <div className="flex items-center gap-3 p-4 rounded-lg bg-green-500/10 border border-green-500/20">
