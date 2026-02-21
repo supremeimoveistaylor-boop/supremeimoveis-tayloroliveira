@@ -539,6 +539,53 @@ export type Database = {
           },
         ]
       }
+      followup_alerts: {
+        Row: {
+          alert_type: string
+          channel: string | null
+          created_at: string
+          id: string
+          lead_id: string | null
+          message_sent: string | null
+          metadata: Json | null
+          stage: number
+          status: string | null
+          whatsapp_message_id: string | null
+        }
+        Insert: {
+          alert_type: string
+          channel?: string | null
+          created_at?: string
+          id?: string
+          lead_id?: string | null
+          message_sent?: string | null
+          metadata?: Json | null
+          stage?: number
+          status?: string | null
+          whatsapp_message_id?: string | null
+        }
+        Update: {
+          alert_type?: string
+          channel?: string | null
+          created_at?: string
+          id?: string
+          lead_id?: string | null
+          message_sent?: string | null
+          metadata?: Json | null
+          stage?: number
+          status?: string | null
+          whatsapp_message_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "followup_alerts_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       general_chat_messages: {
         Row: {
           created_at: string
@@ -570,13 +617,19 @@ export type Database = {
           created_at: string
           email: string | null
           first_conversion_at: string | null
+          followup_stage: number | null
           id: string
           intent: string | null
+          last_agent_notification: string | null
           last_conversion_at: string | null
+          last_followup_at: string | null
           last_interaction_at: string | null
           lead_score: number | null
+          lead_segment: string | null
+          lead_temperature: string | null
           message_count: number | null
           name: string | null
+          nurturing_flow_status: string | null
           origin: string | null
           page_url: string | null
           phone: string | null
@@ -596,13 +649,19 @@ export type Database = {
           created_at?: string
           email?: string | null
           first_conversion_at?: string | null
+          followup_stage?: number | null
           id?: string
           intent?: string | null
+          last_agent_notification?: string | null
           last_conversion_at?: string | null
+          last_followup_at?: string | null
           last_interaction_at?: string | null
           lead_score?: number | null
+          lead_segment?: string | null
+          lead_temperature?: string | null
           message_count?: number | null
           name?: string | null
+          nurturing_flow_status?: string | null
           origin?: string | null
           page_url?: string | null
           phone?: string | null
@@ -622,13 +681,19 @@ export type Database = {
           created_at?: string
           email?: string | null
           first_conversion_at?: string | null
+          followup_stage?: number | null
           id?: string
           intent?: string | null
+          last_agent_notification?: string | null
           last_conversion_at?: string | null
+          last_followup_at?: string | null
           last_interaction_at?: string | null
           lead_score?: number | null
+          lead_segment?: string | null
+          lead_temperature?: string | null
           message_count?: number | null
           name?: string | null
+          nurturing_flow_status?: string | null
           origin?: string | null
           page_url?: string | null
           phone?: string | null
