@@ -10,9 +10,9 @@ const DEFAULT_GLOBAL: SEOGlobalConfig = {
   keywords: ["imóveis goiânia", "alto padrão goiânia", "condomínio fechado goiânia", "casa luxo goiânia", "apartamento premium goiânia"],
   city: "Goiânia",
   state: "GO",
-  phone: "(62) 99999-9999",
-  companyName: "Supreme Empreendimentos",
-  canonicalBase: "https://supremeimoveis.com.br",
+  phone: "(62) 99991-8353",
+  companyName: "Supreme Empreendimentos Imobiliários",
+  canonicalBase: "https://supremeempreendimentos.com",
 };
 
 const EXAMPLE_PAGE: SEOPageConfig = {
