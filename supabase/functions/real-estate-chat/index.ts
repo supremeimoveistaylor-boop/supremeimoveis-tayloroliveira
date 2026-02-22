@@ -757,6 +757,98 @@ Acesse o painel para mais detalhes.`;
               console.log(`✅ CRM card nome atualizado: ${existingCrmCard.id} → ${updates.name}`);
             }
           }
+
+          // =====================================================
+          // DISPARO AUTOMÁTICO WHATSAPP PARA CORRETOR
+          // Verifica se o lead agora tem nome E telefone (mesmo de msgs diferentes)
+          // =====================================================
+          try {
+            const { data: fullLead } = await supabase
+              .from("leads")
+              .select("name, phone, whatsapp_sent, origin, created_at")
+              .eq("id", currentLeadId)
+              .single();
+
+            const hasName = fullLead?.name && fullLead.name !== "Visitante do Chat" && fullLead.name !== "A definir";
+            const hasPhone = fullLead?.phone && fullLead.phone !== "A definir" && fullLead.phone.length >= 8;
+            const alreadySent = fullLead?.whatsapp_sent === true;
+
+            if (hasName && hasPhone && !alreadySent) {
+              const BROKER_PHONE = "5562999918353";
+              const createdDate = fullLead.created_at 
+                ? new Date(fullLead.created_at).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })
+                : new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+
+              const brokerMessage = `🚨 Novo Lead Recebido
+
+Nome: ${fullLead.name}
+Telefone: ${fullLead.phone}
+Origem: Chat do Site
+Data: ${createdDate}
+
+Acesse o CRM para atendimento imediato.`;
+
+              const sendWhatsappUrl = `${SUPABASE_URL}/functions/v1/send-whatsapp`;
+              const whatsappRes = await fetch(sendWhatsappUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  to: BROKER_PHONE,
+                  message: brokerMessage
+                })
+              });
+
+              if (whatsappRes.ok) {
+                // Marcar como enviado para não duplicar
+                await supabase.from("leads").update({
+                  whatsapp_sent: true,
+                  whatsapp_sent_at: new Date().toISOString()
+                }).eq("id", currentLeadId);
+
+                console.log(`✅ WhatsApp ENVIADO para corretor ${BROKER_PHONE} - Lead: ${fullLead.name}`);
+
+                // Log de auditoria
+                await supabase.from("security_logs").insert({
+                  action: "whatsapp_notification",
+                  table_name: "leads",
+                  record_id: currentLeadId,
+                  metadata: {
+                    lead_name: fullLead.name,
+                    lead_phone: fullLead.phone,
+                    broker_phone: BROKER_PHONE,
+                    status: "success"
+                  }
+                });
+              } else {
+                const errData = await whatsappRes.text();
+                console.error(`❌ Erro WhatsApp para corretor: ${errData}`);
+                
+                await supabase.from("security_logs").insert({
+                  action: "whatsapp_notification",
+                  table_name: "leads",
+                  record_id: currentLeadId,
+                  metadata: {
+                    lead_name: fullLead.name,
+                    broker_phone: BROKER_PHONE,
+                    status: "error",
+                    error_message: errData.substring(0, 500)
+                  }
+                });
+              }
+            }
+          } catch (whatsappAutoErr) {
+            console.error("❌ Erro no disparo automático WhatsApp:", whatsappAutoErr);
+            
+            await supabase.from("security_logs").insert({
+              action: "whatsapp_notification",
+              table_name: "leads",
+              record_id: currentLeadId,
+              metadata: {
+                status: "error",
+                error_message: whatsappAutoErr instanceof Error ? whatsappAutoErr.message : "Unknown error"
+              }
+            }).catch(() => {});
+          }
         }
 
         // =====================================================
