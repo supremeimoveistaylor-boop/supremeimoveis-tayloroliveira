@@ -161,6 +161,78 @@ serve(async (req: Request): Promise<Response> => {
       console.error("[real_estate_leads] WhatsApp async error:", err.message);
     });
 
+    // =====================================================
+    // AUTO CRM CARD CREATION — Lead direto para Kanban
+    // =====================================================
+    try {
+      // Verificar se já existe card para este lead
+      const { data: existingCard } = await supabase
+        .from("crm_cards")
+        .select("id")
+        .eq("lead_id", leadId)
+        .limit(1)
+        .maybeSingle();
+
+      if (!existingCard) {
+        const { data: newCard, error: cardErr } = await supabase
+          .from("crm_cards")
+          .insert({
+            lead_id: leadId,
+            titulo: `Lead Chat - ${clientName}`,
+            cliente: clientName,
+            telefone: sanitizedPhone,
+            email: null,
+            coluna: "leads",
+            origem_lead: origin || "chat",
+            lead_score: 0,
+            classificacao: "frio",
+            probabilidade_fechamento: 10,
+            prioridade: "normal",
+            notas: `Interesse: ${interest}\nOrigem: ${origin || "chat"}`,
+            historico: JSON.stringify([{
+              tipo: "sistema",
+              descricao: `Lead capturado via chat. Nome: ${clientName}, Telefone: ${sanitizedPhone}`,
+              data: new Date().toISOString(),
+            }]),
+          })
+          .select("id")
+          .single();
+
+        if (cardErr) {
+          console.error("[real_estate_leads] CRM card creation error:", cardErr.message);
+        } else {
+          console.log("[real_estate_leads] ✅ CRM card criado:", newCard?.id);
+
+          // Registrar evento CRM
+          await supabase.from("crm_events").insert({
+            card_id: newCard?.id,
+            lead_id: leadId,
+            event_type: "LEAD_CAPTURED",
+            new_value: "leads",
+            metadata: {
+              origem: origin || "chat",
+              nome: clientName,
+              telefone: sanitizedPhone,
+            },
+          });
+        }
+      } else {
+        // Atualizar card existente com nome/telefone corretos
+        await supabase
+          .from("crm_cards")
+          .update({
+            cliente: clientName,
+            telefone: sanitizedPhone,
+            last_interaction_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", existingCard.id);
+        console.log("[real_estate_leads] ✅ CRM card atualizado:", existingCard.id);
+      }
+    } catch (crmErr) {
+      console.error("[real_estate_leads] CRM error:", crmErr);
+    }
+
     return new Response(
       JSON.stringify({ success: true, leadId }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }

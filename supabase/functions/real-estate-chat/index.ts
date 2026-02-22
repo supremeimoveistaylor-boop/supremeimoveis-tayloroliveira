@@ -736,6 +736,27 @@ Acesse o painel para mais detalhes.`;
         // Atualizar tabela leads (compatibilidade)
         if (Object.keys(updates).length > 0) {
           await supabase.from("leads").update(updates).eq("id", currentLeadId);
+          
+          // Se nome foi extraído, atualizar CRM card existente também
+          if (updates.name) {
+            const { data: existingCrmCard } = await supabase
+              .from("crm_cards")
+              .select("id")
+              .eq("lead_id", currentLeadId)
+              .limit(1)
+              .maybeSingle();
+            
+            if (existingCrmCard) {
+              const crmUpdate: Record<string, unknown> = {
+                cliente: updates.name,
+                titulo: `Lead Chat - ${updates.name}`,
+                updated_at: new Date().toISOString(),
+              };
+              if (updates.phone) crmUpdate.telefone = updates.phone;
+              await supabase.from("crm_cards").update(crmUpdate).eq("id", existingCrmCard.id);
+              console.log(`✅ CRM card nome atualizado: ${existingCrmCard.id} → ${updates.name}`);
+            }
+          }
         }
 
         // =====================================================
@@ -883,8 +904,13 @@ Entre em contato o quanto antes.`;
         }
 
         // --- AUTO CRM CARD CREATION ---
-        // Só criar card se tem nome real (não "Visitante") e pelo menos score morno
-        if (leadName && leadName !== "Visitante do Chat" && leadName !== "Visitante") {
+        // Criar card para qualquer lead com nome real OU que tenha telefone
+        const isRealLead = (leadName && leadName !== "Visitante do Chat" && leadName !== "Visitante") || leadPhone;
+        if (isRealLead) {
+          // Usar o melhor nome disponível
+          const cardName = (leadName && leadName !== "Visitante do Chat" && leadName !== "Visitante") 
+            ? leadName 
+            : `Lead ${leadPhone || "Chat"}`;
           // Verificar se já existe card para este lead
           const { data: existingCard } = await supabase
             .from("crm_cards")
@@ -914,8 +940,8 @@ Entre em contato o quanto antes.`;
               .from("crm_cards")
               .insert({
                 lead_id: currentLeadId,
-                titulo: `Lead Chat - ${leadName}`,
-                cliente: leadName,
+                titulo: `Lead Chat - ${cardName}`,
+                cliente: cardName,
                 telefone: leadPhone || null,
                 email: null,
                 coluna,
@@ -937,7 +963,7 @@ Entre em contato o quanto antes.`;
             if (cardErr) {
               console.error("❌ Erro ao criar CRM card:", cardErr);
             } else {
-              console.log(`✅ CRM card criado: ${newCard?.id} | ${leadName} | ${leadScore} | coluna: ${coluna}`);
+              console.log(`✅ CRM card criado: ${newCard?.id} | ${cardName} | ${leadScore} | coluna: ${coluna}`);
 
               // Registrar evento CRM
               await supabase.from("crm_events").insert({
