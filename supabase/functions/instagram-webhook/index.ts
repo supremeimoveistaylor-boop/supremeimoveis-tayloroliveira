@@ -13,19 +13,22 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const VERIFY_TOKEN = (Deno.env.get('INSTAGRAM_WEBHOOK_VERIFY_TOKEN') || '').trim();
+  const rawSecret = Deno.env.get('INSTAGRAM_WEBHOOK_VERIFY_TOKEN') || '';
+  const VERIFY_TOKEN = rawSecret.trim();
 
   // ========== GET — Webhook Verification (Meta hub.challenge) ==========
   if (req.method === 'GET') {
     const url = new URL(req.url);
     const mode = url.searchParams.get('hub.mode');
-    const token = url.searchParams.get('hub.verify_token') || '';
+    const token = (url.searchParams.get('hub.verify_token') || '').trim();
     const challenge = url.searchParams.get('hub.challenge') || '';
 
     console.log('[Instagram Webhook] GET verification:', {
       mode,
       tokenLength: token.length,
       secretLength: VERIFY_TOKEN.length,
+      secretFirst10: VERIFY_TOKEN.substring(0, 10),
+      tokenFirst10: token.substring(0, 10),
       secretConfigured: VERIFY_TOKEN.length > 0,
       match: token === VERIFY_TOKEN,
       challenge,
