@@ -11,7 +11,7 @@ import { MessageSquare, ExternalLink, RefreshCw, CheckCircle2, XCircle, Phone, T
 const META_APP_ID = '1594744215047248';
 const META_REDIRECT_URI = 'https://ypkmorgcpooygsvhcpvo.supabase.co/functions/v1/meta-oauth-callback';
 const WHATSAPP_SCOPES = 'whatsapp_business_management,whatsapp_business_messaging,business_management';
-const INSTAGRAM_SCOPES = 'instagram_manage_messages,instagram_basic,pages_show_list,pages_manage_metadata,pages_read_engagement,business_management';
+const INSTAGRAM_SCOPES = 'instagram_manage_messages,instagram_basic,pages_show_list,pages_manage_metadata,pages_read_engagement,business_management,pages_messaging';
 
 interface ChannelConnection {
   id: string;

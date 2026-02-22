@@ -6,7 +6,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Single Meta App ID for both WhatsApp and Instagram
 const META_APP_ID = '1594744215047248';
 const GRAPH_API_VERSION = 'v19.0';
 
@@ -34,7 +33,6 @@ serve(async (req) => {
     let channel: string | null = null;
     let stateAppId: string | null = null;
 
-    // ========== GET — Instagram/Meta redirect callback ==========
     if (req.method === 'GET') {
       const url = new URL(req.url);
       code = url.searchParams.get('code');
@@ -42,20 +40,13 @@ serve(async (req) => {
       const error = url.searchParams.get('error');
       const errorReason = url.searchParams.get('error_reason');
 
-      console.log('[Meta OAuth] GET callback received:', { 
-        hasCode: !!code, 
-        hasState: !!state, 
-        error, 
-        errorReason 
-      });
+      console.log('[Meta OAuth] GET callback:', { hasCode: !!code, hasState: !!state, error, errorReason });
 
       if (error) {
-        console.error('[Meta OAuth] Authorization denied:', error, errorReason);
         const redirectUrl = 'https://supremeempreendimentos.com/#/super-admin?tab=omnichat&error=auth_denied';
         return new Response(null, { status: 302, headers: { 'Location': redirectUrl } });
       }
 
-      // Parse state (expected: JSON with user_id and channel)
       if (state) {
         try {
           const stateData = JSON.parse(atob(state));
@@ -63,22 +54,17 @@ serve(async (req) => {
           channel = stateData.channel || 'instagram';
           redirect_uri = stateData.redirect_uri || null;
           stateAppId = stateData.app_id || null;
-          console.log('[Meta OAuth] State parsed:', { user_id, channel, stateAppId });
         } catch (e) {
-          // If state is just user_id string
           user_id = state;
           channel = 'instagram';
-          console.log('[Meta OAuth] State used as user_id:', user_id);
         }
       }
 
       if (!code || !user_id) {
-        console.error('[Meta OAuth] GET missing code or user_id');
         const redirectUrl = 'https://supremeempreendimentos.com/#/super-admin?tab=omnichat&error=missing_params';
         return new Response(null, { status: 302, headers: { 'Location': redirectUrl } });
       }
     } else {
-      // ========== POST — API call from frontend ==========
       const body = await req.json();
       code = body.code;
       user_id = body.user_id;
@@ -96,62 +82,111 @@ serve(async (req) => {
     const requestedChannel = channel || 'instagram';
     const callbackUri = redirect_uri || 'https://ypkmorgcpooygsvhcpvo.supabase.co/functions/v1/meta-oauth-callback';
     const isGetRequest = req.method === 'GET';
-
-    // Single app — same ID and secret for both channels
     const appId = stateAppId || META_APP_ID;
-    const appSecret = META_APP_SECRET;
 
-    console.log('[Meta OAuth] Using App ID:', appId, 'for channel:', requestedChannel);
+    console.log('[Meta OAuth] Channel:', requestedChannel, 'App ID:', appId);
 
-    // Step 1: Exchange code for access_token
-    console.log('[Meta OAuth] Exchanging code for token...');
+    // Step 1: Exchange code for short-lived token
     const tokenUrl = `https://graph.facebook.com/${GRAPH_API_VERSION}/oauth/access_token?` +
-      `client_id=${appId}` +
-      `&client_secret=${appSecret}` +
-      `&code=${encodeURIComponent(code)}` +
-      `&redirect_uri=${encodeURIComponent(callbackUri)}`;
+      `client_id=${appId}&client_secret=${META_APP_SECRET}&code=${encodeURIComponent(code)}&redirect_uri=${encodeURIComponent(callbackUri)}`;
 
     const tokenRes = await fetch(tokenUrl);
     const tokenData = await tokenRes.json();
 
     if (tokenData.error) {
       console.error('[Meta OAuth] Token exchange error:', tokenData.error);
+      if (isGetRequest) {
+        const redirectUrl = 'https://supremeempreendimentos.com/#/super-admin?tab=omnichat&error=token_exchange';
+        return new Response(null, { status: 302, headers: { 'Location': redirectUrl } });
+      }
       return new Response(JSON.stringify({ error: 'Token exchange failed', details: tokenData.error }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     const accessToken = tokenData.access_token;
-    console.log('[Meta OAuth] Token obtained successfully');
+    console.log('[Meta OAuth] Token obtained');
+
+    // Step 2: Exchange for long-lived token
+    let longLivedToken = accessToken;
+    try {
+      const llRes = await fetch(
+        `https://graph.facebook.com/${GRAPH_API_VERSION}/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${META_APP_SECRET}&fb_exchange_token=${accessToken}`
+      );
+      const llData = await llRes.json();
+      if (llData.access_token) {
+        longLivedToken = llData.access_token;
+        console.log('[Meta OAuth] Long-lived token obtained');
+      }
+    } catch (e) {
+      console.log('[Meta OAuth] Long-lived token exchange failed, using short-lived');
+    }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const connections: any[] = [];
 
     // ========== WHATSAPP ==========
     if (requestedChannel === 'whatsapp' || requestedChannel === 'both') {
-      console.log('[Meta OAuth] Fetching WhatsApp Business Account data...');
+      console.log('[Meta OAuth] Fetching WhatsApp data...');
 
-      const wabaListRes = await fetch(
-        `https://graph.facebook.com/${GRAPH_API_VERSION}/me/whatsapp_business_accounts?fields=id,name,phone_numbers{id,display_phone_number,verified_name}&access_token=${accessToken}`
-      );
-      const wabaListData = await wabaListRes.json();
-      console.log('[Meta OAuth] WABA data:', JSON.stringify(wabaListData));
-
+      // Try via me/businesses first to get WABA
       let wabaId: string | null = null;
       let phoneNumberId: string | null = null;
       let phoneDisplay: string | null = null;
       let waAccountName: string | null = null;
 
-      if (wabaListData.data && wabaListData.data.length > 0) {
-        const waba = wabaListData.data[0];
-        wabaId = waba.id;
-        waAccountName = waba.name || null;
+      // Method 1: Direct WABA endpoint
+      try {
+        const wabaRes = await fetch(
+          `https://graph.facebook.com/${GRAPH_API_VERSION}/me/whatsapp_business_accounts?fields=id,name,phone_numbers{id,display_phone_number,verified_name}&access_token=${longLivedToken}`
+        );
+        const wabaData = await wabaRes.json();
+        console.log('[Meta OAuth] WABA direct:', JSON.stringify(wabaData));
 
-        if (waba.phone_numbers?.data && waba.phone_numbers.data.length > 0) {
-          const phone = waba.phone_numbers.data[0];
-          phoneNumberId = phone.id;
-          phoneDisplay = phone.display_phone_number;
+        if (wabaData.data?.length > 0) {
+          const waba = wabaData.data[0];
+          wabaId = waba.id;
+          waAccountName = waba.name || null;
+          if (waba.phone_numbers?.data?.length > 0) {
+            phoneNumberId = waba.phone_numbers.data[0].id;
+            phoneDisplay = waba.phone_numbers.data[0].display_phone_number;
+          }
+        }
+      } catch (e) {
+        console.log('[Meta OAuth] WABA direct failed:', e);
+      }
+
+      // Method 2: Via business accounts
+      if (!wabaId) {
+        try {
+          const bizRes = await fetch(
+            `https://graph.facebook.com/${GRAPH_API_VERSION}/me/businesses?fields=id,name&access_token=${longLivedToken}`
+          );
+          const bizData = await bizRes.json();
+          console.log('[Meta OAuth] Businesses:', JSON.stringify(bizData));
+
+          if (bizData.data?.length > 0) {
+            for (const biz of bizData.data) {
+              const wabaListRes = await fetch(
+                `https://graph.facebook.com/${GRAPH_API_VERSION}/${biz.id}/owned_whatsapp_business_accounts?fields=id,name,phone_numbers{id,display_phone_number,verified_name}&access_token=${longLivedToken}`
+              );
+              const wabaListData = await wabaListRes.json();
+              console.log('[Meta OAuth] Biz', biz.id, 'WABAs:', JSON.stringify(wabaListData));
+
+              if (wabaListData.data?.length > 0) {
+                const waba = wabaListData.data[0];
+                wabaId = waba.id;
+                waAccountName = waba.name || biz.name;
+                if (waba.phone_numbers?.data?.length > 0) {
+                  phoneNumberId = waba.phone_numbers.data[0].id;
+                  phoneDisplay = waba.phone_numbers.data[0].display_phone_number;
+                }
+                break;
+              }
+            }
+          }
+        } catch (e) {
+          console.log('[Meta OAuth] Biz WABA lookup failed:', e);
         }
       }
 
@@ -159,58 +194,126 @@ serve(async (req) => {
         const waConnection = await upsertConnection(supabase, {
           user_id,
           channel_type: 'whatsapp',
-          access_token_encrypted: accessToken,
+          access_token_encrypted: longLivedToken,
           phone_number_id: phoneNumberId,
           meta_business_id: wabaId,
           account_name: waAccountName,
           status: 'connected',
         });
-
         connections.push({
-          id: waConnection.id,
-          channel_type: 'whatsapp',
-          account_name: waAccountName,
-          phone_number_id: phoneNumberId,
-          phone_display: phoneDisplay,
-          waba_id: wabaId,
-          status: 'connected',
+          id: waConnection.id, channel_type: 'whatsapp', account_name: waAccountName,
+          phone_number_id: phoneNumberId, phone_display: phoneDisplay, waba_id: wabaId, status: 'connected',
         });
+      } else {
+        console.log('[Meta OAuth] No WhatsApp Business Account found');
       }
     }
 
     // ========== INSTAGRAM ==========
     if (requestedChannel === 'instagram' || requestedChannel === 'both') {
-      console.log('[Meta OAuth] Fetching Instagram Business Account data...');
-
-      // First get user's Facebook pages
-      const pagesRes = await fetch(
-        `https://graph.facebook.com/${GRAPH_API_VERSION}/me/accounts?fields=id,name,instagram_business_account{id,name,username,profile_picture_url}&access_token=${accessToken}`
-      );
-      const pagesData = await pagesRes.json();
-      console.log('[Meta OAuth] Pages data:', JSON.stringify(pagesData));
+      console.log('[Meta OAuth] Fetching Instagram data...');
 
       let igAccountId: string | null = null;
       let igAccountName: string | null = null;
       let pageId: string | null = null;
       let pageAccessToken: string | null = null;
 
-      if (pagesData.data && pagesData.data.length > 0) {
+      // Method 1: Get all pages and check for instagram_business_account
+      const pagesRes = await fetch(
+        `https://graph.facebook.com/${GRAPH_API_VERSION}/me/accounts?fields=id,name,access_token,instagram_business_account{id,name,username,profile_picture_url}&access_token=${longLivedToken}`
+      );
+      const pagesData = await pagesRes.json();
+      console.log('[Meta OAuth] Pages:', JSON.stringify(pagesData));
+
+      if (pagesData.data?.length > 0) {
         for (const page of pagesData.data) {
           if (page.instagram_business_account) {
             igAccountId = page.instagram_business_account.id;
             igAccountName = page.instagram_business_account.name || page.instagram_business_account.username || page.name;
             pageId = page.id;
-
-            // Get long-lived page access token for this page
-            const pageTokenRes = await fetch(
-              `https://graph.facebook.com/${GRAPH_API_VERSION}/${page.id}?fields=access_token&access_token=${accessToken}`
-            );
-            const pageTokenData = await pageTokenRes.json();
-            pageAccessToken = pageTokenData.access_token || accessToken;
-
-            console.log('[Meta OAuth] Found IG Business Account:', igAccountId, igAccountName);
-            break; // Use first page with IG account
+            pageAccessToken = page.access_token || longLivedToken;
+            console.log('[Meta OAuth] Found IG via page:', igAccountId, igAccountName);
+            break;
           }
+        }
+
+        // Method 2: If no page has IG linked, try each page individually
+        if (!igAccountId) {
+          console.log('[Meta OAuth] No IG on pages directly, trying individual page lookups...');
+          for (const page of pagesData.data) {
+            try {
+              const pageIgRes = await fetch(
+                `https://graph.facebook.com/${GRAPH_API_VERSION}/${page.id}?fields=instagram_business_account{id,name,username}&access_token=${page.access_token || longLivedToken}`
+              );
+              const pageIgData = await pageIgRes.json();
+              console.log('[Meta OAuth] Page', page.id, 'IG check:', JSON.stringify(pageIgData));
+              if (pageIgData.instagram_business_account) {
+                igAccountId = pageIgData.instagram_business_account.id;
+                igAccountName = pageIgData.instagram_business_account.name || pageIgData.instagram_business_account.username || page.name;
+                pageId = page.id;
+                pageAccessToken = page.access_token || longLivedToken;
+                console.log('[Meta OAuth] Found IG via individual page lookup:', igAccountId);
+                break;
+              }
+            } catch (e) {
+              console.log('[Meta OAuth] Page IG lookup failed for', page.id);
+            }
+          }
+        }
+      }
+
+      // Method 3: Try via business accounts - owned Instagram accounts
+      if (!igAccountId) {
+        console.log('[Meta OAuth] Trying via business accounts...');
+        try {
+          const bizRes = await fetch(
+            `https://graph.facebook.com/${GRAPH_API_VERSION}/me/businesses?fields=id,name&access_token=${longLivedToken}`
+          );
+          const bizData = await bizRes.json();
+          console.log('[Meta OAuth] Businesses for IG:', JSON.stringify(bizData));
+
+          if (bizData.data?.length > 0) {
+            for (const biz of bizData.data) {
+              // Get owned Instagram accounts from business
+              const igListRes = await fetch(
+                `https://graph.facebook.com/${GRAPH_API_VERSION}/${biz.id}/owned_instagram_accounts?fields=id,name,username,profile_picture_url&access_token=${longLivedToken}`
+              );
+              const igListData = await igListRes.json();
+              console.log('[Meta OAuth] Biz', biz.id, 'IG accounts:', JSON.stringify(igListData));
+
+              if (igListData.data?.length > 0) {
+                igAccountId = igListData.data[0].id;
+                igAccountName = igListData.data[0].name || igListData.data[0].username;
+                
+                // Now find the page connected to this IG account
+                const bizPagesRes = await fetch(
+                  `https://graph.facebook.com/${GRAPH_API_VERSION}/${biz.id}/owned_pages?fields=id,name,access_token,instagram_business_account{id}&access_token=${longLivedToken}`
+                );
+                const bizPagesData = await bizPagesRes.json();
+                console.log('[Meta OAuth] Biz pages:', JSON.stringify(bizPagesData));
+
+                if (bizPagesData.data?.length > 0) {
+                  for (const bp of bizPagesData.data) {
+                    if (bp.instagram_business_account?.id === igAccountId) {
+                      pageId = bp.id;
+                      pageAccessToken = bp.access_token || longLivedToken;
+                      console.log('[Meta OAuth] Found matching page for IG:', pageId);
+                      break;
+                    }
+                  }
+                  // If no specific match, use first page with access token
+                  if (!pageId && bizPagesData.data[0]) {
+                    pageId = bizPagesData.data[0].id;
+                    pageAccessToken = bizPagesData.data[0].access_token || longLivedToken;
+                    console.log('[Meta OAuth] Using first biz page as fallback:', pageId);
+                  }
+                }
+                break;
+              }
+            }
+          }
+        } catch (e) {
+          console.log('[Meta OAuth] Business IG lookup failed:', e);
         }
       }
 
@@ -224,50 +327,40 @@ serve(async (req) => {
           account_name: igAccountName,
           status: 'connected',
         });
-
         connections.push({
-          id: igConnection.id,
-          channel_type: 'instagram',
-          account_name: igAccountName,
-          instagram_id: igAccountId,
-          page_id: pageId,
-          status: 'connected',
+          id: igConnection.id, channel_type: 'instagram', account_name: igAccountName,
+          instagram_id: igAccountId, page_id: pageId, status: 'connected',
         });
       } else {
-        console.log('[Meta OAuth] No Instagram Business Account found on any page');
+        console.log('[Meta OAuth] No Instagram Business Account found after all methods');
+        console.log('[Meta OAuth] IMPORTANT: Make sure the Facebook Page with the IG account is selected during OAuth authorization');
       }
     }
 
     if (connections.length === 0) {
+      const errorMsg = requestedChannel === 'instagram'
+        ? 'Nenhuma conta Instagram Business encontrada. Certifique-se de selecionar TODAS as Páginas do Facebook durante a autorização, especialmente a página vinculada à sua conta Instagram Business.'
+        : 'Nenhuma conta business encontrada. Certifique-se de ter uma conta WhatsApp Business ou Instagram Business vinculada.';
+      
       if (isGetRequest) {
-        const redirectUrl = 'https://supremeempreendimentos.com/#/super-admin?tab=omnichat&error=no_accounts';
+        const redirectUrl = `https://supremeempreendimentos.com/#/super-admin?tab=omnichat&error=no_accounts`;
         return new Response(null, { status: 302, headers: { 'Location': redirectUrl } });
       }
-      return new Response(JSON.stringify({ 
-        error: 'No accounts found', 
-        message: 'Nenhuma conta business foi encontrada. Certifique-se de ter uma conta WhatsApp Business ou Instagram Business vinculada.' 
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      return new Response(JSON.stringify({ error: 'No accounts found', message: errorMsg }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    console.log('[Meta OAuth] Connections saved successfully:', connections.length);
+    console.log('[Meta OAuth] Success! Connections:', connections.length);
 
-    // For GET requests (browser redirect from Meta), redirect back to admin panel
     if (isGetRequest) {
       const channelNames = connections.map((c: any) => c.channel_type).join(',');
       const redirectUrl = `https://supremeempreendimentos.com/#/super-admin?tab=omnichat&success=true&channels=${channelNames}`;
       return new Response(null, { status: 302, headers: { 'Location': redirectUrl } });
     }
 
-    return new Response(JSON.stringify({
-      success: true,
-      connections,
-      connection: connections[0],
-    }), {
-      status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    return new Response(JSON.stringify({ success: true, connections, connection: connections[0] }), {
+      status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
@@ -277,13 +370,11 @@ serve(async (req) => {
       return new Response(null, { status: 302, headers: { 'Location': redirectUrl } });
     }
     return new Response(JSON.stringify({ error: 'Internal server error', message: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 });
 
-// Helper: upsert a connection record
 async function upsertConnection(supabase: any, data: any) {
   const { data: existing } = await supabase
     .from('meta_channel_connections')
@@ -300,24 +391,14 @@ async function upsertConnection(supabase: any, data: any) {
 
   let result;
   if (existing) {
-    result = await supabase
-      .from('meta_channel_connections')
-      .update(connectionData)
-      .eq('id', existing.id)
-      .select()
-      .single();
+    result = await supabase.from('meta_channel_connections').update(connectionData).eq('id', existing.id).select().single();
   } else {
-    result = await supabase
-      .from('meta_channel_connections')
-      .insert(connectionData)
-      .select()
-      .single();
+    result = await supabase.from('meta_channel_connections').insert(connectionData).select().single();
   }
 
   if (result.error) {
-    console.error(`[Meta OAuth] DB save error (${data.channel_type}):`, result.error);
-    throw new Error(`Failed to save ${data.channel_type} connection: ${result.error.message}`);
+    console.error(`[Meta OAuth] DB error (${data.channel_type}):`, result.error);
+    throw new Error(`Failed to save ${data.channel_type}: ${result.error.message}`);
   }
-
   return result.data;
 }
