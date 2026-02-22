@@ -32,6 +32,7 @@ serve(async (req) => {
     let redirect_uri: string | null = null;
     let channel: string | null = null;
     let stateAppId: string | null = null;
+    let clientOrigin: string = 'https://supremeempreendimentos.com';
 
     if (req.method === 'GET') {
       const url = new URL(req.url);
@@ -42,11 +43,6 @@ serve(async (req) => {
 
       console.log('[Meta OAuth] GET callback:', { hasCode: !!code, hasState: !!state, error, errorReason });
 
-      if (error) {
-        const redirectUrl = 'https://supremeempreendimentos.com/#/super-admin?tab=omnichat&error=auth_denied';
-        return new Response(null, { status: 302, headers: { 'Location': redirectUrl } });
-      }
-
       if (state) {
         try {
           const stateData = JSON.parse(atob(state));
@@ -54,14 +50,22 @@ serve(async (req) => {
           channel = stateData.channel || 'instagram';
           redirect_uri = stateData.redirect_uri || null;
           stateAppId = stateData.app_id || null;
+          clientOrigin = stateData.origin || clientOrigin;
         } catch (e) {
           user_id = state;
           channel = 'instagram';
         }
       }
 
+      console.log('[Meta OAuth] Client origin:', clientOrigin);
+
+      if (error) {
+        const redirectUrl = `${clientOrigin}/#/super-admin?tab=omnichat&error=auth_denied`;
+        return new Response(null, { status: 302, headers: { 'Location': redirectUrl } });
+      }
+
       if (!code || !user_id) {
-        const redirectUrl = 'https://supremeempreendimentos.com/#/super-admin?tab=omnichat&error=missing_params';
+        const redirectUrl = `${clientOrigin}/#/super-admin?tab=omnichat&error=missing_params`;
         return new Response(null, { status: 302, headers: { 'Location': redirectUrl } });
       }
     } else {
@@ -96,7 +100,7 @@ serve(async (req) => {
     if (tokenData.error) {
       console.error('[Meta OAuth] Token exchange error:', tokenData.error);
       if (isGetRequest) {
-        const redirectUrl = 'https://supremeempreendimentos.com/#/super-admin?tab=omnichat&error=token_exchange';
+        const redirectUrl = `${clientOrigin}/#/super-admin?tab=omnichat&error=token_exchange`;
         return new Response(null, { status: 302, headers: { 'Location': redirectUrl } });
       }
       return new Response(JSON.stringify({ error: 'Token exchange failed', details: tokenData.error }), {
@@ -343,7 +347,7 @@ serve(async (req) => {
         : 'Nenhuma conta business encontrada. Certifique-se de ter uma conta WhatsApp Business ou Instagram Business vinculada.';
       
       if (isGetRequest) {
-        const redirectUrl = `https://supremeempreendimentos.com/#/super-admin?tab=omnichat&error=no_accounts`;
+        const redirectUrl = `${clientOrigin}/#/super-admin?tab=omnichat&error=no_accounts`;
         return new Response(null, { status: 302, headers: { 'Location': redirectUrl } });
       }
       return new Response(JSON.stringify({ error: 'No accounts found', message: errorMsg }), {
@@ -355,7 +359,7 @@ serve(async (req) => {
 
     if (isGetRequest) {
       const channelNames = connections.map((c: any) => c.channel_type).join(',');
-      const redirectUrl = `https://supremeempreendimentos.com/#/super-admin?tab=omnichat&success=true&channels=${channelNames}`;
+      const redirectUrl = `${clientOrigin}/#/super-admin?tab=omnichat&success=true&channels=${channelNames}`;
       return new Response(null, { status: 302, headers: { 'Location': redirectUrl } });
     }
 
@@ -365,8 +369,20 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('[Meta OAuth] Error:', error);
+    // Try to extract origin from state for error redirect
+    let errorOrigin = 'https://supremeempreendimentos.com';
+    try {
+      if (req.method === 'GET') {
+        const url = new URL(req.url);
+        const state = url.searchParams.get('state');
+        if (state) {
+          const stateData = JSON.parse(atob(state));
+          errorOrigin = stateData.origin || errorOrigin;
+        }
+      }
+    } catch (_) {}
     if (req.method === 'GET') {
-      const redirectUrl = 'https://supremeempreendimentos.com/#/super-admin?tab=omnichat&error=internal';
+      const redirectUrl = `${errorOrigin}/#/super-admin?tab=omnichat&error=internal`;
       return new Response(null, { status: 302, headers: { 'Location': redirectUrl } });
     }
     return new Response(JSON.stringify({ error: 'Internal server error', message: error.message }), {
