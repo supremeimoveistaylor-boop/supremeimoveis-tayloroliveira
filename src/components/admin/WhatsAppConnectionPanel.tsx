@@ -129,15 +129,17 @@ export const WhatsAppConnectionPanel = () => {
 
   const handleConnectWhatsApp = () => {
     if (!user) return;
-    const state = btoa(JSON.stringify({ user_id: user.id, channel: 'whatsapp', redirect_uri: META_REDIRECT_URI }));
-    const oauthUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${META_APP_ID}&redirect_uri=${encodeURIComponent(META_REDIRECT_URI)}&scope=${WHATSAPP_SCOPES}&response_type=code&state=${state}`;
+    const origin = window.location.origin;
+    const state = btoa(JSON.stringify({ user_id: user.id, channel: 'whatsapp', redirect_uri: META_REDIRECT_URI, app_id: META_APP_ID, origin }));
+    const oauthUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${META_APP_ID}&redirect_uri=${encodeURIComponent(META_REDIRECT_URI)}&scope=${WHATSAPP_SCOPES}&response_type=code&state=${state}&auth_type=rerequest`;
     window.location.href = oauthUrl;
   };
 
   const handleConnectInstagram = () => {
     if (!user) return;
-    const state = btoa(JSON.stringify({ user_id: user.id, channel: 'instagram', redirect_uri: META_REDIRECT_URI }));
-    const oauthUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${META_APP_ID}&redirect_uri=${encodeURIComponent(META_REDIRECT_URI)}&scope=${INSTAGRAM_SCOPES}&response_type=code&state=${state}`;
+    const origin = window.location.origin;
+    const state = btoa(JSON.stringify({ user_id: user.id, channel: 'instagram', redirect_uri: META_REDIRECT_URI, app_id: META_APP_ID, origin }));
+    const oauthUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${META_APP_ID}&redirect_uri=${encodeURIComponent(META_REDIRECT_URI)}&scope=${INSTAGRAM_SCOPES}&response_type=code&state=${state}&auth_type=rerequest`;
     window.location.href = oauthUrl;
   };
 
