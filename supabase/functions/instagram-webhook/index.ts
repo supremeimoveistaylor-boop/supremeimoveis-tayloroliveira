@@ -16,49 +16,34 @@ serve(async (req) => {
   const rawSecret = Deno.env.get('INSTAGRAM_WEBHOOK_VERIFY_TOKEN') || '';
   const VERIFY_TOKEN = rawSecret.trim();
 
-  // ========== GET — Webhook Verification (Meta hub.challenge) ==========
+  // GET — Webhook Verification
   if (req.method === 'GET') {
     const url = new URL(req.url);
     const mode = url.searchParams.get('hub.mode');
     const token = (url.searchParams.get('hub.verify_token') || '').trim();
     const challenge = url.searchParams.get('hub.challenge') || '';
 
-    console.log('[Instagram Webhook] GET verification:', {
-      mode,
-      tokenLength: token.length,
-      secretLength: VERIFY_TOKEN.length,
-      secretFirst10: VERIFY_TOKEN.substring(0, 10),
-      tokenFirst10: token.substring(0, 10),
-      secretConfigured: VERIFY_TOKEN.length > 0,
-      match: token === VERIFY_TOKEN,
-      challenge,
-    });
+    console.log('[Instagram Webhook] GET verification:', { mode, match: token === VERIFY_TOKEN, challenge });
 
     if (!VERIFY_TOKEN) {
-      console.error('[Instagram Webhook] INSTAGRAM_WEBHOOK_VERIFY_TOKEN not configured');
       return new Response('Server configuration error', { status: 500 });
     }
 
     if (mode === 'subscribe' && token === VERIFY_TOKEN) {
-      console.log('[Instagram Webhook] ✅ Verification successful, returning challenge');
-      return new Response(challenge, {
-        status: 200,
-        headers: { 'Content-Type': 'text/plain' },
-      });
+      console.log('[Instagram Webhook] ✅ Verification successful');
+      return new Response(challenge, { status: 200, headers: { 'Content-Type': 'text/plain' } });
     }
 
-    console.log('[Instagram Webhook] ❌ Verification failed - token mismatch');
     return new Response('Forbidden', { status: 403 });
   }
 
-  // ========== POST — Receive Instagram Events ==========
+  // POST — Receive Instagram Events
   if (req.method === 'POST') {
     try {
       const body = await req.json();
       console.log('[Instagram Webhook] Event received:', JSON.stringify(body, null, 2));
 
       if (body.object !== 'instagram') {
-        console.log('[Instagram Webhook] Ignoring non-instagram event:', body.object);
         return new Response('ok', { status: 200 });
       }
 
@@ -69,102 +54,182 @@ serve(async (req) => {
       const entries = body.entry || [];
 
       for (const entry of entries) {
-        const igUserId = entry.id; // The Instagram Business Account ID receiving the event
+        const igUserId = entry.id;
 
-        // Find the tenant connection for this Instagram account
+        // Find tenant connection
         const { data: connection, error: connErr } = await supabase
           .from('meta_channel_connections')
-          .select('id, user_id, access_token_encrypted')
+          .select('id, user_id, access_token_encrypted, page_id')
           .eq('instagram_id', igUserId)
           .eq('channel_type', 'instagram')
           .eq('status', 'connected')
           .maybeSingle();
 
         if (connErr || !connection) {
-          console.error('[Instagram Webhook] No connection found for IG ID:', igUserId, connErr);
+          console.error('[Instagram Webhook] No connection for IG ID:', igUserId);
           continue;
         }
-
-        console.log('[Instagram Webhook] Matched tenant connection:', connection.id);
 
         // Process messaging events (DMs)
         const messaging = entry.messaging || [];
         for (const event of messaging) {
           const senderId = event.sender?.id;
           const recipientId = event.recipient?.id;
-          const timestamp = event.timestamp;
+
+          // Skip messages from ourselves
+          if (senderId === igUserId) continue;
 
           // Incoming message
           if (event.message) {
             const messageText = event.message.text || '';
             const messageId = event.message.mid;
             const attachments = event.message.attachments || [];
+            const mediaUrl = attachments[0]?.payload?.url || null;
 
-            console.log('[Instagram Webhook] 📩 DM received:', {
-              from: senderId,
-              to: recipientId,
-              text: messageText,
-              messageId,
-              hasAttachments: attachments.length > 0,
+            console.log('[Instagram Webhook] 📩 DM from:', senderId, 'text:', messageText);
+
+            // Save to channel_messages (legacy)
+            await supabase.from('channel_messages').insert({
+              connection_id: connection.id,
+              user_id: connection.user_id,
+              direction: 'inbound',
+              message_type: attachments.length > 0 ? 'media' : 'text',
+              content: messageText,
+              contact_instagram_id: senderId,
+              meta_message_id: messageId,
+              media_url: mediaUrl,
+              status: 'received',
             });
 
-            // Save to channel_messages
-            const { error: insertErr } = await supabase
-              .from('channel_messages')
-              .insert({
-                connection_id: connection.id,
-                user_id: connection.user_id,
-                direction: 'inbound',
-                message_type: attachments.length > 0 ? 'media' : 'text',
-                content: messageText,
-                contact_instagram_id: senderId,
-                meta_message_id: messageId,
-                media_url: attachments[0]?.payload?.url || null,
-                status: 'received',
-              });
+            // Create or update omnichat conversation
+            const { data: existingConv } = await supabase
+              .from('omnichat_conversations')
+              .select('id, unread_count')
+              .eq('user_id', connection.user_id)
+              .eq('channel', 'instagram')
+              .eq('external_contact_id', senderId)
+              .maybeSingle();
 
-            if (insertErr) {
-              console.error('[Instagram Webhook] Error saving message:', insertErr);
+            let convId: string;
+
+            if (existingConv) {
+              convId = existingConv.id;
+              await supabase.from('omnichat_conversations').update({
+                last_message_at: new Date().toISOString(),
+                last_message_preview: messageText.substring(0, 100),
+                unread_count: (existingConv.unread_count || 0) + 1,
+                status: 'open',
+              }).eq('id', convId);
             } else {
-              console.log('[Instagram Webhook] ✅ Message saved successfully');
+              // Check if any agent is online
+              const { data: onlineAgents } = await supabase
+                .from('agent_status')
+                .select('user_id')
+                .eq('status', 'online')
+                .limit(1);
+
+              const botActive = !onlineAgents || onlineAgents.length === 0;
+
+              const { data: newConv } = await supabase
+                .from('omnichat_conversations')
+                .insert({
+                  user_id: connection.user_id,
+                  channel: 'instagram',
+                  external_contact_id: senderId,
+                  connection_id: connection.id,
+                  bot_active: botActive,
+                  last_message_at: new Date().toISOString(),
+                  last_message_preview: messageText.substring(0, 100),
+                  unread_count: 1,
+                })
+                .select('id')
+                .single();
+
+              convId = newConv!.id;
+            }
+
+            // Save to omnichat_messages
+            await supabase.from('omnichat_messages').insert({
+              conversation_id: convId,
+              sender_type: 'client',
+              channel: 'instagram',
+              content: messageText,
+              media_url: mediaUrl,
+              meta_message_id: messageId,
+            });
+
+            // If bot active, trigger AI reply
+            const { data: conv } = await supabase
+              .from('omnichat_conversations')
+              .select('bot_active')
+              .eq('id', convId)
+              .single();
+
+            if (conv?.bot_active && messageText) {
+              try {
+                const chatRes = await fetch(`${SUPABASE_URL}/functions/v1/real-estate-chat`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    message: messageText,
+                    skipLeadCreation: true,
+                    origin: 'instagram',
+                  }),
+                });
+                const chatData = await chatRes.json();
+                const aiReply = chatData?.reply || chatData?.response;
+
+                if (aiReply && connection.page_id) {
+                  // Send AI reply via Instagram
+                  const sendUrl = `https://graph.facebook.com/v19.0/${connection.page_id}/messages`;
+                  await fetch(sendUrl, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${connection.access_token_encrypted}`,
+                    },
+                    body: JSON.stringify({
+                      recipient: { id: senderId },
+                      message: { text: aiReply },
+                    }),
+                  });
+
+                  // Save bot message
+                  await supabase.from('omnichat_messages').insert({
+                    conversation_id: convId,
+                    sender_type: 'bot',
+                    channel: 'instagram',
+                    content: aiReply,
+                  });
+
+                  await supabase.from('omnichat_conversations').update({
+                    last_message_at: new Date().toISOString(),
+                    last_message_preview: aiReply.substring(0, 100),
+                  }).eq('id', convId);
+
+                  console.log('[Instagram Webhook] ✅ AI replied to', senderId);
+                }
+              } catch (aiErr) {
+                console.error('[Instagram Webhook] AI response error:', aiErr);
+              }
             }
 
             // Update last_activity_at on connection
-            await supabase
-              .from('meta_channel_connections')
+            await supabase.from('meta_channel_connections')
               .update({ last_activity_at: new Date().toISOString() })
               .eq('id', connection.id);
           }
 
-          // Message read event
+          // Read event
           if (event.read) {
-            console.log('[Instagram Webhook] Read event:', { senderId, watermark: event.read.watermark });
+            console.log('[Instagram Webhook] Read event:', senderId);
           }
-
-          // Echo/postback events
-          if (event.postback) {
-            console.log('[Instagram Webhook] Postback event:', { 
-              senderId, 
-              payload: event.postback.payload,
-              title: event.postback.title,
-            });
-          }
-        }
-
-        // Process changes (comments, mentions, etc.)
-        const changes = entry.changes || [];
-        for (const change of changes) {
-          console.log('[Instagram Webhook] Change event:', {
-            field: change.field,
-            value: JSON.stringify(change.value).substring(0, 200),
-          });
         }
       }
 
       return new Response('ok', { status: 200, headers: { 'Content-Type': 'text/plain' } });
     } catch (error) {
-      console.error('[Instagram Webhook] Error processing event:', error);
-      // Always return 200 to Meta to avoid retries
+      console.error('[Instagram Webhook] Error:', error);
       return new Response('ok', { status: 200, headers: { 'Content-Type': 'text/plain' } });
     }
   }
