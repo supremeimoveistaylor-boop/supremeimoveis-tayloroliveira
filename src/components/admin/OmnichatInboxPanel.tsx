@@ -10,7 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "@/hooks/use-toast";
 import {
   MessageSquare, Phone, Instagram, Send, Bot, User, Wifi, WifiOff,
-  ArrowRight, X, Clock, RefreshCw, Volume2, Image as ImageIcon
+  ArrowRight, X, Clock, RefreshCw, Volume2, Image as ImageIcon, LayoutGrid
 } from "lucide-react";
 
 interface Conversation {
@@ -236,6 +236,39 @@ export const OmnichatInboxPanel = () => {
     toast({ title: "Conversa encerrada" });
   };
 
+  // Move to CRM Kanban
+  const handleMoveToCRM = async () => {
+    if (!selectedConv) return;
+    try {
+      const newCard = {
+        titulo: selectedConv.contact_name || selectedConv.external_contact_id || 'Lead Omnichat',
+        cliente: selectedConv.contact_name || 'Não informado',
+        telefone: selectedConv.contact_phone || selectedConv.external_contact_id || null,
+        coluna: 'leads',
+        origem_lead: `Omnichat - ${selectedConv.channel}`,
+        lead_id: selectedConv.lead_id || null,
+        classificacao: 'morno',
+        prioridade: 'normal',
+        valor_estimado: 0,
+        lead_score: 0,
+        probabilidade_fechamento: 0,
+        historico: JSON.stringify([{
+          tipo: 'origem',
+          descricao: `Importado do Omnichat (${selectedConv.channel})`,
+          data: new Date().toISOString(),
+        }]),
+        notas: `Conversa ${selectedConv.channel} com ${messages.length} mensagens.`,
+      };
+
+      const { error } = await (supabase as any).from('crm_cards').insert(newCard);
+      if (error) throw error;
+
+      toast({ title: '✅ Lead movido para o CRM Kanban', description: `Card criado na coluna "Leads".` });
+    } catch (err: any) {
+      toast({ title: 'Erro ao mover para CRM', description: err.message, variant: 'destructive' });
+    }
+  };
+
   const filtered = conversations.filter(c => channelFilter === "all" || c.channel === channelFilter);
   const totalUnread = conversations.reduce((sum, c) => sum + c.unread_count, 0);
 
@@ -456,6 +489,10 @@ export const OmnichatInboxPanel = () => {
               </div>
 
               <div className="space-y-2 pt-2 border-t border-slate-700">
+                <Button size="sm" className="w-full bg-purple-600 hover:bg-purple-700 text-white" onClick={handleMoveToCRM}>
+                  <LayoutGrid className="w-4 h-4 mr-2" />
+                  Mover para CRM Kanban
+                </Button>
                 {!selectedConv.assigned_to && selectedConv.status === "open" && (
                   <Button size="sm" className="w-full bg-amber-500 hover:bg-amber-600 text-slate-900" onClick={handleAssume}>
                     <ArrowRight className="w-4 h-4 mr-2" />
