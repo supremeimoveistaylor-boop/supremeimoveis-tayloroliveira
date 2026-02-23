@@ -18,6 +18,7 @@ import { VisitSchedulingPanel } from "@/components/admin/VisitSchedulingPanel";
 import { CRMKanbanPanel } from "@/components/admin/crm";
 import { FinancialControlPanel } from "@/components/admin/financial";
 import { WhatsAppConnectionPanel } from "@/components/admin/WhatsAppConnectionPanel";
+import { OmnichatInboxPanel } from "@/components/admin/OmnichatInboxPanel";
 import { FollowupAlertsPanel } from "@/components/admin/FollowupAlertsPanel";
 import { ChatPerformancePanel } from "@/components/admin/ChatPerformancePanel";
 import { SEOPanel } from "@/components/admin/seo";
@@ -516,8 +517,8 @@ const SuperAdminDashboard = () => {
               Financeiro
             </TabsTrigger>
             <TabsTrigger value="omnichat" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
-              <Phone className="w-4 h-4 mr-2" />
-              Omnichat
+              <MessageSquare className="w-4 h-4 mr-2" />
+              💬 Omnichat
             </TabsTrigger>
             <TabsTrigger value="followup-alerts" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
               <BellRing className="w-4 h-4 mr-2" />
@@ -636,7 +637,7 @@ const SuperAdminDashboard = () => {
 
           {/* Omnichat Tab */}
           <TabsContent value="omnichat" className="space-y-4">
-            <WhatsAppConnectionPanel />
+            <OmnichatInboxPanel />
           </TabsContent>
 
           {/* Follow-up Alerts Tab */}

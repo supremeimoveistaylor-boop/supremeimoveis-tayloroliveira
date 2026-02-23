@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      agent_status: {
+        Row: {
+          created_at: string
+          id: string
+          last_seen: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_seen?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_seen?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       brokers: {
         Row: {
           active: boolean
@@ -912,6 +939,122 @@ export type Database = {
           webhook_verify_token?: string
         }
         Relationships: []
+      }
+      omnichat_conversations: {
+        Row: {
+          assigned_to: string | null
+          bot_active: boolean
+          channel: string
+          connection_id: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          created_at: string
+          external_contact_id: string
+          id: string
+          last_message_at: string | null
+          last_message_preview: string | null
+          lead_id: string | null
+          status: string
+          unread_count: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          bot_active?: boolean
+          channel: string
+          connection_id?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          external_contact_id: string
+          id?: string
+          last_message_at?: string | null
+          last_message_preview?: string | null
+          lead_id?: string | null
+          status?: string
+          unread_count?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assigned_to?: string | null
+          bot_active?: boolean
+          channel?: string
+          connection_id?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          external_contact_id?: string
+          id?: string
+          last_message_at?: string | null
+          last_message_preview?: string | null
+          lead_id?: string | null
+          status?: string
+          unread_count?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "omnichat_conversations_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "meta_channel_connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "omnichat_conversations_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      omnichat_messages: {
+        Row: {
+          channel: string
+          content: string | null
+          conversation_id: string
+          created_at: string
+          id: string
+          media_url: string | null
+          meta_message_id: string | null
+          sender_type: string
+          status: string | null
+        }
+        Insert: {
+          channel: string
+          content?: string | null
+          conversation_id: string
+          created_at?: string
+          id?: string
+          media_url?: string | null
+          meta_message_id?: string | null
+          sender_type: string
+          status?: string | null
+        }
+        Update: {
+          channel?: string
+          content?: string | null
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          media_url?: string | null
+          meta_message_id?: string | null
+          sender_type?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "omnichat_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "omnichat_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
