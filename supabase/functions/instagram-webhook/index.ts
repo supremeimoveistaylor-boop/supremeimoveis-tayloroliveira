@@ -79,6 +79,31 @@ serve(async (req) => {
           // Skip messages from ourselves
           if (senderId === igUserId) continue;
 
+          // Fetch Instagram user profile (non-blocking)
+          let displayName: string | null = null;
+          try {
+            const profileUrl = `https://graph.facebook.com/v19.0/${senderId}?fields=username,name&access_token=${connection.access_token_encrypted}`;
+            const profileRes = await fetch(profileUrl);
+            if (profileRes.ok) {
+              const profile = await profileRes.json();
+              if (profile.username) {
+                displayName = `@${profile.username}`;
+              } else if (profile.name) {
+                displayName = profile.name;
+              }
+              console.log('[Instagram Webhook] 👤 Profile fetched:', displayName);
+            } else {
+              console.warn('[Instagram Webhook] Profile fetch failed:', profileRes.status);
+            }
+          } catch (profileErr) {
+            console.warn('[Instagram Webhook] Profile fetch error (non-blocking):', profileErr);
+          }
+          // Fallback if no name resolved
+          if (!displayName) {
+            const lastDigits = senderId?.slice(-4) || '0000';
+            displayName = `Instagram User #${lastDigits}`;
+          }
+
           // Incoming message
           if (event.message) {
             const messageText = event.message.text || '';
@@ -86,7 +111,7 @@ serve(async (req) => {
             const attachments = event.message.attachments || [];
             const mediaUrl = attachments[0]?.payload?.url || null;
 
-            console.log('[Instagram Webhook] 📩 DM from:', senderId, 'text:', messageText);
+            console.log('[Instagram Webhook] 📩 DM from:', displayName, '(', senderId, ') text:', messageText);
 
             // Save to channel_messages (legacy)
             await supabase.from('channel_messages').insert({
@@ -96,6 +121,7 @@ serve(async (req) => {
               message_type: attachments.length > 0 ? 'media' : 'text',
               content: messageText,
               contact_instagram_id: senderId,
+              contact_name: displayName,
               meta_message_id: messageId,
               media_url: mediaUrl,
               status: 'received',
@@ -119,6 +145,7 @@ serve(async (req) => {
                 last_message_preview: messageText.substring(0, 100),
                 unread_count: (existingConv.unread_count || 0) + 1,
                 status: 'open',
+                contact_name: displayName,
               }).eq('id', convId);
             } else {
               // Check if any agent is online
@@ -136,6 +163,7 @@ serve(async (req) => {
                   user_id: connection.user_id,
                   channel: 'instagram',
                   external_contact_id: senderId,
+                  contact_name: displayName,
                   connection_id: connection.id,
                   bot_active: botActive,
                   last_message_at: new Date().toISOString(),
