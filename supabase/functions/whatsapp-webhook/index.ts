@@ -142,19 +142,20 @@ serve(async (req) => {
                     .single();
 
                   if (conv?.bot_active && messageText) {
-                    // Call real-estate-chat for AI response
+                    // Call dedicated WhatsApp AI module
                     try {
-                      const chatRes = await fetch(`${SUPABASE_URL}/functions/v1/real-estate-chat`, {
+                      const chatRes = await fetch(`${SUPABASE_URL}/functions/v1/whatsapp-ai-chat`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                           message: messageText,
-                          skipLeadCreation: true,
-                          origin: 'whatsapp',
+                          senderPhone,
+                          conversationId: convId,
+                          contactName,
                         }),
                       });
                       const chatData = await chatRes.json();
-                      const aiReply = chatData?.reply || chatData?.response;
+                      const aiReply = chatData?.reply;
 
                       if (aiReply) {
                         // Send AI reply via WhatsApp
