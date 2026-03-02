@@ -11,7 +11,7 @@ import { toast } from "@/hooks/use-toast";
 import {
   MessageSquare, Phone, Instagram, Send, Bot, User, Wifi, WifiOff,
   ArrowRight, X, Clock, RefreshCw, LayoutGrid, Search, PhoneCall,
-  Video, MoreVertical, Globe, Tag, Sparkles
+  Video, MoreVertical, Globe, Tag, Sparkles, Pencil, Check
 } from "lucide-react";
 
 interface Conversation {
@@ -96,6 +96,8 @@ export const OmnichatInboxPanel = () => {
   const [isOnline, setIsOnline] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editNameValue, setEditNameValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -248,6 +250,23 @@ export const OmnichatInboxPanel = () => {
       toast({ title: '✅ Lead movido para o CRM Kanban', description: 'Card criado na coluna "Leads".' });
     } catch (err: any) {
       toast({ title: 'Erro ao mover para CRM', description: err.message, variant: 'destructive' });
+    }
+  };
+
+  const handleSaveName = async () => {
+    if (!selectedConv || !editNameValue.trim()) return;
+    const newName = editNameValue.trim();
+    try {
+      await supabase.from("omnichat_conversations" as any).update({ contact_name: newName } as any).eq("id", selectedConv.id);
+      if (selectedConv.channel === "instagram" && selectedConv.external_contact_id) {
+        await supabase.from("channel_messages" as any).update({ contact_name: newName } as any).eq("contact_instagram_id", selectedConv.external_contact_id);
+      }
+      setSelectedConv(prev => prev ? { ...prev, contact_name: newName } : null);
+      setConversations(prev => prev.map(c => c.id === selectedConv.id ? { ...c, contact_name: newName } : c));
+      setIsEditingName(false);
+      toast({ title: "✅ Nome atualizado" });
+    } catch (err: any) {
+      toast({ title: "Erro ao salvar nome", description: err.message, variant: "destructive" });
     }
   };
 
@@ -519,7 +538,35 @@ export const OmnichatInboxPanel = () => {
                     {getInitials(selectedName)}
                   </AvatarFallback>
                 </Avatar>
-                <h3 className="text-sm font-bold text-foreground">{selectedName}</h3>
+                {isEditingName ? (
+                  <div className="flex items-center gap-1.5 w-full max-w-[200px]">
+                    <Input
+                      value={editNameValue}
+                      onChange={e => setEditNameValue(e.target.value)}
+                      className="h-8 text-sm text-center rounded-lg"
+                      autoFocus
+                      onKeyDown={e => e.key === "Enter" && handleSaveName()}
+                    />
+                    <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0 text-green-500" onClick={handleSaveName}>
+                      <Check className="w-4 h-4" />
+                    </Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0 text-muted-foreground" onClick={() => setIsEditingName(false)}>
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5">
+                    <h3 className="text-sm font-bold text-foreground">{selectedName}</h3>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                      onClick={() => { setEditNameValue(selectedConv.contact_name || selectedName); setIsEditingName(true); }}
+                    >
+                      <Pencil className="w-3 h-3" />
+                    </Button>
+                  </div>
+                )}
                 <p className="text-xs text-muted-foreground mt-0.5">{selectedConv.contact_phone || selectedConv.external_contact_id}</p>
                 <span className={`mt-2 text-[10px] px-2.5 py-1 rounded-full font-semibold text-white ${chCfg?.color}`}>
                   {chCfg?.label?.toUpperCase()}
