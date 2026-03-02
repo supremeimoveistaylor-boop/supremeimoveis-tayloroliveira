@@ -82,18 +82,41 @@ serve(async (req) => {
           // Fetch Instagram user profile (non-blocking)
           let displayName: string | null = null;
           try {
-            const profileUrl = `https://graph.facebook.com/v19.0/${senderId}?fields=username,name&access_token=${connection.access_token_encrypted}`;
-            const profileRes = await fetch(profileUrl);
-            if (profileRes.ok) {
-              const profile = await profileRes.json();
+            // Try Instagram Graph API first (correct endpoint for IGSIDs)
+            const igProfileUrl = `https://graph.instagram.com/v21.0/${senderId}?fields=name,username&access_token=${connection.access_token_encrypted}`;
+            console.log('[Instagram Webhook] Fetching IG profile for IGSID:', senderId);
+            const igProfileRes = await fetch(igProfileUrl);
+            
+            if (igProfileRes.ok) {
+              const profile = await igProfileRes.json();
+              console.log('[Instagram Webhook] IG profile response:', JSON.stringify(profile));
               if (profile.username) {
                 displayName = `@${profile.username}`;
               } else if (profile.name) {
                 displayName = profile.name;
               }
-              console.log('[Instagram Webhook] 👤 Profile fetched:', displayName);
             } else {
-              console.warn('[Instagram Webhook] Profile fetch failed:', profileRes.status);
+              const errText = await igProfileRes.text();
+              console.warn('[Instagram Webhook] IG profile fetch failed:', igProfileRes.status, errText);
+              
+              // Fallback: try Facebook Graph API
+              const fbProfileUrl = `https://graph.facebook.com/v21.0/${senderId}?fields=name,username,profile_pic&access_token=${connection.access_token_encrypted}`;
+              const fbProfileRes = await fetch(fbProfileUrl);
+              if (fbProfileRes.ok) {
+                const fbProfile = await fbProfileRes.json();
+                console.log('[Instagram Webhook] FB profile response:', JSON.stringify(fbProfile));
+                if (fbProfile.username) {
+                  displayName = `@${fbProfile.username}`;
+                } else if (fbProfile.name) {
+                  displayName = fbProfile.name;
+                }
+              } else {
+                console.warn('[Instagram Webhook] FB profile also failed:', fbProfileRes.status);
+              }
+            }
+            
+            if (displayName) {
+              console.log('[Instagram Webhook] 👤 Profile resolved:', displayName);
             }
           } catch (profileErr) {
             console.warn('[Instagram Webhook] Profile fetch error (non-blocking):', profileErr);
