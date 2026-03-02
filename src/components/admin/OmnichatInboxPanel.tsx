@@ -282,7 +282,7 @@ export const OmnichatInboxPanel = () => {
   const chCfg = selectedConv ? channelConfig[selectedConv.channel] : null;
 
   return (
-    <div className="h-[calc(100vh-280px)] min-h-[600px] flex flex-col gap-3">
+    <div className="h-[calc(100vh-280px)] min-h-[600px] flex flex-col gap-3 flex-1">
       {/* ═══ Top Bar ═══ */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3">
