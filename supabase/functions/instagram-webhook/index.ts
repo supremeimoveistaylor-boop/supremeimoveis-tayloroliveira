@@ -81,11 +81,14 @@ serve(async (req) => {
 
           // Fetch Instagram user profile (non-blocking)
           let displayName: string | null = null;
+          const pageToken = connection.access_token_encrypted;
           try {
-            // Try Instagram Graph API first (correct endpoint for IGSIDs)
-            const igProfileUrl = `https://graph.instagram.com/v21.0/${senderId}?fields=name,username&access_token=${connection.access_token_encrypted}`;
+            // Strategy 1: Instagram Graph API with Authorization header (avoids URL encoding issues)
             console.log('[Instagram Webhook] Fetching IG profile for IGSID:', senderId);
-            const igProfileRes = await fetch(igProfileUrl);
+            const igProfileRes = await fetch(
+              `https://graph.instagram.com/v21.0/${senderId}?fields=name,username,profile_pic`,
+              { headers: { 'Authorization': `Bearer ${pageToken}` } }
+            );
             
             if (igProfileRes.ok) {
               const profile = await igProfileRes.json();
@@ -99,9 +102,11 @@ serve(async (req) => {
               const errText = await igProfileRes.text();
               console.warn('[Instagram Webhook] IG profile fetch failed:', igProfileRes.status, errText);
               
-              // Fallback: try Facebook Graph API
-              const fbProfileUrl = `https://graph.facebook.com/v21.0/${senderId}?fields=name,username,profile_pic&access_token=${connection.access_token_encrypted}`;
-              const fbProfileRes = await fetch(fbProfileUrl);
+              // Strategy 2: Facebook Graph API with Authorization header
+              const fbProfileRes = await fetch(
+                `https://graph.facebook.com/v21.0/${senderId}?fields=name,username,profile_pic`,
+                { headers: { 'Authorization': `Bearer ${pageToken}` } }
+              );
               if (fbProfileRes.ok) {
                 const fbProfile = await fbProfileRes.json();
                 console.log('[Instagram Webhook] FB profile response:', JSON.stringify(fbProfile));
@@ -111,7 +116,33 @@ serve(async (req) => {
                   displayName = fbProfile.name;
                 }
               } else {
-                console.warn('[Instagram Webhook] FB profile also failed:', fbProfileRes.status);
+                const fbErr = await fbProfileRes.text();
+                console.warn('[Instagram Webhook] FB profile also failed:', fbProfileRes.status, fbErr);
+
+                // Strategy 3: Page conversations endpoint to find participant name
+                try {
+                  const convRes = await fetch(
+                    `https://graph.facebook.com/v21.0/${connection.page_id}/conversations?platform=instagram&fields=participants{name,username,id}&limit=50`,
+                    { headers: { 'Authorization': `Bearer ${pageToken}` } }
+                  );
+                  if (convRes.ok) {
+                    const convData = await convRes.json();
+                    for (const conv of (convData.data || [])) {
+                      for (const p of (conv.participants?.data || [])) {
+                        if (p.id === senderId) {
+                          displayName = p.username ? `@${p.username}` : p.name || null;
+                          break;
+                        }
+                      }
+                      if (displayName) break;
+                    }
+                    if (displayName) {
+                      console.log('[Instagram Webhook] 👤 Resolved via conversations:', displayName);
+                    }
+                  }
+                } catch (convErr) {
+                  console.warn('[Instagram Webhook] Conversations fallback error:', convErr);
+                }
               }
             }
             

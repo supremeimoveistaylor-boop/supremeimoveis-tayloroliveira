@@ -33,20 +33,17 @@ serve(async (req) => {
     const token = connection.access_token_encrypted;
     const pageId = connection.page_id;
 
-    // Strategy 1: Try to get conversations from Page's Instagram conversations API
-    // This uses pages_messaging + pages_read_engagement permissions
-    console.log('[Update IG Names] Trying Instagram conversations API via Page...');
+    console.log('[Update IG Names] Resolving Instagram usernames...');
     
     const igAccountId = connection.instagram_id;
-    
-    // Try multiple API approaches to resolve usernames
     const nameMap = new Map<string, string>();
+    const authHeader = { 'Authorization': `Bearer ${token}` };
     
-    // Approach 1: Try the Page's conversations endpoint with instagram platform
+    // Approach 1: Page conversations endpoint with instagram platform
     try {
-      const convUrl = `https://graph.facebook.com/v21.0/${pageId}/conversations?fields=participants{name,username,id}&platform=instagram&access_token=${token}&limit=100`;
+      const convUrl = `https://graph.facebook.com/v21.0/${pageId}/conversations?fields=participants{name,username,id}&platform=instagram&limit=100`;
       console.log('[Update IG Names] Fetching page conversations...');
-      const convRes = await fetch(convUrl);
+      const convRes = await fetch(convUrl, { headers: authHeader });
       const convText = await convRes.text();
       console.log(`[Update IG Names] Page conversations API ${convRes.status}:`, convText.substring(0, 500));
       
@@ -70,26 +67,22 @@ serve(async (req) => {
       console.warn('[Update IG Names] Conversations API error:', e);
     }
 
-    // Approach 2: Try using the IG account's conversations
+    // Approach 2: IG account conversations
     if (nameMap.size === 0 && igAccountId) {
       try {
-        const igConvUrl = `https://graph.facebook.com/v21.0/${igAccountId}/conversations?fields=participants{name,username,id}&access_token=${token}&limit=100`;
-        console.log('[Update IG Names] Fetching IG account conversations...');
-        const igConvRes = await fetch(igConvUrl);
+        const igConvUrl = `https://graph.facebook.com/v21.0/${igAccountId}/conversations?fields=participants{name,username,id}&limit=100`;
+        const igConvRes = await fetch(igConvUrl, { headers: authHeader });
         const igConvText = await igConvRes.text();
         console.log(`[Update IG Names] IG conversations API ${igConvRes.status}:`, igConvText.substring(0, 500));
         
         if (igConvRes.ok) {
           const igConvData = JSON.parse(igConvText);
-          const conversations = igConvData.data || [];
-          for (const conv of conversations) {
-            const participants = conv.participants?.data || [];
-            for (const p of participants) {
+          for (const conv of (igConvData.data || [])) {
+            for (const p of (conv.participants?.data || [])) {
               if (p.id && p.id !== pageId && p.id !== igAccountId) {
                 const displayName = p.username ? `@${p.username}` : p.name || null;
                 if (displayName) {
                   nameMap.set(p.id, displayName);
-                  console.log(`[Update IG Names] Found via IG: ${p.id} -> ${displayName}`);
                 }
               }
             }
@@ -100,25 +93,27 @@ serve(async (req) => {
       }
     }
 
-    // Approach 3: Try individual user lookup with name field only (sometimes works with pages_messaging)
+    // Approach 3: Individual user lookups via Instagram Graph API
     if (nameMap.size === 0) {
-      console.log('[Update IG Names] Trying individual user lookups with pages_messaging...');
+      console.log('[Update IG Names] Trying individual lookups via IG Graph API...');
       const { data: conversations } = await supabase
         .from('omnichat_conversations')
         .select('external_contact_id')
         .eq('channel', 'instagram')
-        .limit(3); // Test with just 3
+        .limit(10);
 
       for (const conv of (conversations || [])) {
         try {
-          // Try with just 'name' field (less restrictive)
-          const url = `https://graph.facebook.com/v21.0/${conv.external_contact_id}?fields=name&access_token=${token}`;
-          const res = await fetch(url);
+          const res = await fetch(
+            `https://graph.instagram.com/v21.0/${conv.external_contact_id}?fields=name,username`,
+            { headers: authHeader }
+          );
           const text = await res.text();
-          console.log(`[Update IG Names] Individual lookup ${conv.external_contact_id} -> ${res.status}: ${text.substring(0, 200)}`);
+          console.log(`[Update IG Names] Lookup ${conv.external_contact_id} -> ${res.status}: ${text.substring(0, 200)}`);
           if (res.ok) {
             const data = JSON.parse(text);
-            if (data.name) nameMap.set(conv.external_contact_id, data.name);
+            if (data.username) nameMap.set(conv.external_contact_id, `@${data.username}`);
+            else if (data.name) nameMap.set(conv.external_contact_id, data.name);
           }
         } catch (e) { /* ignore */ }
         await new Promise(r => setTimeout(r, 200));
