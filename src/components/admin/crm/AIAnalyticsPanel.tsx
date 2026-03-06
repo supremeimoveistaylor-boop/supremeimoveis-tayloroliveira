@@ -20,7 +20,7 @@ export const AIAnalyticsPanel = memo(function AIAnalyticsPanel({ metrics, allCar
     const fetchEvents = async () => {
       const { data } = await (supabase as any)
         .from('crm_events')
-        .select('*')
+        .select('id, card_id, lead_id, event_type, old_value, new_value, metadata, created_at')
         .order('created_at', { ascending: false })
         .limit(20);
       setRecentEvents(data || []);
