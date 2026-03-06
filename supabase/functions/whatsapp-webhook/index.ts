@@ -134,6 +134,63 @@ serve(async (req) => {
                     meta_message_id: message.id,
                   });
 
+                  // =====================================================
+                  // AUTO-CREATE/UPDATE LEAD com telefone do WhatsApp
+                  // =====================================================
+                  try {
+                    const sanitizedPhone = senderPhone.replace(/\D/g, '');
+                    
+                    // Verificar se já existe lead com este telefone
+                    const { data: existingLead } = await supabase
+                      .from('leads')
+                      .select('id, name')
+                      .eq('phone', sanitizedPhone)
+                      .maybeSingle();
+
+                    if (existingLead) {
+                      // Atualizar lead existente
+                      const leadUpdate: Record<string, unknown> = {
+                        last_interaction_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString(),
+                      };
+                      // Se tem nome do contato do WhatsApp e o lead ainda tem nome genérico
+                      if (contactName && (!existingLead.name || existingLead.name === 'Visitante do Chat' || existingLead.name === 'A definir')) {
+                        leadUpdate.name = contactName;
+                      }
+                      await supabase.from('leads').update(leadUpdate).eq('id', existingLead.id);
+                      
+                      // Vincular conversa ao lead
+                      await supabase.from('omnichat_conversations').update({
+                        lead_id: existingLead.id,
+                      }).eq('id', convId);
+                      
+                      console.log('[WhatsApp Webhook] ✅ Lead existente atualizado:', existingLead.id);
+                    } else {
+                      // Criar novo lead com telefone do WhatsApp
+                      const { data: newLead } = await supabase
+                        .from('leads')
+                        .insert({
+                          name: contactName || `WhatsApp ${sanitizedPhone.slice(-4)}`,
+                          phone: sanitizedPhone,
+                          origin: 'whatsapp',
+                          status: 'novo',
+                        })
+                        .select('id')
+                        .single();
+                      
+                      if (newLead) {
+                        // Vincular conversa ao lead
+                        await supabase.from('omnichat_conversations').update({
+                          lead_id: newLead.id,
+                        }).eq('id', convId);
+                        
+                        console.log('[WhatsApp Webhook] ✅ Novo lead criado com telefone:', sanitizedPhone);
+                      }
+                    }
+                  } catch (leadErr) {
+                    console.error('[WhatsApp Webhook] Lead sync error:', leadErr);
+                  }
+
                   // If bot is active and no agent online, trigger AI response
                   const { data: conv } = await supabase
                     .from('omnichat_conversations')

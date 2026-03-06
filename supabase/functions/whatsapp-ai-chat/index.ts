@@ -221,7 +221,82 @@ serve(async (req) => {
     const aiData = await aiResponse.json();
     let reply = aiData.choices?.[0]?.message?.content || '';
 
-    // 6. Check for escalation tag
+    // 6. Extract name from conversation and update lead
+    try {
+      // Check if user provided their name in this message
+      const namePatterns = [
+        /meu nome [eé] ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
+        /me chamo ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
+        /sou o ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
+        /sou a ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
+        /pode me chamar de ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
+        /eu sou ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
+      ];
+
+      let extractedName: string | null = null;
+      for (const pattern of namePatterns) {
+        const match = message.match(pattern);
+        if (match) {
+          extractedName = match[1].trim().replace(/[.,!?]+$/, "").substring(0, 100);
+          break;
+        }
+      }
+
+      // Contextual: if AI asked name and user replied with 1-3 words
+      if (!extractedName && history && history.length > 0) {
+        const lastBotMsg = [...history].reverse().find(m => m.sender_type !== 'client');
+        if (lastBotMsg?.content && /como (?:posso )?(?:te )?chamar|qual (?:é )?(?:o )?seu nome/i.test(lastBotMsg.content)) {
+          const cleaned = message.trim().replace(/[.,!?]+$/, "").trim();
+          const words = cleaned.split(/\s+/);
+          if (words.length >= 1 && words.length <= 4 && /^[a-záàâãéèêíïóôõöúçñ\s]+$/i.test(cleaned) && cleaned.length >= 2) {
+            extractedName = words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
+          }
+        }
+      }
+
+      // Update lead and CRM if name was extracted
+      if (extractedName && senderPhone) {
+        const sanitizedPhone = senderPhone.replace(/\D/g, '');
+        const { data: lead } = await supabase
+          .from('leads')
+          .select('id, name')
+          .eq('phone', sanitizedPhone)
+          .maybeSingle();
+
+        if (lead && (!lead.name || lead.name === 'Visitante do Chat' || lead.name.startsWith('WhatsApp'))) {
+          await supabase.from('leads').update({
+            name: extractedName,
+            updated_at: new Date().toISOString(),
+          }).eq('id', lead.id);
+
+          // Update CRM card too
+          const { data: crmCard } = await supabase
+            .from('crm_cards')
+            .select('id')
+            .eq('lead_id', lead.id)
+            .maybeSingle();
+
+          if (crmCard) {
+            await supabase.from('crm_cards').update({
+              cliente: extractedName,
+              titulo: `Lead WhatsApp - ${extractedName}`,
+              updated_at: new Date().toISOString(),
+            }).eq('id', crmCard.id);
+          }
+
+          // Update omnichat conversation name
+          await supabase.from('omnichat_conversations').update({
+            contact_name: extractedName,
+          }).eq('id', conversationId);
+
+          console.log(`[WhatsApp AI] ✅ Nome extraído e atualizado: "${extractedName}"`);
+        }
+      }
+    } catch (extractErr) {
+      console.error('[WhatsApp AI] Data extraction error:', extractErr);
+    }
+
+    // 7. Check for escalation tag
     const shouldEscalate = reply.includes('[ENCAMINHAR_CORRETOR]');
     reply = reply.replace('[ENCAMINHAR_CORRETOR]', '').trim();
 

@@ -575,31 +575,119 @@ Acesse o painel para mais detalhes.`;
         const updates: Record<string, unknown> = {};
         const imobUpdates: Record<string, unknown> = {}; // Para leads_imobiliarios
 
-        // Extrair nome
+        // =====================================================
+        // EXTRAÇÃO INTELIGENTE DE NOME
+        // =====================================================
+        // 1. Padrões explícitos
         const namePatterns = [
-          /meu nome é ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
+          /meu nome [eé] ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
           /me chamo ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
           /sou o ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
           /sou a ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
           /pode me chamar de ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
+          /eu sou ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
+          /aqui [eé] o ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
+          /aqui [eé] a ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
+          /fala com (?:o |a )?([a-záàâãéèêíïóôõöúçñ\s]+)/i,
+          /meu nome[,:]?\s*([a-záàâãéèêíïóôõöúçñ\s]+)/i,
         ];
+
+        let nameExtracted = false;
         for (const pattern of namePatterns) {
           const match = textContent.match(pattern);
           if (match) {
-            const extractedName = match[1].trim().substring(0, 100);
-            updates.name = extractedName;
-            imobUpdates.nome = extractedName;
-            break;
+            const extractedName = match[1].trim().replace(/[.,!?]+$/, "").substring(0, 100);
+            if (extractedName.length >= 2) {
+              updates.name = extractedName;
+              imobUpdates.nome = extractedName;
+              nameExtracted = true;
+              console.log(`🧠 Nome extraído (padrão explícito): "${extractedName}"`);
+              break;
+            }
           }
         }
 
-        // Extrair telefone
-        const phonePattern = /(\d{2}[\s.-]?\d{4,5}[\s.-]?\d{4})/;
-        const phoneMatch = textContent.match(phonePattern);
-        if (phoneMatch) {
-          const extractedPhone = phoneMatch[1].replace(/[\s.-]/g, "").substring(0, 20);
-          updates.phone = extractedPhone;
-          imobUpdates.telefone = extractedPhone;
+        // 2. Detecção contextual: se a mensagem anterior do AI perguntou o nome
+        //    e o usuário respondeu com algo curto (1-3 palavras), provavelmente é o nome
+        if (!nameExtracted && messages.length >= 2) {
+          const prevMsg = messages[messages.length - 2];
+          const prevText = typeof prevMsg.content === "string" ? prevMsg.content.toLowerCase() : "";
+          
+          const aiAskedName = /como (?:posso |devo )?(?:te )?chamar/i.test(prevText) ||
+            /qual (?:[eé] )?(?:o )?seu nome/i.test(prevText) ||
+            /me diga seu nome/i.test(prevText) ||
+            /pode me dizer (?:o )?seu nome/i.test(prevText) ||
+            /com quem (?:eu )?falo/i.test(prevText) ||
+            /gostaria de saber seu nome/i.test(prevText);
+
+          if (aiAskedName && prevMsg.role === "assistant") {
+            // A resposta do usuário provavelmente é o nome
+            const cleanedText = textContent.trim()
+              .replace(/^(oi|olá|hey|eai|bom dia|boa tarde|boa noite|prazer)[,!.\s]*/i, "")
+              .replace(/[.,!?]+$/, "")
+              .trim();
+            
+            // Nome válido: 1-4 palavras, sem números, sem caracteres especiais
+            const words = cleanedText.split(/\s+/).filter(w => w.length > 0);
+            const isLikelyName = words.length >= 1 && words.length <= 4 &&
+              /^[a-záàâãéèêíïóôõöúçñ\s]+$/i.test(cleanedText) &&
+              cleanedText.length >= 2 && cleanedText.length <= 60;
+
+            if (isLikelyName) {
+              // Capitalizar cada palavra
+              const capitalizedName = words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
+              updates.name = capitalizedName;
+              imobUpdates.nome = capitalizedName;
+              nameExtracted = true;
+              console.log(`🧠 Nome extraído (contextual): "${capitalizedName}"`);
+            }
+          }
+        }
+
+        // =====================================================
+        // EXTRAÇÃO INTELIGENTE DE TELEFONE
+        // =====================================================
+        const phonePatterns = [
+          /(\d{2}[\s.-]?\d{4,5}[\s.-]?\d{4})/,                   // 62 99999-9999
+          /(?:\+?55\s?)(\d{2}\s?\d{4,5}\s?\d{4})/,                // +55 62 999999999
+          /(?:fone|tel|whats|zap|whatsapp|telefone|celular|contato)[:\s]*(\d[\d\s.\-()]{8,})/i,
+        ];
+        
+        let phoneExtracted = false;
+        for (const pattern of phonePatterns) {
+          const phoneMatch = textContent.match(pattern);
+          if (phoneMatch) {
+            const extractedPhone = phoneMatch[1].replace(/[\s.\-()]/g, "").substring(0, 20);
+            if (extractedPhone.length >= 10 && extractedPhone.length <= 13) {
+              updates.phone = extractedPhone;
+              imobUpdates.telefone = extractedPhone;
+              phoneExtracted = true;
+              console.log(`📞 Telefone extraído: "${extractedPhone}"`);
+              break;
+            }
+          }
+        }
+
+        // Detecção contextual de telefone: AI pediu telefone e usuário respondeu com números
+        if (!phoneExtracted && messages.length >= 2) {
+          const prevMsg = messages[messages.length - 2];
+          const prevText = typeof prevMsg.content === "string" ? prevMsg.content.toLowerCase() : "";
+          
+          const aiAskedPhone = /(?:telefone|whatsapp|celular|contato|número)/i.test(prevText) &&
+            /(?:qual|me (?:passa|envie|informe|diga)|pode)/i.test(prevText);
+
+          if (aiAskedPhone && prevMsg.role === "assistant") {
+            const phoneOnlyMatch = textContent.match(/(\d[\d\s.\-()]{8,})/);
+            if (phoneOnlyMatch) {
+              const cleanPhone = phoneOnlyMatch[1].replace(/[\s.\-()]/g, "");
+              if (cleanPhone.length >= 10 && cleanPhone.length <= 13) {
+                updates.phone = cleanPhone;
+                imobUpdates.telefone = cleanPhone;
+                phoneExtracted = true;
+                console.log(`📞 Telefone extraído (contextual): "${cleanPhone}"`);
+              }
+            }
+          }
         }
 
         // Extrair intenção / finalidade
