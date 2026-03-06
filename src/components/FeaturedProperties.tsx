@@ -88,7 +88,7 @@ export const FeaturedProperties = ({ filterPurpose }: { filterPurpose?: 'sale' |
         // Fallback to direct query
         const { data, error } = await supabase
           .from('properties')
-          .select('*')
+          .select('id, title, description, price, location, property_type, purpose, bedrooms, bathrooms, parking_spaces, area, images, status, listing_status, user_id, whatsapp_link, youtube_link, amenities, property_code, latitude, longitude')
           .order('created_at', { ascending: false })
           .limit(100);
 

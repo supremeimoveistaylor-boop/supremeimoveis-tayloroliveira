@@ -34,7 +34,7 @@ export function useCRMStore(currentUserId?: string, currentUserRole: Collaborato
       setIsLoading(true);
       const { data, error } = await (supabase as any)
         .from('crm_cards')
-        .select('*')
+        .select('id, titulo, cliente, telefone, email, coluna, origem_lead, lead_score, classificacao, probabilidade_fechamento, prioridade, notas, historico, valor_estimado, responsavel, proxima_acao, proximo_agendamento, lead_id, last_interaction_at, ai_summary, created_at, updated_at')
         .order('created_at', { ascending: true });
 
       if (error) {

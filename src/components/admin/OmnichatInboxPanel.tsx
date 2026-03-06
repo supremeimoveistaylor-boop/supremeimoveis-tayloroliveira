@@ -125,7 +125,7 @@ export const OmnichatInboxPanel = () => {
   const loadConversations = useCallback(async () => {
     setIsLoading(true);
     const { data, error } = await supabase
-      .from("omnichat_conversations" as any).select("*").order("last_message_at", { ascending: false }).limit(100) as any;
+      .from("omnichat_conversations" as any).select("id, user_id, lead_id, channel, external_contact_id, contact_name, contact_phone, assigned_to, bot_active, status, last_message_at, last_message_preview, unread_count, connection_id, created_at").order("last_message_at", { ascending: false }).limit(100) as any;
     if (!error && data) setConversations(data);
     setIsLoading(false);
   }, []);
@@ -155,7 +155,7 @@ export const OmnichatInboxPanel = () => {
 
   const loadMessages = useCallback(async (convId: string) => {
     const { data } = await supabase
-      .from("omnichat_messages" as any).select("*").eq("conversation_id", convId).order("created_at", { ascending: true }).limit(200) as any;
+      .from("omnichat_messages" as any).select("id, conversation_id, sender_type, channel, content, media_url, created_at, status").eq("conversation_id", convId).order("created_at", { ascending: true }).limit(200) as any;
     if (data) setMessages(data);
   }, []);
 

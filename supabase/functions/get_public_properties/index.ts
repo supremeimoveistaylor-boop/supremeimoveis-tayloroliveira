@@ -62,7 +62,7 @@ serve(async (req) => {
 
     let query = supabase
       .from("properties")
-      .select("*")
+      .select("id, title, description, price, location, property_type, purpose, bedrooms, bathrooms, parking_spaces, area, images, status, featured, whatsapp_link, youtube_link, amenities, property_code, latitude, longitude, listing_status, previous_price, delivery_date, created_at, updated_at")
       .order("created_at", { ascending: false })
       .limit(safeLimit);
 
