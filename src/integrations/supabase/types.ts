@@ -159,6 +159,69 @@ export type Database = {
           },
         ]
       }
+      channel_messages_archive: {
+        Row: {
+          archived_at: string
+          connection_id: string
+          contact_instagram_id: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          content: string | null
+          created_at: string
+          direction: string
+          error_message: string | null
+          id: string
+          lead_id: string | null
+          media_url: string | null
+          message_type: string | null
+          meta_conversation_id: string | null
+          meta_message_id: string | null
+          status: string | null
+          template_id: string | null
+          user_id: string
+        }
+        Insert: {
+          archived_at?: string
+          connection_id: string
+          contact_instagram_id?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          content?: string | null
+          created_at: string
+          direction: string
+          error_message?: string | null
+          id: string
+          lead_id?: string | null
+          media_url?: string | null
+          message_type?: string | null
+          meta_conversation_id?: string | null
+          meta_message_id?: string | null
+          status?: string | null
+          template_id?: string | null
+          user_id: string
+        }
+        Update: {
+          archived_at?: string
+          connection_id?: string
+          contact_instagram_id?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          content?: string | null
+          created_at?: string
+          direction?: string
+          error_message?: string | null
+          id?: string
+          lead_id?: string | null
+          media_url?: string | null
+          message_type?: string | null
+          meta_conversation_id?: string | null
+          meta_message_id?: string | null
+          status?: string | null
+          template_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       chat_attendants: {
         Row: {
           active: boolean
@@ -330,6 +393,33 @@ export type Database = {
           },
         ]
       }
+      chat_messages_archive: {
+        Row: {
+          archived_at: string
+          content: string
+          created_at: string
+          id: string
+          lead_id: string
+          role: string
+        }
+        Insert: {
+          archived_at?: string
+          content: string
+          created_at: string
+          id: string
+          lead_id: string
+          role: string
+        }
+        Update: {
+          archived_at?: string
+          content?: string
+          created_at?: string
+          id?: string
+          lead_id?: string
+          role?: string
+        }
+        Relationships: []
+      }
       chat_sessions: {
         Row: {
           attendant_id: string | null
@@ -386,6 +476,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      chat_sessions_archive: {
+        Row: {
+          archived_at: string
+          attendant_id: string | null
+          created_at: string
+          finished_at: string | null
+          id: string
+          lead_id: string
+          started_at: string
+          status: string
+          summary: string | null
+          updated_at: string
+          whatsapp_sent: boolean | null
+          whatsapp_sent_at: string | null
+        }
+        Insert: {
+          archived_at?: string
+          attendant_id?: string | null
+          created_at: string
+          finished_at?: string | null
+          id: string
+          lead_id: string
+          started_at: string
+          status: string
+          summary?: string | null
+          updated_at: string
+          whatsapp_sent?: boolean | null
+          whatsapp_sent_at?: string | null
+        }
+        Update: {
+          archived_at?: string
+          attendant_id?: string | null
+          created_at?: string
+          finished_at?: string | null
+          id?: string
+          lead_id?: string
+          started_at?: string
+          status?: string
+          summary?: string | null
+          updated_at?: string
+          whatsapp_sent?: boolean | null
+          whatsapp_sent_at?: string | null
+        }
+        Relationships: []
       }
       company_settings: {
         Row: {
@@ -613,6 +748,48 @@ export type Database = {
           },
         ]
       }
+      followup_alerts_archive: {
+        Row: {
+          alert_type: string
+          archived_at: string
+          channel: string | null
+          created_at: string
+          id: string
+          lead_id: string | null
+          message_sent: string | null
+          metadata: Json | null
+          stage: number
+          status: string | null
+          whatsapp_message_id: string | null
+        }
+        Insert: {
+          alert_type: string
+          archived_at?: string
+          channel?: string | null
+          created_at: string
+          id: string
+          lead_id?: string | null
+          message_sent?: string | null
+          metadata?: Json | null
+          stage: number
+          status?: string | null
+          whatsapp_message_id?: string | null
+        }
+        Update: {
+          alert_type?: string
+          archived_at?: string
+          channel?: string | null
+          created_at?: string
+          id?: string
+          lead_id?: string | null
+          message_sent?: string | null
+          metadata?: Json | null
+          stage?: number
+          status?: string | null
+          whatsapp_message_id?: string | null
+        }
+        Relationships: []
+      }
       general_chat_messages: {
         Row: {
           created_at: string
@@ -629,6 +806,33 @@ export type Database = {
           user_name: string
         }
         Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          user_id?: string
+          user_name?: string
+        }
+        Relationships: []
+      }
+      general_chat_messages_archive: {
+        Row: {
+          archived_at: string
+          created_at: string
+          id: string
+          message: string
+          user_id: string
+          user_name: string
+        }
+        Insert: {
+          archived_at?: string
+          created_at: string
+          id: string
+          message: string
+          user_id: string
+          user_name: string
+        }
+        Update: {
+          archived_at?: string
           created_at?: string
           id?: string
           message?: string
@@ -763,6 +967,114 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      leads_archive: {
+        Row: {
+          archived_at: string
+          broker_id: string | null
+          budget_range: string | null
+          conversion_count: number | null
+          created_at: string
+          email: string | null
+          first_conversion_at: string | null
+          followup_stage: number | null
+          id: string
+          intent: string | null
+          last_agent_notification: string | null
+          last_conversion_at: string | null
+          last_followup_at: string | null
+          last_interaction_at: string | null
+          lead_category: string | null
+          lead_score: number | null
+          lead_segment: string | null
+          lead_temperature: string | null
+          message_count: number | null
+          name: string | null
+          nurturing_flow_status: string | null
+          origin: string | null
+          page_url: string | null
+          phone: string | null
+          property_id: string | null
+          qualification: string | null
+          score_breakdown: Json | null
+          status: string
+          updated_at: string
+          visit_date: string | null
+          visit_requested: boolean | null
+          whatsapp_sent: boolean | null
+          whatsapp_sent_at: string | null
+        }
+        Insert: {
+          archived_at?: string
+          broker_id?: string | null
+          budget_range?: string | null
+          conversion_count?: number | null
+          created_at: string
+          email?: string | null
+          first_conversion_at?: string | null
+          followup_stage?: number | null
+          id: string
+          intent?: string | null
+          last_agent_notification?: string | null
+          last_conversion_at?: string | null
+          last_followup_at?: string | null
+          last_interaction_at?: string | null
+          lead_category?: string | null
+          lead_score?: number | null
+          lead_segment?: string | null
+          lead_temperature?: string | null
+          message_count?: number | null
+          name?: string | null
+          nurturing_flow_status?: string | null
+          origin?: string | null
+          page_url?: string | null
+          phone?: string | null
+          property_id?: string | null
+          qualification?: string | null
+          score_breakdown?: Json | null
+          status: string
+          updated_at: string
+          visit_date?: string | null
+          visit_requested?: boolean | null
+          whatsapp_sent?: boolean | null
+          whatsapp_sent_at?: string | null
+        }
+        Update: {
+          archived_at?: string
+          broker_id?: string | null
+          budget_range?: string | null
+          conversion_count?: number | null
+          created_at?: string
+          email?: string | null
+          first_conversion_at?: string | null
+          followup_stage?: number | null
+          id?: string
+          intent?: string | null
+          last_agent_notification?: string | null
+          last_conversion_at?: string | null
+          last_followup_at?: string | null
+          last_interaction_at?: string | null
+          lead_category?: string | null
+          lead_score?: number | null
+          lead_segment?: string | null
+          lead_temperature?: string | null
+          message_count?: number | null
+          name?: string | null
+          nurturing_flow_status?: string | null
+          origin?: string | null
+          page_url?: string | null
+          phone?: string | null
+          property_id?: string | null
+          qualification?: string | null
+          score_breakdown?: Json | null
+          status?: string
+          updated_at?: string
+          visit_date?: string | null
+          visit_requested?: boolean | null
+          whatsapp_sent?: boolean | null
+          whatsapp_sent_at?: string | null
+        }
+        Relationships: []
       }
       leads_imobiliarios: {
         Row: {
@@ -1012,6 +1324,66 @@ export type Database = {
           },
         ]
       }
+      omnichat_conversations_archive: {
+        Row: {
+          archived_at: string
+          assigned_to: string | null
+          bot_active: boolean | null
+          channel: string
+          connection_id: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          created_at: string
+          external_contact_id: string
+          id: string
+          last_message_at: string | null
+          last_message_preview: string | null
+          lead_id: string | null
+          status: string
+          unread_count: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived_at?: string
+          assigned_to?: string | null
+          bot_active?: boolean | null
+          channel: string
+          connection_id?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at: string
+          external_contact_id: string
+          id: string
+          last_message_at?: string | null
+          last_message_preview?: string | null
+          lead_id?: string | null
+          status: string
+          unread_count?: number | null
+          updated_at: string
+          user_id: string
+        }
+        Update: {
+          archived_at?: string
+          assigned_to?: string | null
+          bot_active?: boolean | null
+          channel?: string
+          connection_id?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          external_contact_id?: string
+          id?: string
+          last_message_at?: string | null
+          last_message_preview?: string | null
+          lead_id?: string | null
+          status?: string
+          unread_count?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       omnichat_messages: {
         Row: {
           channel: string
@@ -1055,6 +1427,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      omnichat_messages_archive: {
+        Row: {
+          archived_at: string
+          channel: string
+          content: string | null
+          conversation_id: string
+          created_at: string
+          id: string
+          media_url: string | null
+          meta_message_id: string | null
+          sender_type: string
+          status: string | null
+        }
+        Insert: {
+          archived_at?: string
+          channel: string
+          content?: string | null
+          conversation_id: string
+          created_at: string
+          id: string
+          media_url?: string | null
+          meta_message_id?: string | null
+          sender_type: string
+          status?: string | null
+        }
+        Update: {
+          archived_at?: string
+          channel?: string
+          content?: string | null
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          media_url?: string | null
+          meta_message_id?: string | null
+          sender_type?: string
+          status?: string | null
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -1411,6 +1822,36 @@ export type Database = {
         }
         Relationships: []
       }
+      system_cleanup_logs: {
+        Row: {
+          details: Json | null
+          executed_at: string
+          id: string
+          records_archived: number | null
+          records_deleted: number | null
+          status: string | null
+          tables_processed: string[] | null
+        }
+        Insert: {
+          details?: Json | null
+          executed_at?: string
+          id?: string
+          records_archived?: number | null
+          records_deleted?: number | null
+          status?: string | null
+          tables_processed?: string[] | null
+        }
+        Update: {
+          details?: Json | null
+          executed_at?: string
+          id?: string
+          records_archived?: number | null
+          records_deleted?: number | null
+          status?: string | null
+          tables_processed?: string[] | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           assigned_at: string
@@ -1544,6 +1985,7 @@ export type Database = {
       }
     }
     Functions: {
+      archive_old_system_data: { Args: never; Returns: Json }
       assign_attendant_round_robin: { Args: never; Returns: string }
       assign_lead_to_broker: {
         Args: { p_lead_id: string; p_property_id: string }

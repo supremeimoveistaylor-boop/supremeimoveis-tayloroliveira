@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, Home, Edit, Trash2, ArrowLeft, Users, UserCheck, MessageSquare, Headphones, MessageCircle, BarChart3, TrendingUp, LayoutDashboard, CalendarCheck, Kanban, Wallet, Phone } from 'lucide-react';
+import { Plus, Home, Edit, Trash2, ArrowLeft, Users, UserCheck, MessageSquare, Headphones, MessageCircle, BarChart3, TrendingUp, LayoutDashboard, CalendarCheck, Kanban, Wallet, Phone, Archive } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LeadsImobiliariosPanel } from '@/components/admin/LeadsImobiliariosPanel';
@@ -18,6 +18,7 @@ import { VisitSchedulingPanel } from '@/components/admin/VisitSchedulingPanel';
 import { CRMKanbanPanel } from '@/components/admin/crm';
 import { FinancialControlPanel } from '@/components/admin/financial';
 import { WhatsAppConnectionPanel } from '@/components/admin/WhatsAppConnectionPanel';
+import { ArchiveStatusPanel } from '@/components/admin/ArchiveStatusPanel';
 import { useLeadNotification } from '@/hooks/useLeadNotification';
 
 interface Property {
@@ -55,7 +56,7 @@ const Admin = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'properties' | 'users' | 'leads' | 'attendants' | 'sessions' | 'metrics' | 'conversions' | 'visits' | 'crm' | 'financial' | 'omnichat'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'properties' | 'users' | 'leads' | 'attendants' | 'sessions' | 'metrics' | 'conversions' | 'visits' | 'crm' | 'financial' | 'omnichat' | 'archive'>('dashboard');
   const [accessDenied, setAccessDenied] = useState(false);
 
   // Enable real-time lead notifications with sound
@@ -363,6 +364,13 @@ const Admin = () => {
             <Phone className="mr-2 h-4 w-4" />
             Omnichat
           </Button>
+          <Button
+            variant={activeTab === 'archive' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('archive')}
+          >
+            <Archive className="mr-2 h-4 w-4" />
+            Arquivamento
+          </Button>
         </div>
 
         {/* Dashboard Tab */}
@@ -386,6 +394,11 @@ const Admin = () => {
         {/* Omnichat Connection Tab */}
         {activeTab === 'omnichat' && (
           <WhatsAppConnectionPanel />
+        )}
+
+        {/* Archive Tab */}
+        {activeTab === 'archive' && (
+          <ArchiveStatusPanel />
         )}
 
         {/* Visits Tab */}
