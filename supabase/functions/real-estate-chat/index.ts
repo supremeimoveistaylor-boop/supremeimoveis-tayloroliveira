@@ -789,7 +789,7 @@ Acesse o painel para mais detalhes.`;
           imobUpdates.status = "visita_agendada";
         }
 
-        if (phoneMatch) {
+        if (phoneExtracted) {
           conversions.push({ type: "telefone_coletado", metadata: { phone: updates.phone } });
           imobUpdates.status = "em_atendimento";
         }
