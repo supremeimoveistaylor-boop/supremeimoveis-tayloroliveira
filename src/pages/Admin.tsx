@@ -364,6 +364,13 @@ const Admin = () => {
             <Phone className="mr-2 h-4 w-4" />
             Omnichat
           </Button>
+          <Button
+            variant={activeTab === 'archive' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('archive')}
+          >
+            <Archive className="mr-2 h-4 w-4" />
+            Arquivamento
+          </Button>
         </div>
 
         {/* Dashboard Tab */}
@@ -387,6 +394,11 @@ const Admin = () => {
         {/* Omnichat Connection Tab */}
         {activeTab === 'omnichat' && (
           <WhatsAppConnectionPanel />
+        )}
+
+        {/* Archive Tab */}
+        {activeTab === 'archive' && (
+          <ArchiveStatusPanel />
         )}
 
         {/* Visits Tab */}
