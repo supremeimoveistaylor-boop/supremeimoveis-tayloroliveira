@@ -789,7 +789,7 @@ Acesse o painel para mais detalhes.`;
           imobUpdates.status = "visita_agendada";
         }
 
-        if (phoneMatch) {
+        if (phoneExtracted) {
           conversions.push({ type: "telefone_coletado", metadata: { phone: updates.phone } });
           imobUpdates.status = "em_atendimento";
         }
@@ -943,21 +943,45 @@ Acesse o CRM para atendimento imediato.`;
         // SINCRONIZAR leads_imobiliarios (FONTE ÚNICA)
         // =====================================================
         if (Object.keys(imobUpdates).length > 0) {
-          // Buscar lead_imobiliario mais recente com base na origem/página
-          const { data: recentImobLead } = await supabase
-            .from("leads_imobiliarios")
-            .select("id")
-            .eq("pagina_origem", pageUrl || "")
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .single();
+          // Usar leadImobiliarioId diretamente se disponível
+          let targetImobId = leadImobiliarioId;
           
-          if (recentImobLead) {
+          if (!targetImobId) {
+            // Fallback: buscar por telefone ou pelo lead_id mais recente
+            if (updates.phone || clientPhone) {
+              const searchPhone = (updates.phone || clientPhone || "").toString().replace(/\D/g, "");
+              if (searchPhone.length >= 10) {
+                const { data: imobByPhone } = await supabase
+                  .from("leads_imobiliarios")
+                  .select("id")
+                  .or(`telefone.eq.${searchPhone}`)
+                  .order("created_at", { ascending: false })
+                  .limit(1)
+                  .maybeSingle();
+                if (imobByPhone) targetImobId = imobByPhone.id;
+              }
+            }
+            
+            // Último fallback: buscar por página
+            if (!targetImobId && pageUrl) {
+              const { data: imobByPage } = await supabase
+                .from("leads_imobiliarios")
+                .select("id")
+                .eq("pagina_origem", pageUrl)
+                .order("created_at", { ascending: false })
+                .limit(1)
+                .maybeSingle();
+              if (imobByPage) targetImobId = imobByPage.id;
+            }
+          }
+          
+          if (targetImobId) {
+            imobUpdates.updated_at = new Date().toISOString();
             await supabase
               .from("leads_imobiliarios")
               .update(imobUpdates)
-              .eq("id", recentImobLead.id);
-            console.log(`✅ Lead imobiliário atualizado: ${recentImobLead.id}`, imobUpdates);
+              .eq("id", targetImobId);
+            console.log(`✅ Lead imobiliário atualizado: ${targetImobId}`, imobUpdates);
           }
           
           // Enviar WhatsApp com dados completos se capturou nome E telefone

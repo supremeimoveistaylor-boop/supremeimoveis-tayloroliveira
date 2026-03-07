@@ -701,6 +701,48 @@ export type Database = {
           },
         ]
       }
+      event_tracking: {
+        Row: {
+          browser: string | null
+          created_at: string
+          device_type: string | null
+          event_type: string
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          page_url: string | null
+          referrer: string | null
+          session_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          browser?: string | null
+          created_at?: string
+          device_type?: string | null
+          event_type: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          page_url?: string | null
+          referrer?: string | null
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          browser?: string | null
+          created_at?: string
+          device_type?: string | null
+          event_type?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          page_url?: string | null
+          referrer?: string | null
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       followup_alerts: {
         Row: {
           alert_type: string

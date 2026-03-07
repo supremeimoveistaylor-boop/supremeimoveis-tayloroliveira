@@ -1,4 +1,5 @@
-// GA4 + Meta Pixel Custom Events Helper
+// GA4 + Meta Pixel + CRM Pixel Custom Events Helper
+import { trackEvent as crmTrack } from './pixel-tracker';
 
 declare global {
   interface Window {
@@ -8,6 +9,19 @@ declare global {
   }
 }
 
+// Map GA4 event names to CRM pixel event types
+const CRM_EVENT_MAP: Record<string, string> = {
+  'whatsapp_click': 'whatsapp_click',
+  'form_submit': 'contact_form_submitted',
+  'view_property_details': 'property_viewed',
+  'simulator_started': 'financing_started',
+  'simulator_completed': 'financing_completed',
+  'chat_opened': 'chat_started',
+  'chat_first_message': 'chat_message_sent',
+  'chat_name_captured': 'lead_generated',
+  'chat_phone_captured': 'lead_generated',
+};
+
 export const trackEvent = (eventName: string, params?: Record<string, any>) => {
   // GA4
   if (typeof window.gtag === 'function') {
@@ -16,6 +30,11 @@ export const trackEvent = (eventName: string, params?: Record<string, any>) => {
   // Meta Pixel
   if (typeof window.fbq === 'function') {
     window.fbq('trackCustom', eventName, params);
+  }
+  // CRM Pixel Tracker interno
+  const crmEventType = CRM_EVENT_MAP[eventName];
+  if (crmEventType) {
+    crmTrack(crmEventType as any, { original_event: eventName, ...params });
   }
 };
 
