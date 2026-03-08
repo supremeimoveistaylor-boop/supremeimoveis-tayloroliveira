@@ -731,6 +731,14 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
     }
   };
 
+  // Refs to track extracted data synchronously (avoids React state timing issues)
+  const clientNameRef = useRef<string | null>(null);
+  const clientPhoneRef = useRef<string | null>(null);
+
+  // Keep refs in sync with state
+  useEffect(() => { clientNameRef.current = clientName; }, [clientName]);
+  useEffect(() => { clientPhoneRef.current = clientPhone; }, [clientPhone]);
+
   const handleSendMessage = async () => {
     if ((!inputMessage.trim() && !pendingAttachment) || isLoading) return;
 
@@ -739,9 +747,14 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
       trackChatFirstMessage();
     }
 
-    // Extração silenciosa de dados do lead
+    // Extração silenciosa de dados do lead (updates refs synchronously too)
     if (inputMessage.trim()) {
       silentExtract(inputMessage.trim());
+      // Sync refs immediately after extraction
+      const extractedName = extractNameFromText(inputMessage.trim());
+      const extractedPhone = extractPhoneFromText(inputMessage.trim());
+      if (extractedName && !clientNameRef.current) clientNameRef.current = extractedName;
+      if (extractedPhone && !clientPhoneRef.current) clientPhoneRef.current = extractedPhone;
     }
 
     let messageContent: string | MessageContent[] = inputMessage.trim();
