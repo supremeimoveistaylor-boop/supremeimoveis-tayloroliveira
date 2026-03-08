@@ -466,7 +466,7 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
           pageContext,
           clientName: clientName || undefined,
           clientPhone: clientPhone || undefined,
-          skipLeadCreation: true,
+          skipLeadCreation: !!effectiveLeadId,
         }),
       });
 
