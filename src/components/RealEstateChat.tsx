@@ -803,6 +803,7 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
         body: JSON.stringify({
           messages: apiMessages,
           leadId,
+          leadImobId: leadImobId || undefined,
           propertyId,
           propertyName,
           pageUrl: window.location.href,
