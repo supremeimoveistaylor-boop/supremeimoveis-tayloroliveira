@@ -82,76 +82,113 @@ serve(async (req) => {
           // Fetch Instagram user profile (non-blocking)
           let displayName: string | null = null;
           const pageToken = connection.access_token_encrypted;
-          try {
-            // Strategy 1: Instagram Graph API with Authorization header (avoids URL encoding issues)
-            console.log('[Instagram Webhook] Fetching IG profile for IGSID:', senderId);
-            const igProfileRes = await fetch(
-              `https://graph.instagram.com/v21.0/${senderId}?fields=name,username,profile_pic`,
-              { headers: { 'Authorization': `Bearer ${pageToken}` } }
-            );
-            
-            if (igProfileRes.ok) {
-              const profile = await igProfileRes.json();
-              console.log('[Instagram Webhook] IG profile response:', JSON.stringify(profile));
-              if (profile.username) {
-                displayName = `@${profile.username}`;
-              } else if (profile.name) {
-                displayName = profile.name;
-              }
-            } else {
-              const errText = await igProfileRes.text();
-              console.warn('[Instagram Webhook] IG profile fetch failed:', igProfileRes.status, errText);
-              
-              // Strategy 2: Facebook Graph API with Authorization header
-              const fbProfileRes = await fetch(
-                `https://graph.facebook.com/v21.0/${senderId}?fields=name,username,profile_pic`,
+          
+          // Check if we already have a name saved for this contact
+          const { data: existingConvCheck } = await supabase
+            .from('omnichat_conversations')
+            .select('contact_name')
+            .eq('user_id', connection.user_id)
+            .eq('channel', 'instagram')
+            .eq('external_contact_id', senderId)
+            .maybeSingle();
+          
+          // If we already have a real name (not a fallback), reuse it
+          if (existingConvCheck?.contact_name && 
+              !existingConvCheck.contact_name.startsWith('Instagram User #')) {
+            displayName = existingConvCheck.contact_name;
+            console.log('[Instagram Webhook] 👤 Reusing saved name:', displayName);
+          }
+          
+          if (!displayName) {
+            try {
+              // Strategy 1: Instagram Graph API
+              console.log('[Instagram Webhook] Fetching IG profile for IGSID:', senderId);
+              const igProfileRes = await fetch(
+                `https://graph.instagram.com/v21.0/${senderId}?fields=name,username,profile_pic`,
                 { headers: { 'Authorization': `Bearer ${pageToken}` } }
               );
-              if (fbProfileRes.ok) {
-                const fbProfile = await fbProfileRes.json();
-                console.log('[Instagram Webhook] FB profile response:', JSON.stringify(fbProfile));
-                if (fbProfile.username) {
-                  displayName = `@${fbProfile.username}`;
-                } else if (fbProfile.name) {
-                  displayName = fbProfile.name;
+              
+              if (igProfileRes.ok) {
+                const profile = await igProfileRes.json();
+                console.log('[Instagram Webhook] IG profile response:', JSON.stringify(profile));
+                if (profile.username) {
+                  displayName = `@${profile.username}`;
+                } else if (profile.name) {
+                  displayName = profile.name;
                 }
               } else {
-                const fbErr = await fbProfileRes.text();
-                console.warn('[Instagram Webhook] FB profile also failed:', fbProfileRes.status, fbErr);
-
-                // Strategy 3: Page conversations endpoint to find participant name
-                try {
-                  const convRes = await fetch(
-                    `https://graph.facebook.com/v21.0/${connection.page_id}/conversations?platform=instagram&fields=participants{name,username,id}&limit=50`,
-                    { headers: { 'Authorization': `Bearer ${pageToken}` } }
-                  );
-                  if (convRes.ok) {
-                    const convData = await convRes.json();
-                    for (const conv of (convData.data || [])) {
-                      for (const p of (conv.participants?.data || [])) {
-                        if (p.id === senderId) {
-                          displayName = p.username ? `@${p.username}` : p.name || null;
-                          break;
-                        }
-                      }
-                      if (displayName) break;
-                    }
-                    if (displayName) {
-                      console.log('[Instagram Webhook] 👤 Resolved via conversations:', displayName);
-                    }
+                const errText = await igProfileRes.text();
+                console.warn('[Instagram Webhook] IG profile fetch failed:', igProfileRes.status, errText);
+                
+                // Strategy 2: Facebook Graph API
+                const fbProfileRes = await fetch(
+                  `https://graph.facebook.com/v21.0/${senderId}?fields=name,username,profile_pic`,
+                  { headers: { 'Authorization': `Bearer ${pageToken}` } }
+                );
+                if (fbProfileRes.ok) {
+                  const fbProfile = await fbProfileRes.json();
+                  if (fbProfile.username) {
+                    displayName = `@${fbProfile.username}`;
+                  } else if (fbProfile.name) {
+                    displayName = fbProfile.name;
                   }
-                } catch (convErr) {
-                  console.warn('[Instagram Webhook] Conversations fallback error:', convErr);
+                } else {
+                  // Strategy 3: Page conversations endpoint
+                  try {
+                    const convRes = await fetch(
+                      `https://graph.facebook.com/v21.0/${connection.page_id}/conversations?platform=instagram&fields=participants{name,username,id}&limit=50`,
+                      { headers: { 'Authorization': `Bearer ${pageToken}` } }
+                    );
+                    if (convRes.ok) {
+                      const convData = await convRes.json();
+                      for (const conv of (convData.data || [])) {
+                        for (const p of (conv.participants?.data || [])) {
+                          if (p.id === senderId) {
+                            displayName = p.username ? `@${p.username}` : p.name || null;
+                            break;
+                          }
+                        }
+                        if (displayName) break;
+                      }
+                    }
+                  } catch (convErr) {
+                    console.warn('[Instagram Webhook] Conversations fallback error:', convErr);
+                  }
+                }
+              }
+              
+              if (displayName) {
+                console.log('[Instagram Webhook] 👤 Profile resolved:', displayName);
+              }
+            } catch (profileErr) {
+              console.warn('[Instagram Webhook] Profile fetch error (non-blocking):', profileErr);
+            }
+          }
+          
+          // Strategy 4: Try to extract name from the message text itself
+          if (!displayName && event.message?.text) {
+            const msgText = event.message.text;
+            const namePatterns = [
+              /meu nome [eé] ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
+              /me chamo ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
+              /sou o ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
+              /sou a ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
+              /aqui [eé] o ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
+              /aqui [eé] a ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
+            ];
+            for (const pattern of namePatterns) {
+              const match = msgText.match(pattern);
+              if (match) {
+                const name = match[1].trim().replace(/[.,!?]+$/, "");
+                if (name.length >= 2 && name.length <= 50) {
+                  displayName = name.charAt(0).toUpperCase() + name.slice(1);
+                  console.log('[Instagram Webhook] 👤 Name extracted from message:', displayName);
+                  break;
                 }
               }
             }
-            
-            if (displayName) {
-              console.log('[Instagram Webhook] 👤 Profile resolved:', displayName);
-            }
-          } catch (profileErr) {
-            console.warn('[Instagram Webhook] Profile fetch error (non-blocking):', profileErr);
           }
+          
           // Fallback if no name resolved
           if (!displayName) {
             const lastDigits = senderId?.slice(-4) || '0000';
