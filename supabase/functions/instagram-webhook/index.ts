@@ -281,6 +281,121 @@ serve(async (req) => {
               meta_message_id: messageId,
             });
 
+            // =====================================================
+            // AUTO-CREATE/UPDATE LEAD for Instagram contacts
+            // =====================================================
+            try {
+              const { data: convForLead } = await supabase
+                .from('omnichat_conversations')
+                .select('lead_id')
+                .eq('id', convId)
+                .single();
+
+              if (!convForLead?.lead_id) {
+                // Create a new lead for this Instagram contact
+                const leadName = displayName.startsWith('Instagram User #') ? displayName : displayName;
+                const { data: newLead } = await supabase
+                  .from('leads')
+                  .insert({
+                    name: leadName,
+                    origin: 'instagram',
+                    status: 'novo',
+                  })
+                  .select('id')
+                  .single();
+
+                if (newLead) {
+                  await supabase.from('omnichat_conversations').update({
+                    lead_id: newLead.id,
+                  }).eq('id', convId);
+                  console.log('[Instagram Webhook] ✅ Lead criado para contato Instagram:', newLead.id);
+                }
+              } else {
+                // Update existing lead name if we now have a real name
+                if (!displayName.startsWith('Instagram User #')) {
+                  await supabase.from('leads').update({
+                    name: displayName,
+                    last_interaction_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                  }).eq('id', convForLead.lead_id);
+                }
+              }
+            } catch (leadErr) {
+              console.error('[Instagram Webhook] Lead sync error:', leadErr);
+            }
+
+            // Also try extracting name from message for existing conversations with fallback names
+            if (messageText && existingConv) {
+              const namePatterns = [
+                /meu nome [eé] ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
+                /me chamo ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
+                /sou o ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
+                /sou a ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
+              ];
+              
+              // Check if the previous bot message asked for the name
+              const { data: lastBotMsg } = await supabase
+                .from('omnichat_messages')
+                .select('content')
+                .eq('conversation_id', convId)
+                .eq('sender_type', 'bot')
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .maybeSingle();
+              
+              let extractedName: string | null = null;
+              
+              // Check explicit patterns
+              for (const pattern of namePatterns) {
+                const match = messageText.match(pattern);
+                if (match) {
+                  extractedName = match[1].trim().replace(/[.,!?]+$/, "");
+                  break;
+                }
+              }
+              
+              // Check contextual: bot asked name and user responded with short text
+              if (!extractedName && lastBotMsg?.content) {
+                const botText = lastBotMsg.content.toLowerCase();
+                const askedName = /como (?:posso |devo )?(?:te )?chamar/i.test(botText) ||
+                  /qual (?:[eé] )?(?:o )?seu nome/i.test(botText);
+                
+                if (askedName) {
+                  const cleaned = messageText.trim().replace(/[.,!?]+$/, "").trim();
+                  const words = cleaned.split(/\s+/);
+                  if (words.length >= 1 && words.length <= 4 && 
+                      /^[a-záàâãéèêíïóôõöúçñ\s]+$/i.test(cleaned) &&
+                      cleaned.length >= 2 && cleaned.length <= 60) {
+                    extractedName = words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
+                  }
+                }
+              }
+              
+              if (extractedName && extractedName.length >= 2) {
+                console.log('[Instagram Webhook] 👤 Name extracted from conversation:', extractedName);
+                // Update conversation name
+                await supabase.from('omnichat_conversations').update({
+                  contact_name: extractedName,
+                }).eq('id', convId);
+                // Update channel_messages
+                await supabase.from('channel_messages').update({
+                  contact_name: extractedName,
+                }).eq('contact_instagram_id', senderId);
+                // Update lead
+                const { data: convLead } = await supabase
+                  .from('omnichat_conversations')
+                  .select('lead_id')
+                  .eq('id', convId)
+                  .single();
+                if (convLead?.lead_id) {
+                  await supabase.from('leads').update({
+                    name: extractedName,
+                    updated_at: new Date().toISOString(),
+                  }).eq('id', convLead.lead_id);
+                }
+              }
+            }
+
             // If bot active, trigger AI reply
             const { data: conv } = await supabase
               .from('omnichat_conversations')
