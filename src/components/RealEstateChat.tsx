@@ -167,6 +167,8 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
   const [leadScore, setLeadScore] = useState<number>(50);
   const [leadSaveAttempted, setLeadSaveAttempted] = useState(false);
   const leadScoreRef = useRef<number>(50);
+  const clientNameRef = useRef<string | null>(null);
+  const clientPhoneRef = useRef<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -466,7 +468,7 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
           pageContext,
           clientName: clientName || undefined,
           clientPhone: clientPhone || undefined,
-          skipLeadCreation: true,
+          skipLeadCreation: !!effectiveLeadId,
         }),
       });
 
@@ -731,6 +733,10 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
     }
   };
 
+  // Keep refs in sync with state
+  useEffect(() => { clientNameRef.current = clientName; }, [clientName]);
+  useEffect(() => { clientPhoneRef.current = clientPhone; }, [clientPhone]);
+
   const handleSendMessage = async () => {
     if ((!inputMessage.trim() && !pendingAttachment) || isLoading) return;
 
@@ -739,9 +745,14 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
       trackChatFirstMessage();
     }
 
-    // Extração silenciosa de dados do lead
+    // Extração silenciosa de dados do lead (updates refs synchronously too)
     if (inputMessage.trim()) {
       silentExtract(inputMessage.trim());
+      // Sync refs immediately after extraction
+      const extractedName = extractNameFromText(inputMessage.trim());
+      const extractedPhone = extractPhoneFromText(inputMessage.trim());
+      if (extractedName && !clientNameRef.current) clientNameRef.current = extractedName;
+      if (extractedPhone && !clientPhoneRef.current) clientPhoneRef.current = extractedPhone;
     }
 
     let messageContent: string | MessageContent[] = inputMessage.trim();
@@ -810,8 +821,8 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
           origin: origin || "Direto",
           pageProperties: pageProperties?.slice(0, 10),
           pageContext,
-          clientName: clientName || undefined,
-          clientPhone: clientPhone || undefined,
+          clientName: clientNameRef.current || clientName || undefined,
+          clientPhone: clientPhoneRef.current || clientPhone || undefined,
         }),
       });
 
