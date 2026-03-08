@@ -820,8 +820,12 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
       }
 
       const responseLeadId = response.headers.get("X-Lead-Id");
+      const responseLeadImobId = response.headers.get("X-Lead-Imob-Id");
       if (responseLeadId && !leadId) {
         setLeadId(responseLeadId);
+      }
+      if (responseLeadImobId && !leadImobId) {
+        setLeadImobId(responseLeadImobId);
       }
 
       await processStream(response, responseLeadId || leadId);
