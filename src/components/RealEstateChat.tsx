@@ -823,8 +823,8 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
           origin: origin || "Direto",
           pageProperties: pageProperties?.slice(0, 10),
           pageContext,
-          clientName: clientName || undefined,
-          clientPhone: clientPhone || undefined,
+          clientName: clientNameRef.current || clientName || undefined,
+          clientPhone: clientPhoneRef.current || clientPhone || undefined,
         }),
       });
 
