@@ -733,10 +733,6 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
     }
   };
 
-  // Refs to track extracted data synchronously (avoids React state timing issues)
-  const clientNameRef = useRef<string | null>(null);
-  const clientPhoneRef = useRef<string | null>(null);
-
   // Keep refs in sync with state
   useEffect(() => { clientNameRef.current = clientName; }, [clientName]);
   useEffect(() => { clientPhoneRef.current = clientPhone; }, [clientPhone]);
