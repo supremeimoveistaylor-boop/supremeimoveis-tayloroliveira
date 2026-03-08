@@ -144,6 +144,7 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [leadId, setLeadId] = useState<string | null>(null);
+  const [leadImobId, setLeadImobId] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [hasStarted, setHasStarted] = useState(false);
   const [hasHistory, setHasHistory] = useState(false);
@@ -802,6 +803,7 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
         body: JSON.stringify({
           messages: apiMessages,
           leadId,
+          leadImobId: leadImobId || undefined,
           propertyId,
           propertyName,
           pageUrl: window.location.href,
@@ -819,8 +821,12 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
       }
 
       const responseLeadId = response.headers.get("X-Lead-Id");
+      const responseLeadImobId = response.headers.get("X-Lead-Imob-Id");
       if (responseLeadId && !leadId) {
         setLeadId(responseLeadId);
+      }
+      if (responseLeadImobId && !leadImobId) {
+        setLeadImobId(responseLeadImobId);
       }
 
       await processStream(response, responseLeadId || leadId);

@@ -441,54 +441,61 @@ serve(async (req) => {
         console.log("Lead criado (tabela leads):", currentLeadId, "Nome:", leadName);
       }
 
-      // 2. Verificar duplicidade por telefone antes de criar em leads_imobiliarios
-      let existingImobLeadId: string | null = null;
-      if (leadPhone && leadPhone !== "A definir") {
-        const cleanPhone = leadPhone.replace(/\D/g, "");
-        const { data: existingImob } = await supabase
-          .from("leads_imobiliarios")
-          .select("id")
-          .or(`telefone.eq.${leadPhone},telefone.eq.${cleanPhone}`)
-          .limit(1)
-          .single();
-        
-        if (existingImob) {
-          existingImobLeadId = existingImob.id;
-          leadImobiliarioId = existingImob.id;
-          // Atualizar lead existente
-          await supabase
+      // 2. SÓ criar em leads_imobiliarios se tiver dados REAIS (não defaults)
+      const hasRealName = leadName && leadName !== "Visitante do Chat";
+      const hasRealPhone = leadPhone && leadPhone !== "A definir" && leadPhone.replace(/\D/g, "").length >= 10;
+      
+      if (hasRealName || hasRealPhone) {
+        // Verificar duplicidade por telefone antes de criar
+        let existingImobLeadId: string | null = null;
+        if (hasRealPhone) {
+          const cleanPhone = leadPhone.replace(/\D/g, "");
+          const { data: existingImob } = await supabase
             .from("leads_imobiliarios")
-            .update({
-              nome: leadName !== "Visitante do Chat" ? leadName : undefined,
+            .select("id")
+            .or(`telefone.eq.${leadPhone},telefone.eq.${cleanPhone}`)
+            .limit(1)
+            .single();
+          
+          if (existingImob) {
+            existingImobLeadId = existingImob.id;
+            leadImobiliarioId = existingImob.id;
+            await supabase
+              .from("leads_imobiliarios")
+              .update({
+                nome: hasRealName ? leadName : undefined,
+                telefone: leadPhone,
+                pagina_origem: pageUrl || null,
+                updated_at: new Date().toISOString()
+              })
+              .eq("id", existingImob.id);
+            console.log("✅ Lead imobiliário existente atualizado:", existingImob.id);
+          }
+        }
+
+        if (!existingImobLeadId) {
+          const { data: newLeadImobiliario, error: leadImobError } = await supabase
+            .from("leads_imobiliarios")
+            .insert({
+              nome: leadName,
+              telefone: hasRealPhone ? leadPhone : "A definir",
+              origem: origin || "site",
               pagina_origem: pageUrl || null,
-              updated_at: new Date().toISOString()
+              status: "novo",
+              descricao: `Lead criado automaticamente via chat. Página: ${pageUrl || "Homepage"}`
             })
-            .eq("id", existingImob.id);
-          console.log("✅ Lead imobiliário existente atualizado (duplicidade evitada):", existingImob.id);
-        }
-      }
+            .select()
+            .single();
 
-      // 3. CRIAR LEAD NA FONTE ÚNICA: leads_imobiliarios (se não existe)
-      if (!existingImobLeadId) {
-        const { data: newLeadImobiliario, error: leadImobError } = await supabase
-          .from("leads_imobiliarios")
-          .insert({
-            nome: leadName,
-            telefone: leadPhone,
-            origem: origin || "site",
-            pagina_origem: pageUrl || null,
-            status: "novo",
-            descricao: `Lead criado automaticamente via chat. Página: ${pageUrl || "Homepage"}`
-          })
-          .select()
-          .single();
-
-        if (leadImobError) {
-          console.error("Erro ao criar lead_imobiliario:", leadImobError);
-        } else {
-          leadImobiliarioId = newLeadImobiliario.id;
-          console.log("✅ Lead criado em leads_imobiliarios:", leadImobiliarioId, "Nome:", leadName);
+          if (leadImobError) {
+            console.error("Erro ao criar lead_imobiliario:", leadImobError);
+          } else {
+            leadImobiliarioId = newLeadImobiliario.id;
+            console.log("✅ Lead criado em leads_imobiliarios:", leadImobiliarioId);
+          }
         }
+      } else {
+        console.log("⏳ Lead imobiliário NÃO criado - aguardando dados reais (nome/telefone)");
       }
 
       // 4. Atribuir corretor usando RPC (mantém compatibilidade)
@@ -947,7 +954,7 @@ Acesse o CRM para atendimento imediato.`;
           let targetImobId = leadImobiliarioId;
           
           if (!targetImobId) {
-            // Fallback: buscar por telefone ou pelo lead_id mais recente
+            // Fallback: buscar por telefone
             if (updates.phone || clientPhone) {
               const searchPhone = (updates.phone || clientPhone || "").toString().replace(/\D/g, "");
               if (searchPhone.length >= 10) {
@@ -961,18 +968,6 @@ Acesse o CRM para atendimento imediato.`;
                 if (imobByPhone) targetImobId = imobByPhone.id;
               }
             }
-            
-            // Último fallback: buscar por página
-            if (!targetImobId && pageUrl) {
-              const { data: imobByPage } = await supabase
-                .from("leads_imobiliarios")
-                .select("id")
-                .eq("pagina_origem", pageUrl)
-                .order("created_at", { ascending: false })
-                .limit(1)
-                .maybeSingle();
-              if (imobByPage) targetImobId = imobByPage.id;
-            }
           }
           
           if (targetImobId) {
@@ -981,7 +976,36 @@ Acesse o CRM para atendimento imediato.`;
               .from("leads_imobiliarios")
               .update(imobUpdates)
               .eq("id", targetImobId);
+            leadImobiliarioId = targetImobId;
             console.log(`✅ Lead imobiliário atualizado: ${targetImobId}`, imobUpdates);
+          } else {
+            // Se não existe leads_imobiliarios e agora temos dados reais, CRIAR
+            const hasRealName = imobUpdates.nome && imobUpdates.nome !== "Visitante do Chat";
+            const hasRealPhone = imobUpdates.telefone && String(imobUpdates.telefone).replace(/\D/g, "").length >= 10;
+            
+            if (hasRealName || hasRealPhone) {
+              const { data: newImob } = await supabase
+                .from("leads_imobiliarios")
+                .insert({
+                  nome: (imobUpdates.nome as string) || "Visitante do Chat",
+                  telefone: (imobUpdates.telefone as string) || "A definir",
+                  origem: origin || "site",
+                  pagina_origem: pageUrl || null,
+                  status: "novo",
+                  tipo_imovel: (imobUpdates.tipo_imovel as string) || null,
+                  finalidade: (imobUpdates.finalidade as string) || null,
+                  lead_category: (imobUpdates.lead_category as string) || null,
+                  budget_range: (imobUpdates.budget_range as string) || null,
+                  descricao: `Lead capturado via chat. Dados extraídos da conversa.`
+                })
+                .select("id")
+                .single();
+              
+              if (newImob) {
+                leadImobiliarioId = newImob.id;
+                console.log(`✅ Lead imobiliário CRIADO com dados reais: ${newImob.id}`, imobUpdates);
+              }
+            }
           }
           
           // Enviar WhatsApp com dados completos se capturou nome E telefone
@@ -1456,6 +1480,8 @@ Me conta: você está procurando um imóvel para morar ou investir?"`;
     const headers = new Headers(corsHeaders);
     headers.set("Content-Type", "text/event-stream");
     headers.set("X-Lead-Id", currentLeadId || "");
+    headers.set("X-Lead-Imob-Id", leadImobiliarioId || "");
+    headers.set("Access-Control-Expose-Headers", "X-Lead-Id, X-Lead-Imob-Id");
 
     return new Response(response.body, { headers });
   } catch (e) {
