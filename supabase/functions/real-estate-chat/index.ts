@@ -1480,6 +1480,8 @@ Me conta: você está procurando um imóvel para morar ou investir?"`;
     const headers = new Headers(corsHeaders);
     headers.set("Content-Type", "text/event-stream");
     headers.set("X-Lead-Id", currentLeadId || "");
+    headers.set("X-Lead-Imob-Id", leadImobiliarioId || "");
+    headers.set("Access-Control-Expose-Headers", "X-Lead-Id, X-Lead-Imob-Id");
 
     return new Response(response.body, { headers });
   } catch (e) {
