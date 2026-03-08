@@ -144,6 +144,7 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [leadId, setLeadId] = useState<string | null>(null);
+  const [leadImobId, setLeadImobId] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [hasStarted, setHasStarted] = useState(false);
   const [hasHistory, setHasHistory] = useState(false);
