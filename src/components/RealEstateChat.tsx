@@ -167,6 +167,8 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
   const [leadScore, setLeadScore] = useState<number>(50);
   const [leadSaveAttempted, setLeadSaveAttempted] = useState(false);
   const leadScoreRef = useRef<number>(50);
+  const clientNameRef = useRef<string | null>(null);
+  const clientPhoneRef = useRef<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
