@@ -339,60 +339,56 @@ serve(async (req) => {
         console.log("✅ Dados do lead atualizados:", { clientName, clientPhone });
       }
     } else if (currentLeadId && !skipLeadCreation) {
-      // Lead existe mas não veio do widget (compatibilidade)
-      console.log("Lead já existe (legacy):", currentLeadId);
+      // Lead existe - atualizar com dados do frontend se disponíveis
+      console.log("Lead já existe:", currentLeadId);
       
-      // Buscar dados atuais do lead
-      const { data: existingLead } = await supabase
-        .from("leads")
-        .select("name, phone")
-        .eq("id", currentLeadId)
-        .single();
+      // Se o frontend extraiu nome/telefone, atualizar imediatamente
+      const hasRealClientName = clientName && clientName !== "Visitante do Chat" && clientName.length >= 2;
+      const hasRealClientPhone = clientPhone && clientPhone !== "A definir" && clientPhone.replace(/\D/g, "").length >= 10;
+      
+      if (hasRealClientName || hasRealClientPhone) {
+        const leadUpdate: Record<string, unknown> = { updated_at: new Date().toISOString() };
+        if (hasRealClientName) leadUpdate.name = clientName;
+        if (hasRealClientPhone) leadUpdate.phone = clientPhone;
+        
+        await supabase.from("leads").update(leadUpdate).eq("id", currentLeadId);
+        console.log(`✅ Lead atualizado com dados do frontend: name=${clientName}, phone=${clientPhone}`);
+        
+        // Também atualizar leads_imobiliarios
+        if (leadImobiliarioId) {
+          const imobUpdate: Record<string, unknown> = { updated_at: new Date().toISOString() };
+          if (hasRealClientName) imobUpdate.nome = clientName;
+          if (hasRealClientPhone) imobUpdate.telefone = clientPhone;
+          await supabase.from("leads_imobiliarios").update(imobUpdate).eq("id", leadImobiliarioId);
+          console.log(`✅ Lead imobiliário atualizado com dados do frontend`);
+        }
+      }
       
       // Sincronizar com leads_imobiliarios se ainda não existir
-      const leadName = clientName || existingLead?.name || "Visitante do Chat";
-      const leadPhone = clientPhone || existingLead?.phone || "A definir";
-      
-      // Verificar se já existe lead_imobiliario com mesmo telefone
-      if (leadPhone && leadPhone !== "A definir") {
-        const cleanPhone = leadPhone.replace(/\D/g, "");
-        const { data: existingImobLead } = await supabase
-          .from("leads_imobiliarios")
-          .select("id")
-          .or(`telefone.eq.${leadPhone},telefone.eq.${cleanPhone}`)
-          .limit(1)
+      if (!leadImobiliarioId) {
+        const { data: existingLead } = await supabase
+          .from("leads")
+          .select("name, phone")
+          .eq("id", currentLeadId)
           .single();
         
-        if (existingImobLead) {
-          leadImobiliarioId = existingImobLead.id;
-          await supabase
+        const leadName = clientName || existingLead?.name || "Visitante do Chat";
+        const leadPhone = clientPhone || existingLead?.phone || "A definir";
+        
+        if (leadPhone && leadPhone !== "A definir") {
+          const cleanPhone = leadPhone.replace(/\D/g, "");
+          const { data: existingImobLead } = await supabase
             .from("leads_imobiliarios")
-            .update({
-              nome: leadName !== "Visitante do Chat" ? leadName : undefined,
-              telefone: leadPhone,
-              pagina_origem: pageUrl || null,
-              updated_at: new Date().toISOString()
-            })
-            .eq("id", existingImobLead.id);
-          console.log("✅ Lead imobiliário existente atualizado:", existingImobLead.id);
-        } else {
-          // Criar novo lead_imobiliario
-          const { data: newImobLead } = await supabase
-            .from("leads_imobiliarios")
-            .insert({
-              nome: leadName,
-              telefone: leadPhone,
-              origem: origin || "site",
-              pagina_origem: pageUrl || null,
-              status: "novo",
-              descricao: `Lead do chat. Página: ${pageUrl || "Homepage"}`
-            })
-            .select()
-            .single();
+            .select("id")
+            .or(`telefone.eq.${leadPhone},telefone.eq.${cleanPhone}`)
+            .limit(1)
+            .maybeSingle();
           
-          if (newImobLead) {
-            leadImobiliarioId = newImobLead.id;
-            console.log("✅ Novo lead imobiliário criado:", leadImobiliarioId);
+          if (existingImobLead) {
+            leadImobiliarioId = existingImobLead.id;
+            const imobUpdate: Record<string, unknown> = { updated_at: new Date().toISOString() };
+            if (hasRealClientName) imobUpdate.nome = clientName;
+            await supabase.from("leads_imobiliarios").update(imobUpdate).eq("id", existingImobLead.id);
           }
         }
       }
