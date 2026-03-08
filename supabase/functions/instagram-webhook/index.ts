@@ -231,13 +231,17 @@ serve(async (req) => {
 
             if (existingConv) {
               convId = existingConv.id;
-              await supabase.from('omnichat_conversations').update({
+              const convUpdate: Record<string, unknown> = {
                 last_message_at: new Date().toISOString(),
                 last_message_preview: messageText.substring(0, 100),
                 unread_count: (existingConv.unread_count || 0) + 1,
                 status: 'open',
-                contact_name: displayName,
-              }).eq('id', convId);
+              };
+              // Only update name if we have a real one (not a fallback)
+              if (!displayName.startsWith('Instagram User #')) {
+                convUpdate.contact_name = displayName;
+              }
+              await supabase.from('omnichat_conversations').update(convUpdate).eq('id', convId);
             } else {
               // Check if any agent is online
               const { data: onlineAgents } = await supabase
