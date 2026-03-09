@@ -611,5 +611,6 @@ const Admin = () => {
       </main>
     </div>
   );
+};
 
 export default Admin;
