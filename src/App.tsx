@@ -27,6 +27,7 @@ import PoliticaPrivacidade from "./pages/PoliticaPrivacidade";
 import TermosUso from "./pages/TermosUso";
 import SEOLanding from "./pages/SEOLanding";
 import Conversas from "./pages/Conversas";
+import AvaliarImovel from "./pages/AvaliarImovel";
 import NotFound from "./pages/NotFound";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
