@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
-import { MapPin, Building, Trees, ShoppingBag, GraduationCap, Heart } from 'lucide-react';
-import { neighborhoods, streets, pois, regions, CITY } from '@/lib/geo-locations';
+import { MapPin, Building, Trees, ShoppingBag, GraduationCap, Heart, Star } from 'lucide-react';
+import { neighborhoods, streets, pois } from '@/lib/geo-locations';
 
 interface GeoInternalLinksProps {
   variant?: 'full' | 'compact';
@@ -47,7 +47,6 @@ export const GeoInternalLinks = ({ variant = 'full', exclude }: GeoInternalLinks
 
   return (
     <div className="grid md:grid-cols-3 gap-8">
-      {/* Bairros */}
       <div>
         <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
           <Building className="h-5 w-5 text-accent" />
@@ -65,7 +64,6 @@ export const GeoInternalLinks = ({ variant = 'full', exclude }: GeoInternalLinks
         </ul>
       </div>
 
-      {/* Ruas */}
       <div>
         <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
           <MapPin className="h-5 w-5 text-accent" />
@@ -83,7 +81,6 @@ export const GeoInternalLinks = ({ variant = 'full', exclude }: GeoInternalLinks
         </ul>
       </div>
 
-      {/* POIs */}
       <div>
         <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
           <Star className="h-5 w-5 text-accent" />
@@ -103,5 +100,3 @@ export const GeoInternalLinks = ({ variant = 'full', exclude }: GeoInternalLinks
     </div>
   );
 };
-
-import { Star } from 'lucide-react';

@@ -29,6 +29,8 @@ import SEOLanding from "./pages/SEOLanding";
 import Conversas from "./pages/Conversas";
 import AvaliarImovel from "./pages/AvaliarImovel";
 import NotFound from "./pages/NotFound";
+import BuscaMapa from "./pages/BuscaMapa";
+import GeoLanding from "./pages/GeoLanding";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Chat agora é injetado via script no <head> (index.html), não via React

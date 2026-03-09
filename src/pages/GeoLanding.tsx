@@ -165,7 +165,7 @@ const GeoLanding = () => {
             <Home className="inline h-6 w-6 text-accent mr-2" />
             Imóveis Disponíveis {pageType === 'perto' ? `perto do ${locationName}` : `no ${locationName}`}
           </h2>
-          <FeaturedProperties searchLocation={locationName} />
+          <FeaturedProperties />
         </div>
       </section>
 
