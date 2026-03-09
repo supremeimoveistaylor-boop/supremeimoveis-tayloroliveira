@@ -545,6 +545,10 @@ const SuperAdminDashboard = () => {
               <FileText className="w-4 h-4 mr-2" />
               Auditoria
             </TabsTrigger>
+            <TabsTrigger value="captacao" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+              <Home className="w-4 h-4 mr-2" />
+              🏠 Captação
+            </TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
