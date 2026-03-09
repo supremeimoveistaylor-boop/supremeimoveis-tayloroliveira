@@ -20,6 +20,7 @@ import { FinancialControlPanel } from '@/components/admin/financial';
 import { WhatsAppConnectionPanel } from '@/components/admin/WhatsAppConnectionPanel';
 import { ArchiveStatusPanel } from '@/components/admin/ArchiveStatusPanel';
 import { useLeadNotification } from '@/hooks/useLeadNotification';
+import { CaptacaoImoveisPanel } from '@/components/admin/CaptacaoImoveisPanel';
 
 interface Property {
   id: string;
@@ -56,7 +57,7 @@ const Admin = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'properties' | 'users' | 'leads' | 'attendants' | 'sessions' | 'metrics' | 'conversions' | 'visits' | 'crm' | 'financial' | 'omnichat' | 'archive'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'properties' | 'users' | 'leads' | 'attendants' | 'sessions' | 'metrics' | 'conversions' | 'visits' | 'crm' | 'financial' | 'omnichat' | 'archive' | 'captacao'>('dashboard');
   const [accessDenied, setAccessDenied] = useState(false);
 
   // Enable real-time lead notifications with sound
@@ -371,6 +372,13 @@ const Admin = () => {
             <Archive className="mr-2 h-4 w-4" />
             Arquivamento
           </Button>
+          <Button
+            variant={activeTab === 'captacao' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('captacao')}
+          >
+            <Home className="mr-2 h-4 w-4" />
+            Captação
+          </Button>
         </div>
 
         {/* Dashboard Tab */}
@@ -594,6 +602,11 @@ const Admin = () => {
         {/* Conversions Tab */}
         {activeTab === 'conversions' && (
           <ChatConversionsPanel />
+        )}
+
+        {/* Captação de Imóveis Tab */}
+        {activeTab === 'captacao' && (
+          <CaptacaoImoveisPanel />
         )}
       </main>
     </div>

@@ -77,6 +77,84 @@ export type Database = {
         }
         Relationships: []
       }
+      captacao_imoveis: {
+        Row: {
+          area: number | null
+          bairro: string
+          broker_id: string | null
+          cidade: string
+          created_at: string
+          email: string | null
+          estado_imovel: string
+          id: string
+          lead_id: string | null
+          nome: string
+          quartos: number | null
+          status: string | null
+          telefone: string
+          tipo_imovel: string
+          updated_at: string
+          vagas: number | null
+          valor_estimado_max: number
+          valor_estimado_min: number
+        }
+        Insert: {
+          area?: number | null
+          bairro: string
+          broker_id?: string | null
+          cidade: string
+          created_at?: string
+          email?: string | null
+          estado_imovel: string
+          id?: string
+          lead_id?: string | null
+          nome: string
+          quartos?: number | null
+          status?: string | null
+          telefone: string
+          tipo_imovel: string
+          updated_at?: string
+          vagas?: number | null
+          valor_estimado_max: number
+          valor_estimado_min: number
+        }
+        Update: {
+          area?: number | null
+          bairro?: string
+          broker_id?: string | null
+          cidade?: string
+          created_at?: string
+          email?: string | null
+          estado_imovel?: string
+          id?: string
+          lead_id?: string | null
+          nome?: string
+          quartos?: number | null
+          status?: string | null
+          telefone?: string
+          tipo_imovel?: string
+          updated_at?: string
+          vagas?: number | null
+          valor_estimado_max?: number
+          valor_estimado_min?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "captacao_imoveis_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "brokers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "captacao_imoveis_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       channel_messages: {
         Row: {
           connection_id: string

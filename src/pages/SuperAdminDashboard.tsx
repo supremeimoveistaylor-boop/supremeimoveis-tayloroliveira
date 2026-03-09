@@ -22,6 +22,7 @@ import { OmnichatInboxPanel } from "@/components/admin/OmnichatInboxPanel";
 import { FollowupAlertsPanel } from "@/components/admin/FollowupAlertsPanel";
 import { ChatPerformancePanel } from "@/components/admin/ChatPerformancePanel";
 import { SEOPanel } from "@/components/admin/seo";
+import { CaptacaoImoveisPanel } from "@/components/admin/CaptacaoImoveisPanel";
 import { 
   Shield, 
   Users, 
@@ -41,11 +42,12 @@ import {
   Kanban,
   Wallet,
   Phone,
-   BellRing,
+  BellRing,
   Zap,
   Search,
   Download,
-  Smartphone
+  Smartphone,
+  Home
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
@@ -544,6 +546,10 @@ const SuperAdminDashboard = () => {
               <FileText className="w-4 h-4 mr-2" />
               Auditoria
             </TabsTrigger>
+            <TabsTrigger value="captacao" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+              <Home className="w-4 h-4 mr-2" />
+              🏠 Captação
+            </TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
@@ -653,6 +659,11 @@ const SuperAdminDashboard = () => {
           {/* SEO Inteligente Tab */}
           <TabsContent value="seo" className="space-y-4">
             <SEOPanel />
+          </TabsContent>
+
+          {/* Captação de Imóveis Tab */}
+          <TabsContent value="captacao" className="space-y-4">
+            <CaptacaoImoveisPanel />
           </TabsContent>
 
           {/* Users Tab */}
