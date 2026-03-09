@@ -78,6 +78,9 @@ const App = () => (
                 <Route path="/avaliar-imovel" element={<AvaliarImovel />} />
                 <Route path="/quanto-vale-meu-imovel" element={<AvaliarImovel />} />
                 <Route path="/avaliar-imovel/:cidade" element={<AvaliarImovel />} />
+                {/* Geo SEO Pages */}
+                <Route path="/busca-mapa" element={<BuscaMapa />} />
+                <Route path="/imoveis/:type/:slug" element={<GeoLanding />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
                 <Route path="*" element={<NotFound />} />
