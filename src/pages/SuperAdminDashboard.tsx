@@ -22,6 +22,7 @@ import { OmnichatInboxPanel } from "@/components/admin/OmnichatInboxPanel";
 import { FollowupAlertsPanel } from "@/components/admin/FollowupAlertsPanel";
 import { ChatPerformancePanel } from "@/components/admin/ChatPerformancePanel";
 import { SEOPanel } from "@/components/admin/seo";
+import { CaptacaoImoveisPanel } from "@/components/admin/CaptacaoImoveisPanel";
 import { 
   Shield, 
   Users, 
