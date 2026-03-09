@@ -38,7 +38,20 @@ interface LeadData {
 }
 
 const AvaliarImovel = () => {
+  const { cidade: cidadeSlug } = useParams<{ cidade?: string }>();
+  const cidadeFromUrl = cidadeSlug ? CITY_MAP[cidadeSlug] || cidadeSlug : '';
+
   const [currentStep, setCurrentStep] = useState(1);
+
+  // SEO metadata
+  useEffect(() => {
+    const cityLabel = cidadeFromUrl || 'sua cidade';
+    document.title = `Avaliar Imóvel em ${cityLabel} | Quanto Vale Meu Imóvel - Supreme`;
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) {
+      metaDesc.setAttribute('content', `Descubra quanto vale seu imóvel em ${cityLabel}. Simulador gratuito de avaliação imobiliária. Receba uma estimativa instantânea e avaliação completa de um corretor especializado.`);
+    }
+  }, [cidadeFromUrl]);
   const [propertyData, setPropertyData] = useState<PropertyData>({
     tipo_imovel: '',
     cidade: '',
