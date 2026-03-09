@@ -7,6 +7,8 @@ import { Contact } from "@/components/Contact";
 import { Footer } from "@/components/Footer";
 import { FinancingSection } from "@/components/financing";
 import { RealEstateChat } from "@/components/RealEstateChat";
+import { GeoInternalLinks } from "@/components/geo/GeoInternalLinks";
+import { GeoCTA } from "@/components/geo/GeoCTA";
 
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
