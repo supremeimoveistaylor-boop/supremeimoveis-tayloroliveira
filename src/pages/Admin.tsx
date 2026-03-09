@@ -603,6 +603,16 @@ const Admin = () => {
         {activeTab === 'conversions' && (
           <ChatConversionsPanel />
         )}
+
+        {/* Captação de Imóveis Tab */}
+        {activeTab === 'captacao' && (
+          <CaptacaoImoveisPanel />
+        )}
+      </main>
+    </div>
+  );
+};
+        )}
       </main>
     </div>
   );
