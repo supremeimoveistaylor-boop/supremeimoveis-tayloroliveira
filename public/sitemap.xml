@@ -2,44 +2,88 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://supremeempreendimentos.com/</loc>
-    <lastmod>2026-02-02</lastmod>
+    <lastmod>2026-03-09</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://supremeempreendimentos.com/#/comprar</loc>
-    <lastmod>2026-02-02</lastmod>
+    <lastmod>2026-03-09</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://supremeempreendimentos.com/#/alugar</loc>
-    <lastmod>2026-02-02</lastmod>
+    <lastmod>2026-03-09</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://supremeempreendimentos.com/#/rurais</loc>
-    <lastmod>2026-02-02</lastmod>
+    <lastmod>2026-03-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://supremeempreendimentos.com/#/busca-mapa</loc>
+    <lastmod>2026-03-09</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://supremeempreendimentos.com/#/avaliar-imovel</loc>
+    <lastmod>2026-03-09</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://supremeempreendimentos.com/#/sobre</loc>
-    <lastmod>2026-02-02</lastmod>
+    <lastmod>2026-03-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://supremeempreendimentos.com/#/contato</loc>
-    <lastmod>2026-02-02</lastmod>
+    <lastmod>2026-03-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://supremeempreendimentos.com/#/buscar</loc>
-    <lastmod>2026-02-02</lastmod>
+    <lastmod>2026-03-09</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
+  <!-- Geo SEO: Bairros -->
+  <url><loc>https://supremeempreendimentos.com/#/imoveis/bairro/setor-bueno</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://supremeempreendimentos.com/#/imoveis/bairro/setor-marista</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://supremeempreendimentos.com/#/imoveis/bairro/setor-oeste</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://supremeempreendimentos.com/#/imoveis/bairro/jardim-goias</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://supremeempreendimentos.com/#/imoveis/bairro/setor-central</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://supremeempreendimentos.com/#/imoveis/bairro/alphaville-flamboyant</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://supremeempreendimentos.com/#/imoveis/bairro/aldeia-do-vale</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://supremeempreendimentos.com/#/imoveis/bairro/setor-nova-suica</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://supremeempreendimentos.com/#/imoveis/bairro/jardim-america</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://supremeempreendimentos.com/#/imoveis/bairro/parque-amazonia</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://supremeempreendimentos.com/#/imoveis/bairro/setor-pedro-ludovico</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://supremeempreendimentos.com/#/imoveis/bairro/vila-rosa</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <!-- Geo SEO: Ruas -->
+  <url><loc>https://supremeempreendimentos.com/#/imoveis/rua/avenida-t-63</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://supremeempreendimentos.com/#/imoveis/rua/avenida-85</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://supremeempreendimentos.com/#/imoveis/rua/avenida-t-9</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://supremeempreendimentos.com/#/imoveis/rua/avenida-portugal</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://supremeempreendimentos.com/#/imoveis/rua/avenida-t-4</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://supremeempreendimentos.com/#/imoveis/rua/rua-t-37</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://supremeempreendimentos.com/#/imoveis/rua/avenida-republica-do-libano</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://supremeempreendimentos.com/#/imoveis/rua/avenida-terceira-radial</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <!-- Geo SEO: Pontos de Interesse -->
+  <url><loc>https://supremeempreendimentos.com/#/imoveis/perto/parque-flamboyant</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://supremeempreendimentos.com/#/imoveis/perto/parque-vaca-brava</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://supremeempreendimentos.com/#/imoveis/perto/parque-areiao</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://supremeempreendimentos.com/#/imoveis/perto/shopping-flamboyant</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://supremeempreendimentos.com/#/imoveis/perto/goiania-shopping</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://supremeempreendimentos.com/#/imoveis/perto/shopping-passeio-das-aguas</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://supremeempreendimentos.com/#/imoveis/perto/ufg</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://supremeempreendimentos.com/#/imoveis/perto/puc-goias</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://supremeempreendimentos.com/#/imoveis/perto/hospital-araujo-jorge</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
 </urlset>

@@ -13,7 +13,7 @@ export const GeoCTA = ({ locationName }: GeoCTAProps) => (
       <h2 className="text-2xl md:text-3xl font-bold mb-3">
         Tem um imóvel no <span className="text-accent">{locationName}</span>?
       </h2>
-      <p className="text-lg text-gray-300 mb-6 max-w-xl mx-auto">
+      <p className="text-lg text-muted-foreground mb-6 max-w-xl mx-auto">
         Descubra quanto vale seu imóvel com nossa avaliação gratuita. Milhares de proprietários já utilizaram nosso simulador.
       </p>
       <div className="flex flex-wrap justify-center gap-3">

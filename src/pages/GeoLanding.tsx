@@ -139,7 +139,7 @@ const GeoLanding = () => {
             <span className="block text-xl md:text-2xl mt-2 font-normal text-muted-foreground">em {CITY}, GO</span>
           </h1>
 
-          <p className="text-lg text-gray-300 max-w-3xl leading-relaxed">{locationDesc}</p>
+          <p className="text-lg text-muted-foreground max-w-3xl leading-relaxed">{locationDesc}</p>
 
           <div className="flex flex-wrap gap-3 mt-6">
             <Button asChild className="bg-accent text-accent-foreground hover:bg-accent/90">
