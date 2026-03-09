@@ -660,6 +660,11 @@ const SuperAdminDashboard = () => {
             <SEOPanel />
           </TabsContent>
 
+          {/* Captação de Imóveis Tab */}
+          <TabsContent value="captacao" className="space-y-4">
+            <CaptacaoImoveisPanel />
+          </TabsContent>
+
           {/* Users Tab */}
           <TabsContent value="users" className="space-y-4">
             <SuperAdminUsersPanel currentUserId={user!.id} />
