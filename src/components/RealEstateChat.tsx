@@ -1113,11 +1113,13 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
           border: '2px solid hsl(45 100% 50% / 0.4)',
         }} />
         {/* Avatar photo */}
-        <img
-          src="/images/chat-avatar.png"
-          alt="Atendimento"
-          className="h-full w-full rounded-full object-cover border-2 border-accent"
-        />
+        <div className="h-full w-full rounded-full overflow-hidden border-2 border-accent">
+          <img
+            src="/images/chat-avatar.png"
+            alt="Atendimento"
+            className="w-full h-full object-cover scale-[1.8] object-[center_25%]"
+          />
+        </div>
       </button>
     );
   }
