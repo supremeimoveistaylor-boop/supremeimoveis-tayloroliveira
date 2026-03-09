@@ -372,6 +372,13 @@ const Admin = () => {
             <Archive className="mr-2 h-4 w-4" />
             Arquivamento
           </Button>
+          <Button
+            variant={activeTab === 'captacao' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('captacao')}
+          >
+            <Home className="mr-2 h-4 w-4" />
+            Captação
+          </Button>
         </div>
 
         {/* Dashboard Tab */}
