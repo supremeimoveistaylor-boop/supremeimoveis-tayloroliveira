@@ -20,6 +20,7 @@ import { FinancialControlPanel } from '@/components/admin/financial';
 import { WhatsAppConnectionPanel } from '@/components/admin/WhatsAppConnectionPanel';
 import { ArchiveStatusPanel } from '@/components/admin/ArchiveStatusPanel';
 import { useLeadNotification } from '@/hooks/useLeadNotification';
+import { CaptacaoImoveisPanel } from '@/components/admin/CaptacaoImoveisPanel';
 
 interface Property {
   id: string;
