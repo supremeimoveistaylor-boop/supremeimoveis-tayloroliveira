@@ -1097,14 +1097,27 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 h-[56px] w-[56px] rounded-[18px] z-[9999] flex items-center justify-center transition-all duration-500 ease-out hover:scale-105 hover:shadow-[0_8px_30px_rgba(198,165,91,0.5)]"
+        className="fixed bottom-6 right-6 h-[72px] w-[72px] rounded-full z-[9999] flex items-center justify-center transition-all duration-500 ease-out hover:scale-110 group"
         style={{
-          background: 'linear-gradient(135deg, #C6A85B, #D4B86A)',
+          background: 'linear-gradient(135deg, hsl(0 0% 0%), hsl(0 0% 10%))',
           boxShadow: '0 6px 24px rgba(198,165,91,0.4)',
+          padding: '3px',
         }}
         title="Especialista Imobiliário"
       >
-        <MessageCircle className="h-6 w-6 text-[#111]" strokeWidth={2.2} />
+        {/* Pulsing gold ring */}
+        <span className="absolute inset-0 rounded-full animate-[chat-pulse_2s_ease-in-out_infinite]" style={{
+          border: '2.5px solid hsl(45 100% 50%)',
+        }} />
+        <span className="absolute inset-0 rounded-full animate-[chat-pulse-outer_2s_ease-in-out_infinite_0.5s]" style={{
+          border: '2px solid hsl(45 100% 50% / 0.4)',
+        }} />
+        {/* Avatar photo */}
+        <img
+          src="/images/chat-avatar.png"
+          alt="Atendimento"
+          className="h-full w-full rounded-full object-cover border-2 border-accent"
+        />
       </button>
     );
   }
