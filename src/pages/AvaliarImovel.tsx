@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +12,14 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
+
+const CITY_MAP: Record<string, string> = {
+  'goiania': 'Goiânia',
+  'sao-paulo': 'São Paulo',
+  'aparecida-de-goiania': 'Aparecida de Goiânia',
+  'anapolis': 'Anápolis',
+  'brasilia': 'Brasília',
+};
 
 interface PropertyData {
   tipo_imovel: string;
