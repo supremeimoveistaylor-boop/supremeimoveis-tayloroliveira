@@ -42,11 +42,12 @@ import {
   Kanban,
   Wallet,
   Phone,
-   BellRing,
+  BellRing,
   Zap,
   Search,
   Download,
-  Smartphone
+  Smartphone,
+  Home
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
