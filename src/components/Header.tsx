@@ -18,6 +18,7 @@ export const Header = () => {
     { to: "/comprar", label: "Comprar" },
     { to: "/alugar", label: "Alugar" },
     { to: "/rurais", label: "Propriedades Rurais" },
+    { to: "/busca-mapa", label: "Mapa" },
     { to: "/sobre", label: "Sobre Nós" },
     { to: "/contato", label: "Contato" },
   ];

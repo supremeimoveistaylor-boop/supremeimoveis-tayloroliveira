@@ -7,6 +7,8 @@ import { Contact } from "@/components/Contact";
 import { Footer } from "@/components/Footer";
 import { FinancingSection } from "@/components/financing";
 import { RealEstateChat } from "@/components/RealEstateChat";
+import { GeoInternalLinks } from "@/components/geo/GeoInternalLinks";
+import { GeoCTA } from "@/components/geo/GeoCTA";
 
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -102,7 +104,18 @@ const Index = () => {
       
       {/* Financing Simulator Section */}
       <FinancingSection />
-      
+
+      {/* Geo CTA */}
+      <GeoCTA locationName="Goiânia" />
+
+      {/* Geo SEO Links */}
+      <section className="py-12 bg-secondary">
+        <div className="container mx-auto px-4">
+          <h2 className="text-2xl font-bold text-center mb-8">Imóveis por Localização em Goiânia</h2>
+          <GeoInternalLinks variant="full" />
+        </div>
+      </section>
+
       <About />
       <Contact />
       <Footer />
