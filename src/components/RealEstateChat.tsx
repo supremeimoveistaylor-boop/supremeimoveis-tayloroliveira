@@ -1152,7 +1152,7 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
       <div className="p-4 rounded-t-[20px] flex items-center justify-between" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.04), transparent)', borderBottom: '1px solid #C6A85B' }}>
         <div className="flex items-center gap-3">
           <div className="relative w-10 h-10 rounded-full overflow-hidden flex items-center justify-center" style={{ background: '#0f172a' }}>
-            <img src="/images/chat-avatar.png" alt="Supreme" className="w-full h-full object-contain" />
+            <img src="/images/chat-avatar.png" alt="Supreme" className="w-full h-full object-cover scale-[1.8] object-[center_25%]" />
             <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full animate-pulse" style={{ background: '#22c55e', border: '2px solid #C6A85B' }} />
           </div>
           <div>
