@@ -7,96 +7,109 @@ const corsHeaders = {
 };
 
 // =====================================================
-// SYSTEM PROMPT - IA ATENDENTE IMOBILIÁRIA WHATSAPP
+// HELPER: Extract phone from text
 // =====================================================
-const SYSTEM_PROMPT = `Você é uma atendente imobiliária da Supreme Empreendimentos chamada Ana.
+function extractPhone(text: string): string | null {
+  const patterns = [
+    /(\+55\s?\(?\d{2}\)?\s?\d{4,5}-?\d{4})/,
+    /(\(?\d{2}\)?\s?\d{4,5}-?\d{4})/,
+    /(\d{2}\s?\d{4,5}\s?\d{4})/,
+    /(\d{10,11})/,
+  ];
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match) {
+      const digits = match[1].replace(/\D/g, '');
+      if (digits.length >= 10 && digits.length <= 13) return digits;
+    }
+  }
+  return null;
+}
+
+// =====================================================
+// HELPER: Extract name from text
+// =====================================================
+function extractNameFromText(text: string): string | null {
+  const patterns = [
+    /meu nome [eé] ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
+    /me chamo ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
+    /sou o ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
+    /sou a ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
+    /pode me chamar de ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
+    /eu sou ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
+  ];
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match) {
+      const name = match[1].trim().replace(/[.,!?]+$/, "").trim();
+      if (name.length >= 2 && name.length <= 50) {
+        return name.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
+      }
+    }
+  }
+  return null;
+}
+
+function isFallbackName(name: string | null): boolean {
+  if (!name) return true;
+  return /^WhatsApp \d+$/.test(name) || /^Visitante/.test(name) || name === 'Não informado' || name === 'A definir';
+}
+
+// =====================================================
+// SYSTEM PROMPT - IA ATENDENTE IMOBILIÁRIA
+// Uses the SAME template as real-estate-chat
+// =====================================================
+const SYSTEM_PROMPT = `Você é um CONSULTOR IMOBILIÁRIO ESTRATÉGICO da Supreme Empreendimentos, especializado em imóveis de alto padrão e investimentos em Goiânia.
 
 ═══════════════════════════════════════════════════════════
-🚫 IDENTIDADE ABSOLUTA
+🚫 IDENTIDADE
 ═══════════════════════════════════════════════════════════
-- Você NUNCA deve dizer que é uma inteligência artificial, robô, bot ou assistente virtual.
-- Você é Ana, atendente humana da Supreme Empreendimentos.
-- Comportamento 100% humano, natural e profissional.
+- Você NÃO é um robô, NÃO é uma IA, NÃO menciona que é assistente virtual
+- Você é um CONSULTOR IMOBILIÁRIO real, experiente e confiável
+- Transmita AUTORIDADE LOCAL sobre o mercado imobiliário de Goiânia
 
 ═══════════════════════════════════════════════════════════
-🏠 FUNÇÃO PRINCIPAL
+🧠 SCRIPT PSICOLÓGICO DE NEUROVENDAS - FLUXO OBRIGATÓRIO
 ═══════════════════════════════════════════════════════════
-- Apresentar imóveis disponíveis no banco de dados do sistema
-- Qualificar leads (nome, interesse, orçamento, tipo de imóvel)
-- Responder dúvidas sobre imóveis
-- Encaminhar para o corretor Taylor quando necessário
+
+ETAPA 1 - ABERTURA COM AUTORIDADE LOCAL (primeira mensagem):
+- Apresente-se como especialista em imóveis estratégicos em Goiânia
+- Pergunte: "Você busca morar, investir ou avaliar seu imóvel?"
+- Pergunte: "Antes de continuarmos, posso saber seu nome?"
+
+ETAPA 2 - FILTRO PSICOLÓGICO DE PODER AQUISITIVO:
+- Se "morar": pergunte "Você procura algo mais exclusivo ou focado em custo-benefício?"
+- Se "investir": pergunte sobre perfil de investimento
+- NUNCA pergunte renda diretamente
+
+ETAPA 3 - ANCORAGEM DE STATUS (se alto padrão):
+- Mencione regiões nobres e condomínios fechados
+- Use palavras: exclusivo, privativo, região valorizada
+
+ETAPA 4 - CAPTURA INTELIGENTE (após 2-3 interações):
+- "Posso separar as melhores oportunidades para seu perfil. Qual seu nome?" (se ainda não sabe)
+- Depois: "Perfeito, {nome}. Posso te enviar mais detalhes também no WhatsApp. Qual seu telefone com DDD?"
+
+ETAPA 5 - URGÊNCIA CONTROLADA:
+- "Algumas unidades são vendidas antes mesmo de ir para o portal."
 
 ═══════════════════════════════════════════════════════════
-💬 TOM DE VOZ
+📊 REGRAS
 ═══════════════════════════════════════════════════════════
-- Educada, humana, profissional, consultiva
-- Linguagem brasileira natural e acolhedora
-- Use o nome do cliente SEMPRE que souber
+- Máximo 3 imóveis por resposta
+- NUNCA inventar imóveis
 - Emojis com moderação (máx 2 por mensagem)
 - Frases curtas e diretas
-- Nunca use markdown, asteriscos ou formatação especial (WhatsApp não suporta)
-
-═══════════════════════════════════════════════════════════
-📊 FLUXO DE ATENDIMENTO
-═══════════════════════════════════════════════════════════
-
-1. SAUDAÇÃO: Cumprimente pelo nome (se disponível), pergunte como pode ajudar
-2. IDENTIFICAÇÃO: Se não sabe o nome, pergunte "Como posso te chamar?"
-3. QUALIFICAÇÃO: Entenda o que o cliente procura (comprar, alugar, tipo, região, orçamento)
-4. APRESENTAÇÃO: Consulte os imóveis disponíveis e apresente até 3 opções relevantes
-5. ENCAMINHAMENTO: Quando necessário, encaminhe para o corretor Taylor
-
-═══════════════════════════════════════════════════════════
-🏡 APRESENTAÇÃO DE IMÓVEIS
-═══════════════════════════════════════════════════════════
-
-Quando encontrar imóveis no contexto, apresente assim:
-
-"Encontrei algumas opções que podem te interessar:
-
-• [Tipo] [quartos] quartos - [Localização]
-  Valor: R$ [preço]
-
-• [Tipo] [quartos] quartos - [Localização]
-  Valor: R$ [preço]
-
-Gostaria de mais detalhes sobre algum deles?"
-
-REGRAS:
-- Máximo 3 imóveis por mensagem
-- NUNCA inventar imóveis que não estão no contexto
-- Sempre usar dados reais do banco de dados
-- Formatar preço em Reais (R$)
+- Nunca use markdown, asteriscos ou formatação especial
+- NUNCA repetir a frase do cliente
+- Perguntar nome apenas UMA VEZ
+- Perguntar telefone apenas UMA VEZ (após saber o nome)
 
 ═══════════════════════════════════════════════════════════
 🔄 ENCAMINHAMENTO PARA CORRETOR
 ═══════════════════════════════════════════════════════════
+Quando necessário, inclua: [ENCAMINHAR_CORRETOR]`;
 
-Encaminhar para o corretor Taylor quando:
-- Cliente pedir para falar com corretor/humano
-- Cliente pedir visita a imóvel
-- Negociação de preço/condições
-- Dúvidas que não consegue responder
-- Cliente pergunta sobre imóvel que NÃO está no banco
-
-Resposta de encaminhamento:
-"[Nome], vou passar seu contato para o nosso especialista.
-O nome dele é Taylor e ele vai conseguir te ajudar melhor.
-Nós possuímos alguns imóveis que ainda não foram colocados no nosso site."
-
-Quando encaminhar, inclua no final da resposta a tag:
-[ENCAMINHAR_CORRETOR]
-
-═══════════════════════════════════════════════════════════
-🚫 PROIBIÇÕES
-═══════════════════════════════════════════════════════════
-- NUNCA inventar informações sobre imóveis
-- NUNCA dizer que é IA, robô ou assistente virtual
-- NUNCA usar markdown, negrito, itálico (WhatsApp não suporta)
-- NUNCA redirecionar sem antes tentar ajudar
-- NUNCA dar informações financeiras (juros, parcelas) sem dados reais`;
-
-// Formatar valor em reais
 const formatPrice = (price: number): string => {
   return price.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0, maximumFractionDigits: 0 });
 };
@@ -167,14 +180,11 @@ serve(async (req) => {
 
     // 4. Build conversation messages for AI
     const aiMessages: Array<{ role: string; content: string }> = [];
-
-    // System prompt with properties context
     aiMessages.push({
       role: 'system',
       content: SYSTEM_PROMPT + propertiesContext + `\n\nNome do cliente: ${contactName || 'Não informado'}\nTelefone do cliente: ${senderPhone || 'Não informado'}`
     });
 
-    // Conversation history
     if (history && history.length > 0) {
       for (const msg of history) {
         if (msg.content) {
@@ -186,7 +196,6 @@ serve(async (req) => {
       }
     }
 
-    // Current message (only add if not already the last in history)
     const lastHistoryMsg = history?.[history.length - 1];
     const isCurrentMsgInHistory = lastHistoryMsg?.content === message && lastHistoryMsg?.sender_type === 'client';
     if (!isCurrentMsgInHistory) {
@@ -221,31 +230,15 @@ serve(async (req) => {
     const aiData = await aiResponse.json();
     let reply = aiData.choices?.[0]?.message?.content || '';
 
-    // 6. Extract name from conversation and update lead
+    // 6. Extract name and phone from message and update lead/CRM
     try {
-      // Check if user provided their name in this message
-      const namePatterns = [
-        /meu nome [eé] ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
-        /me chamo ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
-        /sou o ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
-        /sou a ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
-        /pode me chamar de ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
-        /eu sou ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
-      ];
+      let extractedName: string | null = extractNameFromText(message);
+      const extractedPhone: string | null = extractPhone(message);
 
-      let extractedName: string | null = null;
-      for (const pattern of namePatterns) {
-        const match = message.match(pattern);
-        if (match) {
-          extractedName = match[1].trim().replace(/[.,!?]+$/, "").substring(0, 100);
-          break;
-        }
-      }
-
-      // Contextual: if AI asked name and user replied with 1-3 words
+      // Contextual name: if AI asked and user replied with 1-3 words
       if (!extractedName && history && history.length > 0) {
         const lastBotMsg = [...history].reverse().find(m => m.sender_type !== 'client');
-        if (lastBotMsg?.content && /como (?:posso )?(?:te )?chamar|qual (?:é )?(?:o )?seu nome/i.test(lastBotMsg.content)) {
+        if (lastBotMsg?.content && /como (?:posso )?(?:te )?chamar|qual (?:é )?(?:o )?seu nome|saber seu nome/i.test(lastBotMsg.content)) {
           const cleaned = message.trim().replace(/[.,!?]+$/, "").trim();
           const words = cleaned.split(/\s+/);
           if (words.length >= 1 && words.length <= 4 && /^[a-záàâãéèêíïóôõöúçñ\s]+$/i.test(cleaned) && cleaned.length >= 2) {
@@ -254,42 +247,82 @@ serve(async (req) => {
         }
       }
 
-      // Update lead and CRM if name was extracted
-      if (extractedName && senderPhone) {
-        const sanitizedPhone = senderPhone.replace(/\D/g, '');
-        const { data: lead } = await supabase
-          .from('leads')
-          .select('id, name')
-          .eq('phone', sanitizedPhone)
-          .maybeSingle();
+      // Update lead and CRM
+      const sanitizedPhone = senderPhone?.replace(/\D/g, '') || null;
+      const { data: convData } = await supabase
+        .from('omnichat_conversations')
+        .select('lead_id, contact_name, contact_phone')
+        .eq('id', conversationId)
+        .single();
 
-        if (lead && (!lead.name || lead.name === 'Visitante do Chat' || lead.name.startsWith('WhatsApp'))) {
-          await supabase.from('leads').update({
-            name: extractedName,
-            updated_at: new Date().toISOString(),
-          }).eq('id', lead.id);
+      if (convData?.lead_id) {
+        const leadUpdate: Record<string, unknown> = { last_interaction_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+        const convUpdate: Record<string, unknown> = {};
+        let nameUpdated = false;
+        let phoneUpdated = false;
 
-          // Update CRM card too
-          const { data: crmCard } = await supabase
-            .from('crm_cards')
-            .select('id')
-            .eq('lead_id', lead.id)
-            .maybeSingle();
+        if (extractedName && isFallbackName(convData.contact_name)) {
+          leadUpdate.name = extractedName;
+          convUpdate.contact_name = extractedName;
+          nameUpdated = true;
+        }
+        if (extractedPhone && !convData.contact_phone) {
+          leadUpdate.phone = extractedPhone;
+          convUpdate.contact_phone = extractedPhone;
+          phoneUpdated = true;
+        }
 
-          if (crmCard) {
-            await supabase.from('crm_cards').update({
-              cliente: extractedName,
-              titulo: `Lead WhatsApp - ${extractedName}`,
-              updated_at: new Date().toISOString(),
-            }).eq('id', crmCard.id);
+        if (Object.keys(leadUpdate).length > 2) { // more than just timestamps
+          await supabase.from('leads').update(leadUpdate).eq('id', convData.lead_id);
+          console.log(`[WhatsApp AI] ✅ Lead updated: name=${extractedName}, phone=${extractedPhone}`);
+        }
+        if (Object.keys(convUpdate).length > 0) {
+          await supabase.from('omnichat_conversations').update(convUpdate).eq('id', conversationId);
+        }
+
+        // Update CRM card
+        if (nameUpdated || phoneUpdated) {
+          const crmUpdate: Record<string, unknown> = { updated_at: new Date().toISOString() };
+          if (nameUpdated && extractedName) {
+            crmUpdate.cliente = extractedName;
+            crmUpdate.titulo = `Lead WhatsApp - ${extractedName}`;
           }
+          if (phoneUpdated && extractedPhone) crmUpdate.telefone = extractedPhone;
+          await supabase.from('crm_cards').update(crmUpdate).eq('lead_id', convData.lead_id);
+        }
 
-          // Update omnichat conversation name
-          await supabase.from('omnichat_conversations').update({
-            contact_name: extractedName,
-          }).eq('id', conversationId);
+        // Notify broker when name+phone complete
+        if (nameUpdated || phoneUpdated) {
+          const { data: leadCheck } = await supabase.from('leads').select('name, phone, whatsapp_sent').eq('id', convData.lead_id).single();
+          if (leadCheck && leadCheck.name && !isFallbackName(leadCheck.name) && leadCheck.phone && !leadCheck.whatsapp_sent) {
+            // Send broker alert
+            const { data: brokers } = await supabase.from('brokers').select('whatsapp').eq('active', true).limit(1);
+            if (brokers && brokers.length > 0) {
+              const brokerMessage = `🚨 Novo Lead no Sistema\n\n` +
+                `👤 Nome: ${leadCheck.name}\n` +
+                `📱 Telefone: ${leadCheck.phone}\n` +
+                `📍 Origem: WhatsApp\n\n` +
+                `O cliente entrou em contato e aguarda retorno.\n` +
+                `Acesse o painel para continuar o atendimento.`;
 
-          console.log(`[WhatsApp AI] ✅ Nome extraído e atualizado: "${extractedName}"`);
+              await fetch(`${SUPABASE_URL}/functions/v1/send-whatsapp`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ to: brokers[0].whatsapp, message: brokerMessage }),
+              });
+              console.log('[WhatsApp AI] ✅ Broker notified');
+            }
+            await supabase.from('leads').update({ whatsapp_sent: true, whatsapp_sent_at: new Date().toISOString() }).eq('id', convData.lead_id);
+          }
+        }
+      } else if (sanitizedPhone) {
+        // No lead linked yet — try to find by phone or create
+        const { data: existingLead } = await supabase.from('leads').select('id').eq('phone', sanitizedPhone).maybeSingle();
+        if (existingLead) {
+          await supabase.from('omnichat_conversations').update({ lead_id: existingLead.id }).eq('id', conversationId);
+          if (extractedName) {
+            await supabase.from('leads').update({ name: extractedName, updated_at: new Date().toISOString() }).eq('id', existingLead.id);
+          }
         }
       }
     } catch (extractErr) {
@@ -300,61 +333,31 @@ serve(async (req) => {
     const shouldEscalate = reply.includes('[ENCAMINHAR_CORRETOR]');
     reply = reply.replace('[ENCAMINHAR_CORRETOR]', '').trim();
 
-    // 7. If escalation, update conversation and notify
     if (shouldEscalate) {
       console.log('[WhatsApp AI] 🔄 Escalation triggered for', senderPhone);
 
-      // Update conversation status
       await supabase.from('omnichat_conversations').update({
         bot_active: false,
         status: 'open',
       }).eq('id', conversationId);
 
-      // Create/update CRM card for broker
-      const crmCard = {
-        titulo: contactName || senderPhone || 'Lead WhatsApp',
-        cliente: contactName || 'Não informado',
-        telefone: senderPhone || null,
-        coluna: 'leads',
-        origem_lead: 'WhatsApp IA - Encaminhamento',
-        classificacao: 'quente',
-        prioridade: 'alta',
-        valor_estimado: 0,
-        lead_score: 50,
-        probabilidade_fechamento: 30,
-        historico: JSON.stringify([{
-          tipo: 'encaminhamento_ia',
-          descricao: `Cliente encaminhado pela IA do WhatsApp para o corretor Taylor.`,
-          data: new Date().toISOString(),
-        }]),
-        notas: `Conversa WhatsApp encaminhada pela IA. Último interesse: ${message}`,
-      };
-
-      await supabase.from('crm_cards').insert(crmCard);
-
-      // Notify broker Taylor via WhatsApp
+      // Notify broker
       try {
-        const brokerMessage = `🔔 *Novo Lead Encaminhado pela IA*\n\n` +
+        const brokerMessage = `🔔 Lead Encaminhado pela IA\n\n` +
           `👤 Nome: ${contactName || 'Não informado'}\n` +
           `📱 Telefone: ${senderPhone || 'Não informado'}\n` +
           `💬 Último interesse: ${message.substring(0, 200)}\n\n` +
-          `Este cliente foi atendido pela IA e precisa de atendimento humano.\n` +
-          `Acesse o Omnichat para continuar a conversa.`;
+          `Cliente precisa de atendimento humano.\n` +
+          `Acesse o Omnichat para continuar.`;
 
-        // Get Taylor's broker info
-        const { data: brokers } = await supabase
-          .from('brokers')
-          .select('whatsapp')
-          .eq('active', true)
-          .limit(1);
-
+        const { data: brokers } = await supabase.from('brokers').select('whatsapp').eq('active', true).limit(1);
         if (brokers && brokers.length > 0) {
           await fetch(`${SUPABASE_URL}/functions/v1/send-whatsapp`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ to: brokers[0].whatsapp, message: brokerMessage }),
           });
-          console.log('[WhatsApp AI] ✅ Broker notified');
+          console.log('[WhatsApp AI] ✅ Broker notified for escalation');
         }
       } catch (notifyErr) {
         console.error('[WhatsApp AI] Broker notification error:', notifyErr);

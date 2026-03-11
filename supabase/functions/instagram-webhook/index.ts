@@ -61,7 +61,7 @@ function extractNameFromText(text: string): string | null {
 // =====================================================
 function isFallbackName(name: string | null): boolean {
   if (!name) return true;
-  return /^Instagram User #\d+$/.test(name) || /^\d+$/.test(name);
+  return /^Instagram User #\d+$/.test(name) || /^\d+$/.test(name) || name === 'Visitante' || name === 'Visitante do Chat';
 }
 
 // =====================================================
@@ -181,10 +181,68 @@ async function syncLeadData(
 
     // 4. Update CRM card if exists
     const crmUpdate: Record<string, unknown> = { updated_at: new Date().toISOString() };
-    if (updates.name) crmUpdate.cliente = updates.name;
+    if (updates.name) {
+      crmUpdate.cliente = updates.name;
+      crmUpdate.titulo = `Lead Instagram - ${updates.name}`;
+    }
     if (updates.phone) crmUpdate.telefone = updates.phone;
     crmUpdate.last_interaction_at = new Date().toISOString();
     await supabase.from('crm_cards').update(crmUpdate).eq('lead_id', convData.lead_id);
+
+    // 5. Send broker WhatsApp alert when we have BOTH name and phone
+    if (updates.name && updates.phone) {
+      await notifyBroker(supabase, updates.name, updates.phone, 'Instagram');
+    } else if (updates.phone) {
+      // Check if lead already has name
+      const { data: leadData } = await supabase.from('leads').select('name').eq('id', convData.lead_id).single();
+      if (leadData?.name && !isFallbackName(leadData.name)) {
+        await notifyBroker(supabase, leadData.name, updates.phone, 'Instagram');
+      }
+    } else if (updates.name) {
+      // Check if lead already has phone
+      const { data: leadData } = await supabase.from('leads').select('phone, whatsapp_sent').eq('id', convData.lead_id).single();
+      if (leadData?.phone && !leadData.whatsapp_sent) {
+        await notifyBroker(supabase, updates.name, leadData.phone, 'Instagram');
+        await supabase.from('leads').update({ whatsapp_sent: true, whatsapp_sent_at: new Date().toISOString() }).eq('id', convData.lead_id);
+      }
+    }
+  }
+}
+
+// =====================================================
+// HELPER: Notify broker via WhatsApp
+// =====================================================
+async function notifyBroker(
+  supabase: ReturnType<typeof createClient>,
+  name: string,
+  phone: string,
+  origin: string
+) {
+  try {
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+    const { data: brokers } = await supabase
+      .from('brokers')
+      .select('whatsapp')
+      .eq('active', true)
+      .limit(1);
+
+    if (brokers && brokers.length > 0) {
+      const brokerMessage = `🚨 Novo Lead no Sistema\n\n` +
+        `👤 Nome: ${name}\n` +
+        `📱 Telefone: ${phone}\n` +
+        `📍 Origem: ${origin}\n\n` +
+        `O cliente entrou em contato e aguarda retorno.\n` +
+        `Acesse o painel para continuar o atendimento.`;
+
+      await fetch(`${SUPABASE_URL}/functions/v1/send-whatsapp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: brokers[0].whatsapp, message: brokerMessage }),
+      });
+      console.log(`[Instagram Webhook] ✅ Broker notified: ${name} / ${phone}`);
+    }
+  } catch (notifyErr) {
+    console.error('[Instagram Webhook] Broker notification error:', notifyErr);
   }
 }
 
@@ -315,10 +373,7 @@ serve(async (req) => {
             let extractedPhone: string | null = null;
 
             if (messageText) {
-              // Extract name from explicit patterns
               extractedName = extractNameFromText(messageText);
-
-              // Extract phone
               extractedPhone = extractPhone(messageText);
             }
 
@@ -421,24 +476,66 @@ serve(async (req) => {
                 .single();
 
               if (!convForLead?.lead_id) {
-                // Create a new lead for this Instagram contact
-                const leadName = extractedName || (isFallbackName(displayName) ? displayName : displayName);
-                const { data: newLead } = await supabase
-                  .from('leads')
-                  .insert({
-                    name: leadName,
-                    phone: extractedPhone,
-                    origin: 'instagram',
-                    status: 'novo',
-                  })
-                  .select('id')
-                  .single();
+                // Check dedup by phone first
+                let existingLeadId: string | null = null;
+                if (extractedPhone) {
+                  const { data: phoneMatch } = await supabase
+                    .from('leads')
+                    .select('id')
+                    .eq('phone', extractedPhone)
+                    .maybeSingle();
+                  if (phoneMatch) existingLeadId = phoneMatch.id;
+                }
 
-                if (newLead) {
-                  await supabase.from('omnichat_conversations').update({
-                    lead_id: newLead.id,
-                  }).eq('id', convId);
-                  console.log('[Instagram Webhook] ✅ Lead created for Instagram contact:', newLead.id);
+                if (existingLeadId) {
+                  // Link existing lead
+                  await supabase.from('omnichat_conversations').update({ lead_id: existingLeadId }).eq('id', convId);
+                  const leadUpdate: Record<string, unknown> = { last_interaction_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+                  if (extractedName) leadUpdate.name = extractedName;
+                  await supabase.from('leads').update(leadUpdate).eq('id', existingLeadId);
+                  console.log('[Instagram Webhook] ✅ Linked to existing lead by phone:', existingLeadId);
+                } else {
+                  // Create new lead (temporary if no name)
+                  const leadName = extractedName || (isFallbackName(displayName) ? 'Visitante' : displayName);
+                  const { data: newLead } = await supabase
+                    .from('leads')
+                    .insert({
+                      name: leadName,
+                      phone: extractedPhone,
+                      origin: 'instagram',
+                      status: 'novo',
+                    })
+                    .select('id')
+                    .single();
+
+                  if (newLead) {
+                    await supabase.from('omnichat_conversations').update({
+                      lead_id: newLead.id,
+                    }).eq('id', convId);
+
+                    // Create CRM card
+                    await supabase.from('crm_cards').insert({
+                      titulo: `Lead Instagram - ${leadName}`,
+                      cliente: leadName,
+                      telefone: extractedPhone || null,
+                      coluna: 'leads',
+                      origem_lead: 'instagram',
+                      classificacao: 'frio',
+                      prioridade: 'normal',
+                      lead_id: newLead.id,
+                      lead_score: 10,
+                      probabilidade_fechamento: 5,
+                      valor_estimado: 0,
+                    });
+
+                    console.log('[Instagram Webhook] ✅ Lead + CRM card created:', newLead.id);
+
+                    // If already has name+phone, notify broker
+                    if (extractedName && extractedPhone) {
+                      await notifyBroker(supabase, extractedName, extractedPhone, 'Instagram');
+                      await supabase.from('leads').update({ whatsapp_sent: true, whatsapp_sent_at: new Date().toISOString() }).eq('id', newLead.id);
+                    }
+                  }
                 }
               } else {
                 // Update existing lead with better data
@@ -454,9 +551,21 @@ serve(async (req) => {
                 // Also update CRM card if exists
                 if (extractedName || extractedPhone) {
                   const crmUpdate: Record<string, unknown> = { updated_at: new Date().toISOString() };
-                  if (extractedName) crmUpdate.cliente = extractedName;
+                  if (extractedName) {
+                    crmUpdate.cliente = extractedName;
+                    crmUpdate.titulo = `Lead Instagram - ${extractedName}`;
+                  }
                   if (extractedPhone) crmUpdate.telefone = extractedPhone;
                   await supabase.from('crm_cards').update(crmUpdate).eq('lead_id', convForLead.lead_id);
+                }
+
+                // Check if we should notify broker (name+phone now complete)
+                if (extractedName || extractedPhone) {
+                  const { data: leadCheck } = await supabase.from('leads').select('name, phone, whatsapp_sent').eq('id', convForLead.lead_id).single();
+                  if (leadCheck && leadCheck.name && !isFallbackName(leadCheck.name) && leadCheck.phone && !leadCheck.whatsapp_sent) {
+                    await notifyBroker(supabase, leadCheck.name, leadCheck.phone, 'Instagram');
+                    await supabase.from('leads').update({ whatsapp_sent: true, whatsapp_sent_at: new Date().toISOString() }).eq('id', convForLead.lead_id);
+                  }
                 }
               }
             } catch (leadErr) {
@@ -485,7 +594,8 @@ serve(async (req) => {
                   const askedName = /como (?:posso |devo )?(?:te )?chamar/i.test(botText) ||
                     /qual (?:[eé] )?(?:o )?seu nome/i.test(botText) ||
                     /seu nome/i.test(botText) ||
-                    /como te chamar/i.test(botText);
+                    /como te chamar/i.test(botText) ||
+                    /saber seu nome/i.test(botText);
 
                   if (askedName) {
                     const cleaned = messageText.trim().replace(/[.,!?]+$/, "").trim();
@@ -516,19 +626,33 @@ serve(async (req) => {
             // =====================================================
             const { data: conv } = await supabase
               .from('omnichat_conversations')
-              .select('bot_active')
+              .select('bot_active, contact_name')
               .eq('id', convId)
               .single();
 
             if (conv?.bot_active && messageText) {
               try {
+                // Build messages array matching real-estate-chat format
+                const { data: historyMsgs } = await supabase
+                  .from('omnichat_messages')
+                  .select('sender_type, content')
+                  .eq('conversation_id', convId)
+                  .order('created_at', { ascending: true })
+                  .limit(20);
+
+                const chatMessages = (historyMsgs || []).map(m => ({
+                  role: m.sender_type === 'client' ? 'user' : 'assistant',
+                  content: m.content || '',
+                }));
+
                 const chatRes = await fetch(`${SUPABASE_URL}/functions/v1/real-estate-chat`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
-                    message: messageText,
+                    messages: chatMessages,
                     skipLeadCreation: true,
                     origin: 'instagram',
+                    clientName: conv.contact_name || displayName,
                   }),
                 });
                 const chatData = await chatRes.json();
