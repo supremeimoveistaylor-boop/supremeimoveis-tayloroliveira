@@ -143,34 +143,40 @@ serve(async (req) => {
                     // Verificar se já existe lead com este telefone
                     const { data: existingLead } = await supabase
                       .from('leads')
-                      .select('id, name')
+                      .select('id, name, whatsapp_sent')
                       .eq('phone', sanitizedPhone)
                       .maybeSingle();
 
                     if (existingLead) {
-                      // Atualizar lead existente
                       const leadUpdate: Record<string, unknown> = {
                         last_interaction_at: new Date().toISOString(),
                         updated_at: new Date().toISOString(),
                       };
-                      // Se tem nome do contato do WhatsApp e o lead ainda tem nome genérico
-                      if (contactName && (!existingLead.name || existingLead.name === 'Visitante do Chat' || existingLead.name === 'A definir')) {
+                      if (contactName && (!existingLead.name || existingLead.name === 'Visitante do Chat' || existingLead.name === 'A definir' || /^WhatsApp \d+$/.test(existingLead.name))) {
                         leadUpdate.name = contactName;
                       }
                       await supabase.from('leads').update(leadUpdate).eq('id', existingLead.id);
                       
-                      // Vincular conversa ao lead
                       await supabase.from('omnichat_conversations').update({
                         lead_id: existingLead.id,
                       }).eq('id', convId);
+
+                      // Update CRM card
+                      if (contactName) {
+                        await supabase.from('crm_cards').update({
+                          cliente: contactName,
+                          telefone: sanitizedPhone,
+                          updated_at: new Date().toISOString(),
+                        }).eq('lead_id', existingLead.id);
+                      }
                       
                       console.log('[WhatsApp Webhook] ✅ Lead existente atualizado:', existingLead.id);
                     } else {
-                      // Criar novo lead com telefone do WhatsApp
+                      const leadName = contactName || `Visitante`;
                       const { data: newLead } = await supabase
                         .from('leads')
                         .insert({
-                          name: contactName || `WhatsApp ${sanitizedPhone.slice(-4)}`,
+                          name: leadName,
                           phone: sanitizedPhone,
                           origin: 'whatsapp',
                           status: 'novo',
@@ -179,12 +185,26 @@ serve(async (req) => {
                         .single();
                       
                       if (newLead) {
-                        // Vincular conversa ao lead
                         await supabase.from('omnichat_conversations').update({
                           lead_id: newLead.id,
                         }).eq('id', convId);
+
+                        // Create CRM card
+                        await supabase.from('crm_cards').insert({
+                          titulo: `Lead WhatsApp - ${leadName}`,
+                          cliente: leadName,
+                          telefone: sanitizedPhone,
+                          coluna: 'leads',
+                          origem_lead: 'whatsapp',
+                          classificacao: 'frio',
+                          prioridade: 'normal',
+                          lead_id: newLead.id,
+                          lead_score: 10,
+                          probabilidade_fechamento: 5,
+                          valor_estimado: 0,
+                        });
                         
-                        console.log('[WhatsApp Webhook] ✅ Novo lead criado com telefone:', sanitizedPhone);
+                        console.log('[WhatsApp Webhook] ✅ Novo lead + CRM card criado:', sanitizedPhone);
                       }
                     }
                   } catch (leadErr) {
