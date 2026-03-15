@@ -1903,6 +1903,33 @@ export type Database = {
         }
         Relationships: []
       }
+      storage_cleanup_logs: {
+        Row: {
+          bucket: string
+          file_path: string
+          file_size: number | null
+          id: string
+          reason: string
+          removed_at: string
+        }
+        Insert: {
+          bucket: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          reason: string
+          removed_at?: string
+        }
+        Update: {
+          bucket?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          reason?: string
+          removed_at?: string
+        }
+        Relationships: []
+      }
       super_admin_logs: {
         Row: {
           action: string
