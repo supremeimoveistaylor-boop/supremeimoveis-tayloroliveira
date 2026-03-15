@@ -21,6 +21,7 @@ import { WhatsAppConnectionPanel } from '@/components/admin/WhatsAppConnectionPa
 import { ArchiveStatusPanel } from '@/components/admin/ArchiveStatusPanel';
 import { useLeadNotification } from '@/hooks/useLeadNotification';
 import { CaptacaoImoveisPanel } from '@/components/admin/CaptacaoImoveisPanel';
+import { StorageCleanupPanel } from '@/components/admin/StorageCleanupPanel';
 
 interface Property {
   id: string;
