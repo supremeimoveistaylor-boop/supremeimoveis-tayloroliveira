@@ -58,7 +58,7 @@ const Admin = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'properties' | 'users' | 'leads' | 'attendants' | 'sessions' | 'metrics' | 'conversions' | 'visits' | 'crm' | 'financial' | 'omnichat' | 'archive' | 'captacao'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'properties' | 'users' | 'leads' | 'attendants' | 'sessions' | 'metrics' | 'conversions' | 'visits' | 'crm' | 'financial' | 'omnichat' | 'archive' | 'captacao' | 'storage'>('dashboard');
   const [accessDenied, setAccessDenied] = useState(false);
 
   // Enable real-time lead notifications with sound
