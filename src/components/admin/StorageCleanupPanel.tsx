@@ -32,7 +32,7 @@ export const StorageCleanupPanel = () => {
         .limit(50);
 
       if (error) throw error;
-      const logsData = (data || []) as CleanupLog[];
+      const logsData = (data || []) as unknown as CleanupLog[];
       setLogs(logsData);
 
       // Calculate stats
