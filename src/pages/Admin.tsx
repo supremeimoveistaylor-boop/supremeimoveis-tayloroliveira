@@ -380,6 +380,13 @@ const Admin = () => {
             <Home className="mr-2 h-4 w-4" />
             Captação
           </Button>
+          <Button
+            variant={activeTab === 'storage' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('storage')}
+          >
+            <HardDrive className="mr-2 h-4 w-4" />
+            Storage
+          </Button>
         </div>
 
         {/* Dashboard Tab */}
