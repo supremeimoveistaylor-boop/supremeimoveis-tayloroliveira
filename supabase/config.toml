@@ -44,3 +44,6 @@ verify_jwt = false
 
 [functions.track-event]
 verify_jwt = false
+
+[functions.storage-cleanup]
+verify_jwt = false

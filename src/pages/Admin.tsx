@@ -417,6 +417,11 @@ const Admin = () => {
           <ArchiveStatusPanel />
         )}
 
+        {/* Storage Cleanup Tab */}
+        {activeTab === 'storage' && (
+          <StorageCleanupPanel />
+        )}
+
         {/* Visits Tab */}
         {activeTab === 'visits' && (
           <VisitSchedulingPanel />
