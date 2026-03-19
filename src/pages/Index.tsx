@@ -138,12 +138,12 @@ const Index = () => {
       {properties.length > 0 && (
         <section className="py-16 bg-background">
           <div className="container mx-auto px-4">
-            <div className="text-center mb-12">
+           <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold text-primary mb-4">
-                Encontre <span className="text-accent">Seu Imóvel</span> no Mapa
+                Encontre <span className="text-accent">Imóveis de Luxo</span> em Goiânia no Mapa
               </h2>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Visualize a localização dos imóveis disponíveis em Goiânia
+                Casas de alto padrão e condomínios fechados nos bairros mais nobres de Goiânia
               </p>
             </div>
             <PropertyMap 
