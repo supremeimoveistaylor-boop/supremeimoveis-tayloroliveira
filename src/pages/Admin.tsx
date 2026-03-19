@@ -22,6 +22,7 @@ import { ArchiveStatusPanel } from '@/components/admin/ArchiveStatusPanel';
 import { useLeadNotification } from '@/hooks/useLeadNotification';
 import { CaptacaoImoveisPanel } from '@/components/admin/CaptacaoImoveisPanel';
 import { StorageCleanupPanel } from '@/components/admin/StorageCleanupPanel';
+import { BlogAdminPanel } from '@/components/admin/BlogAdminPanel';
 
 interface Property {
   id: string;
