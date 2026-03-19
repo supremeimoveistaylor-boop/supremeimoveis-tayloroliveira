@@ -168,10 +168,48 @@ const Index = () => {
         </div>
       </section>
 
+      {/* FAQ Section for SEO */}
+      <section className="py-16 bg-background">
+        <div className="container mx-auto px-4 max-w-4xl">
+          <h2 className="text-3xl font-bold text-center text-foreground mb-10">
+            Perguntas Frequentes sobre Imóveis de Luxo em Goiânia
+          </h2>
+          <div className="space-y-6">
+            <details className="border rounded-lg p-6 group" open>
+              <summary className="font-semibold text-lg text-foreground cursor-pointer list-none flex justify-between items-center">
+                Quanto custa uma casa de alto padrão em Goiânia?
+                <span className="text-accent text-2xl group-open:rotate-45 transition-transform">+</span>
+              </summary>
+              <p className="mt-4 text-muted-foreground leading-relaxed">
+                Casas de alto padrão em Goiânia variam de R$ 1,5 milhão a R$ 15 milhões, dependendo da localização, tamanho e acabamentos. Condomínios como Aldeia do Vale e Alphaville Flamboyant possuem opções a partir de R$ 2 milhões, enquanto imóveis no Setor Marista e Jardim Goiás podem superar R$ 10 milhões. A Supreme Empreendimentos oferece consultoria personalizada para encontrar o imóvel ideal dentro do seu orçamento.
+              </p>
+            </details>
+            <details className="border rounded-lg p-6 group">
+              <summary className="font-semibold text-lg text-foreground cursor-pointer list-none flex justify-between items-center">
+                Quais os melhores condomínios fechados em Goiânia?
+                <span className="text-accent text-2xl group-open:rotate-45 transition-transform">+</span>
+              </summary>
+              <p className="mt-4 text-muted-foreground leading-relaxed">
+                Os condomínios fechados mais valorizados em Goiânia são Aldeia do Vale, Alphaville Flamboyant, Portal do Sol Green, Jardins Atenas e Jardins Paris. Oferecem segurança 24h, áreas de lazer completas com piscinas, quadras esportivas e academias, além de localização privilegiada próxima a shoppings e escolas internacionais.
+              </p>
+            </details>
+            <details className="border rounded-lg p-6 group">
+              <summary className="font-semibold text-lg text-foreground cursor-pointer list-none flex justify-between items-center">
+                Vale a pena investir em imóveis de luxo em Goiânia?
+                <span className="text-accent text-2xl group-open:rotate-45 transition-transform">+</span>
+              </summary>
+              <p className="mt-4 text-muted-foreground leading-relaxed">
+                Sim. Goiânia apresenta valorização imobiliária acima da média nacional, especialmente nos bairros nobres como Setor Marista, Jardim Goiás e Setor Bueno. Imóveis de alto padrão têm alta liquidez, retorno sobre investimento superior a 8% ao ano e demanda crescente por parte de empresários e executivos que se mudam para a capital goiana.
+              </p>
+            </details>
+          </div>
+        </div>
+      </section>
+
       <About />
       <Contact />
       <Footer />
-      <RealEstateChat origin="home" pageContext="Página inicial" />
+      <RealEstateChat origin="home" pageContext="Página inicial - casa alto padrão goiânia" />
     </div>
   );
 };
