@@ -54,6 +54,13 @@
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
+  <!-- Blog -->
+  <url>
+    <loc>https://supremeempreendimentos.com/#/blog</loc>
+    <lastmod>2026-03-19</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
   <!-- Geo SEO: Bairros -->
   <url><loc>https://supremeempreendimentos.com/#/imoveis/bairro/setor-bueno</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://supremeempreendimentos.com/#/imoveis/bairro/setor-marista</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>

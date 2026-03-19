@@ -116,9 +116,9 @@ const Rurais = () => {
   const hasActiveFilters = purpose || city || minPrice || maxPrice || searchQuery;
 
   useEffect(() => {
-    document.title = "Propriedades Rurais em Goiás | Fazendas, Chácaras e Sítios - Supreme";
+    document.title = "Fazendas e Chácaras de Luxo em Goiás | Propriedades Rurais - Supreme";
     const meta = document.querySelector('meta[name="description"]');
-    if (meta) meta.setAttribute("content", "Propriedades rurais à venda em Goiás: fazendas, chácaras e sítios com excelente localização e potencial de valorização. Supreme Negócios Imobiliários.");
+    if (meta) meta.setAttribute("content", "Fazendas, chácaras e sítios de alto padrão à venda em Goiás. Propriedades rurais exclusivas com excelente localização e potencial de valorização.");
   }, []);
 
   return (

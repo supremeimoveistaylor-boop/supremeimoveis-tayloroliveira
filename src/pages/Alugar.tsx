@@ -123,9 +123,9 @@ const Alugar = () => {
   const hasActiveFilters = propertyType || neighborhood || minPrice || maxPrice || searchQuery;
 
   useEffect(() => {
-    document.title = "Imóveis para Alugar em Goiânia | Casas e Apartamentos - Supreme";
+    document.title = "Imóveis de Luxo para Alugar em Goiânia | Alto Padrão - Supreme";
     const meta = document.querySelector('meta[name="description"]');
-    if (meta) meta.setAttribute("content", "Alugue imóveis em Goiânia: casas, apartamentos e coberturas nos melhores bairros. Atendimento especializado Supreme Negócios Imobiliários.");
+    if (meta) meta.setAttribute("content", "Alugue imóveis de alto padrão em Goiânia: casas em condomínio fechado, apartamentos e coberturas nos melhores bairros. Setor Marista, Bueno e Jardim Goiás.");
   }, []);
 
   return (

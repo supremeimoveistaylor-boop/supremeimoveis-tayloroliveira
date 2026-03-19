@@ -10,9 +10,9 @@ import taylorPhoto from "@/assets/taylor-photo.png";
 
 const Sobre = () => {
   useEffect(() => {
-    document.title = "Sobre a Supreme Negócios Imobiliários em Goiânia | Quem Somos";
+    document.title = "Sobre a Supreme: Especialistas em Imóveis de Luxo em Goiânia";
     const meta = document.querySelector('meta[name="description"]');
-    if (meta) meta.setAttribute("content", "Conheça a Supreme Negócios Imobiliários: mais de 15 anos de experiência no mercado imobiliário de Goiânia. Especialistas em imóveis de alto padrão.");
+    if (meta) meta.setAttribute("content", "Supreme Negócios Imobiliários: mais de 15 anos de experiência em imóveis de alto padrão em Goiânia. Casas em condomínio fechado, coberturas e apartamentos de luxo.");
   }, []);
 
   const features = [
