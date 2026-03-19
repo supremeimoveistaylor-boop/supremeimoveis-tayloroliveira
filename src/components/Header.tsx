@@ -19,6 +19,7 @@ export const Header = () => {
     { to: "/alugar", label: "Alugar" },
     { to: "/rurais", label: "Propriedades Rurais" },
     { to: "/busca-mapa", label: "Mapa" },
+    { to: "/blog", label: "Blog" },
     { to: "/sobre", label: "Sobre Nós" },
     { to: "/contato", label: "Contato" },
   ];

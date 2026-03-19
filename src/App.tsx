@@ -31,6 +31,8 @@ import AvaliarImovel from "./pages/AvaliarImovel";
 import NotFound from "./pages/NotFound";
 import BuscaMapa from "./pages/BuscaMapa";
 import GeoLanding from "./pages/GeoLanding";
+import Blog from "./pages/Blog";
+import BlogPostPage from "./pages/BlogPost";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Chat agora é injetado via script no <head> (index.html), não via React
@@ -81,6 +83,8 @@ const App = () => (
                 {/* Geo SEO Pages */}
                 <Route path="/busca-mapa" element={<BuscaMapa />} />
                 <Route path="/imoveis/:type/:slug" element={<GeoLanding />} />
+                <Route path="/blog" element={<Blog />} />
+                <Route path="/blog/:slug" element={<BlogPostPage />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
                 <Route path="*" element={<NotFound />} />

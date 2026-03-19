@@ -41,6 +41,75 @@ export type Database = {
         }
         Relationships: []
       }
+      blog_posts: {
+        Row: {
+          ai_generated: boolean | null
+          author: string | null
+          category: string | null
+          content: string
+          created_at: string | null
+          excerpt: string | null
+          featured_image_url: string | null
+          id: string
+          internal_links: string[] | null
+          keywords: string[] | null
+          meta_description: string | null
+          meta_title: string | null
+          publish_date: string | null
+          slug: string
+          status: string | null
+          tags: string[] | null
+          title: string
+          updated_at: string | null
+          view_count: number | null
+          word_count: number | null
+        }
+        Insert: {
+          ai_generated?: boolean | null
+          author?: string | null
+          category?: string | null
+          content: string
+          created_at?: string | null
+          excerpt?: string | null
+          featured_image_url?: string | null
+          id?: string
+          internal_links?: string[] | null
+          keywords?: string[] | null
+          meta_description?: string | null
+          meta_title?: string | null
+          publish_date?: string | null
+          slug: string
+          status?: string | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string | null
+          view_count?: number | null
+          word_count?: number | null
+        }
+        Update: {
+          ai_generated?: boolean | null
+          author?: string | null
+          category?: string | null
+          content?: string
+          created_at?: string | null
+          excerpt?: string | null
+          featured_image_url?: string | null
+          id?: string
+          internal_links?: string[] | null
+          keywords?: string[] | null
+          meta_description?: string | null
+          meta_title?: string | null
+          publish_date?: string | null
+          slug?: string
+          status?: string | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string | null
+          view_count?: number | null
+          word_count?: number | null
+        }
+        Relationships: []
+      }
       brokers: {
         Row: {
           active: boolean
