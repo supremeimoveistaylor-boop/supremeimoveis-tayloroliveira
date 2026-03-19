@@ -67,11 +67,11 @@ export const Hero = () => {
           {/* Hero Content */}
           <div className="text-center">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white-soft mb-6 leading-tight">
-              Encontre o <span className="text-accent">Imóvel dos Seus Sonhos</span> em Goiânia - Goiás
+              Casa Alto Padrão em Goiânia: <span className="text-accent">Melhores Condomínios Fechados</span>
             </h1>
             <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto text-center">
-              Especialistas em propriedades de qualidade na região de Goiânia - Goiás. 
-              Mais de 15 anos conectando pessoas aos seus lares ideais.
+              Imóveis de luxo em Goiânia nos bairros mais valorizados — Setor Marista, Jardim Goiás, Setor Bueno. 
+              Segurança 24h, exclusividade e alto potencial de valorização.
             </p>
             
             {/* Stats */}
