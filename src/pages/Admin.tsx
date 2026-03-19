@@ -629,6 +629,11 @@ const Admin = () => {
         {activeTab === 'captacao' && (
           <CaptacaoImoveisPanel />
         )}
+
+        {/* Blog Tab */}
+        {activeTab === 'blog' && (
+          <BlogAdminPanel />
+        )}
       </main>
     </div>
   );
