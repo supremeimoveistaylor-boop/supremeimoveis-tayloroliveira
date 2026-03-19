@@ -47,3 +47,6 @@ verify_jwt = false
 
 [functions.storage-cleanup]
 verify_jwt = false
+
+[functions.generate-blog-post]
+verify_jwt = false
