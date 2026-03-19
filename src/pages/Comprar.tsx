@@ -123,9 +123,9 @@ const Comprar = () => {
   const hasActiveFilters = propertyType || neighborhood || minPrice || maxPrice || searchQuery;
 
   useEffect(() => {
-    document.title = "Imóveis à Venda em Goiânia | Casas, Apartamentos e Coberturas - Supreme";
+    document.title = "Casa Alto Padrão Goiânia à Venda | Condomínios Fechados Exclusivos - Supreme";
     const meta = document.querySelector('meta[name="description"]');
-    if (meta) meta.setAttribute("content", "Encontre imóveis à venda em Goiânia: casas em condomínio fechado, apartamentos e coberturas de alto padrão. Atendimento personalizado e segurança na compra.");
+    if (meta) meta.setAttribute("content", "Casas de alto padrão à venda em Goiânia. Condomínios fechados exclusivos no Setor Marista, Jardim Goiás e Setor Bueno. Segurança 24h, lazer completo e valorização garantida.");
   }, []);
 
   return (
