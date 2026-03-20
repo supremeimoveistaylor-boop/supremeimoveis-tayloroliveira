@@ -59,8 +59,13 @@ function playNotification() {
   } catch {}
 }
 
+function isFallbackDisplayName(name: string | null): boolean {
+  if (!name) return true;
+  return /^\d+$/.test(name) || /^Instagram User #\d+$/.test(name) || /^WhatsApp #?\d+$/.test(name) || name === 'Visitante' || name === 'Visitante do Chat' || name === 'Cliente' || name === 'A definir' || name === 'Não informado';
+}
+
 function resolveDisplayName(conv: Conversation): string {
-  if (conv.contact_name && !/^\d+$/.test(conv.contact_name)) return conv.contact_name;
+  if (conv.contact_name && !isFallbackDisplayName(conv.contact_name)) return conv.contact_name;
   const id = conv.external_contact_id || "0000";
   const suffix = id.slice(-4);
   return conv.channel === "instagram" ? `Instagram User #${suffix}` : `WhatsApp #${suffix}`;
