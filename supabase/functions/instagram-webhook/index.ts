@@ -61,7 +61,7 @@ function extractNameFromText(text: string): string | null {
 // =====================================================
 function isFallbackName(name: string | null): boolean {
   if (!name) return true;
-  return /^Instagram User #\d+$/.test(name) || /^\d+$/.test(name) || name === 'Visitante' || name === 'Visitante do Chat';
+  return /^Instagram User #\d+$/.test(name) || /^\d+$/.test(name) || name === 'Visitante' || name === 'Visitante do Chat' || name === 'Cliente' || name === 'A definir' || name === 'Não informado' || /^WhatsApp #?\d+$/.test(name);
 }
 
 // =====================================================

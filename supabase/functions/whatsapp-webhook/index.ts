@@ -87,13 +87,18 @@ serve(async (req) => {
 
                   if (existingConv) {
                     convId = existingConv.id;
-                    await supabase.from('omnichat_conversations').update({
+                    const convUpdate: Record<string, unknown> = {
                       last_message_at: new Date().toISOString(),
                       last_message_preview: messageText.substring(0, 100),
                       unread_count: (existingConv.unread_count || 0) + 1,
-                      contact_name: contactName || undefined,
                       status: 'open',
-                    }).eq('id', convId);
+                      contact_phone: senderPhone,
+                    };
+                    // Always update name from WhatsApp profile if current is a fallback
+                    if (contactName && (!existingConv.contact_name || existingConv.contact_name === 'Visitante' || existingConv.contact_name === 'Cliente' || /^\d+$/.test(existingConv.contact_name))) {
+                      convUpdate.contact_name = contactName;
+                    }
+                    await supabase.from('omnichat_conversations').update(convUpdate).eq('id', convId);
                   } else {
                     // Check if any agent is online
                     const { data: onlineAgents } = await supabase
