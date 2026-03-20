@@ -202,8 +202,9 @@ serve(async (req) => {
                         .insert({
                           name: leadName,
                           phone: sanitizedPhone,
-                          origin: 'whatsapp',
+                          origin: adSource,
                           status: 'novo',
+                          page_url: adCampaign ? `meta_ads: ${adCampaign}` : undefined,
                         })
                         .select('id')
                         .single();
