@@ -77,7 +77,7 @@ serve(async (req) => {
                   // Create or update omnichat conversation
                   const { data: existingConv } = await supabase
                     .from('omnichat_conversations')
-                    .select('id, unread_count')
+                    .select('id, unread_count, contact_name, contact_phone, lead_id')
                     .eq('user_id', connection.user_id)
                     .eq('channel', 'whatsapp')
                     .eq('external_contact_id', senderPhone)
