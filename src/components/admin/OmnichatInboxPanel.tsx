@@ -59,8 +59,13 @@ function playNotification() {
   } catch {}
 }
 
+function isFallbackDisplayName(name: string | null): boolean {
+  if (!name) return true;
+  return /^\d+$/.test(name) || /^Instagram User #\d+$/.test(name) || /^WhatsApp #?\d+$/.test(name) || name === 'Visitante' || name === 'Visitante do Chat' || name === 'Cliente' || name === 'A definir' || name === 'Não informado';
+}
+
 function resolveDisplayName(conv: Conversation): string {
-  if (conv.contact_name && !/^\d+$/.test(conv.contact_name)) return conv.contact_name;
+  if (conv.contact_name && !isFallbackDisplayName(conv.contact_name)) return conv.contact_name;
   const id = conv.external_contact_id || "0000";
   const suffix = id.slice(-4);
   return conv.channel === "instagram" ? `Instagram User #${suffix}` : `WhatsApp #${suffix}`;
@@ -257,14 +262,33 @@ export const OmnichatInboxPanel = () => {
     if (!selectedConv || !editNameValue.trim()) return;
     const newName = editNameValue.trim();
     try {
+      // 1. Update conversation
       await supabase.from("omnichat_conversations" as any).update({ contact_name: newName } as any).eq("id", selectedConv.id);
+      
+      // 2. Update channel_messages
       if (selectedConv.channel === "instagram" && selectedConv.external_contact_id) {
         await supabase.from("channel_messages" as any).update({ contact_name: newName } as any).eq("contact_instagram_id", selectedConv.external_contact_id);
       }
+      
+      // 3. Update linked lead
+      if (selectedConv.lead_id) {
+        await supabase.from("leads" as any).update({ 
+          name: newName, 
+          updated_at: new Date().toISOString() 
+        } as any).eq("id", selectedConv.lead_id);
+        
+        // 4. Update CRM card
+        await supabase.from("crm_cards" as any).update({ 
+          cliente: newName,
+          titulo: `Lead ${selectedConv.channel === 'instagram' ? 'Instagram' : 'WhatsApp'} - ${newName}`,
+          updated_at: new Date().toISOString() 
+        } as any).eq("lead_id", selectedConv.lead_id);
+      }
+      
       setSelectedConv(prev => prev ? { ...prev, contact_name: newName } : null);
       setConversations(prev => prev.map(c => c.id === selectedConv.id ? { ...c, contact_name: newName } : c));
       setIsEditingName(false);
-      toast({ title: "✅ Nome atualizado" });
+      toast({ title: "✅ Nome atualizado em todos os registros" });
     } catch (err: any) {
       toast({ title: "Erro ao salvar nome", description: err.message, variant: "destructive" });
     }
