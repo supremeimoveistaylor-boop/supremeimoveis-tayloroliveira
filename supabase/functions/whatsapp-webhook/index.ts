@@ -143,36 +143,49 @@ serve(async (req) => {
                     // Verificar se já existe lead com este telefone
                     const { data: existingLead } = await supabase
                       .from('leads')
-                      .select('id, name, whatsapp_sent')
+                      .select('id, name, phone, whatsapp_sent')
                       .eq('phone', sanitizedPhone)
                       .maybeSingle();
 
+                    // Determine the best name: contactName from WhatsApp profile > extracted from text > fallback
+                    const isFallback = (n: string | null) => !n || n === 'Visitante' || n === 'Visitante do Chat' || n === 'Cliente' || n === 'A definir' || /^WhatsApp \d+$/.test(n || '');
+                    
                     if (existingLead) {
                       const leadUpdate: Record<string, unknown> = {
                         last_interaction_at: new Date().toISOString(),
                         updated_at: new Date().toISOString(),
                       };
-                      if (contactName && (!existingLead.name || existingLead.name === 'Visitante do Chat' || existingLead.name === 'A definir' || /^WhatsApp \d+$/.test(existingLead.name))) {
+                      // Always update name if current is fallback and we have a real name
+                      if (contactName && isFallback(existingLead.name)) {
                         leadUpdate.name = contactName;
+                      }
+                      // Ensure phone is set
+                      if (!existingLead.phone) {
+                        leadUpdate.phone = sanitizedPhone;
                       }
                       await supabase.from('leads').update(leadUpdate).eq('id', existingLead.id);
                       
                       await supabase.from('omnichat_conversations').update({
                         lead_id: existingLead.id,
+                        contact_name: contactName && isFallback(existingConv?.contact_name ?? null) ? contactName : undefined,
+                        contact_phone: sanitizedPhone,
                       }).eq('id', convId);
 
                       // Update CRM card
-                      if (contactName) {
-                        await supabase.from('crm_cards').update({
-                          cliente: contactName,
-                          telefone: sanitizedPhone,
-                          updated_at: new Date().toISOString(),
-                        }).eq('lead_id', existingLead.id);
+                      const crmUpdate: Record<string, unknown> = { 
+                        telefone: sanitizedPhone,
+                        updated_at: new Date().toISOString(),
+                        last_interaction_at: new Date().toISOString(),
+                      };
+                      if (contactName && isFallback(existingLead.name)) {
+                        crmUpdate.cliente = contactName;
+                        crmUpdate.titulo = `Lead WhatsApp - ${contactName}`;
                       }
+                      await supabase.from('crm_cards').update(crmUpdate).eq('lead_id', existingLead.id);
                       
-                      console.log('[WhatsApp Webhook] ✅ Lead existente atualizado:', existingLead.id);
+                      console.log('[WhatsApp Webhook] ✅ Lead existente atualizado:', existingLead.id, 'nome:', contactName);
                     } else {
-                      const leadName = contactName || `Visitante`;
+                      const leadName = contactName || 'Visitante';
                       const { data: newLead } = await supabase
                         .from('leads')
                         .insert({
@@ -187,6 +200,8 @@ serve(async (req) => {
                       if (newLead) {
                         await supabase.from('omnichat_conversations').update({
                           lead_id: newLead.id,
+                          contact_name: contactName || undefined,
+                          contact_phone: sanitizedPhone,
                         }).eq('id', convId);
 
                         // Create CRM card
@@ -204,7 +219,26 @@ serve(async (req) => {
                           valor_estimado: 0,
                         });
                         
-                        console.log('[WhatsApp Webhook] ✅ Novo lead + CRM card criado:', sanitizedPhone);
+                        // Notify broker immediately since WhatsApp gives us phone + possibly name
+                        if (contactName && !isFallback(contactName)) {
+                          try {
+                            const { data: brokers } = await supabase.from('brokers').select('whatsapp').eq('active', true).limit(1);
+                            if (brokers && brokers.length > 0) {
+                              const brokerMessage = `🚨 Novo Lead no Sistema\n\n👤 Nome: ${contactName}\n📱 Telefone: ${sanitizedPhone}\n📍 Origem: WhatsApp\n\nO cliente entrou em contato e aguarda retorno.`;
+                              await fetch(`${SUPABASE_URL}/functions/v1/send-whatsapp`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ to: brokers[0].whatsapp, message: brokerMessage }),
+                              });
+                              await supabase.from('leads').update({ whatsapp_sent: true, whatsapp_sent_at: new Date().toISOString() }).eq('id', newLead.id);
+                              console.log('[WhatsApp Webhook] ✅ Broker notificado para novo lead:', contactName);
+                            }
+                          } catch (notifyErr) {
+                            console.error('[WhatsApp Webhook] Broker notification error:', notifyErr);
+                          }
+                        }
+                        
+                        console.log('[WhatsApp Webhook] ✅ Novo lead + CRM card criado:', sanitizedPhone, 'nome:', leadName);
                       }
                     }
                   } catch (leadErr) {
