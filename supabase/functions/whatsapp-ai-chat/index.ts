@@ -56,8 +56,47 @@ function isFallbackName(name: string | null): boolean {
 }
 
 // =====================================================
+// HELPER: Detect intent from message text
+// =====================================================
+interface DetectedIntent {
+  type: 'compra' | 'aluguel' | 'agendamento' | 'avaliacao' | 'investimento' | 'duvida' | 'geral';
+  isScheduling: boolean;
+  isHot: boolean;
+}
+
+function detectIntent(message: string, history: Array<{ content: string | null; sender_type: string }> | null): DetectedIntent {
+  const lower = message.toLowerCase();
+  const allMessages = (history || []).filter(m => m.sender_type === 'client').map(m => m.content?.toLowerCase() || '').join(' ') + ' ' + lower;
+
+  const isScheduling = /\b(visitar|agendar|agenda|ver o im[oó]vel|conhecer|marcar|visita|quero ir|posso ir|quando posso|hor[aá]rio)\b/i.test(lower);
+  
+  let type: DetectedIntent['type'] = 'geral';
+  if (/\b(comprar|compra|adquirir|quero um|procuro|procurando)\b/i.test(allMessages)) type = 'compra';
+  else if (/\b(alugar|aluguel|locar|loca[çc][aã]o)\b/i.test(allMessages)) type = 'aluguel';
+  else if (/\b(avaliar|avalia[çc][aã]o|quanto vale|valor do meu)\b/i.test(allMessages)) type = 'avaliacao';
+  else if (/\b(investir|investimento|rentabilidade|retorno)\b/i.test(allMessages)) type = 'investimento';
+  else if (/\b(d[uú]vida|pergunta|como funciona|pode me explicar)\b/i.test(allMessages)) type = 'duvida';
+  
+  if (isScheduling) type = 'agendamento';
+
+  // Hot if scheduling, buying intent, or investment intent
+  const isHot = isScheduling || type === 'compra' || type === 'investimento';
+
+  return { type, isScheduling, isHot };
+}
+
+// =====================================================
+// HELPER: Calculate lead temperature from message count + intent
+// =====================================================
+function calculateTemperature(messageCount: number, intent: DetectedIntent): string {
+  if (intent.isHot || intent.isScheduling) return 'quente';
+  if (messageCount >= 5 || intent.type === 'compra' || intent.type === 'investimento') return 'quente';
+  if (messageCount >= 2) return 'morno';
+  return 'frio';
+}
+
+// =====================================================
 // SYSTEM PROMPT - IA ATENDENTE IMOBILIÁRIA
-// Uses the SAME template as real-estate-chat
 // =====================================================
 const SYSTEM_PROMPT = `Você é um CONSULTOR IMOBILIÁRIO ESTRATÉGICO da Supreme Empreendimentos, especializado em imóveis de alto padrão e investimentos em Goiânia.
 
@@ -115,7 +154,7 @@ ETAPA 5 - REPERGUNTAR ANTES DE ENCERRAR:
 ═══════════════════════════════════════════════════════════
 🔄 ENCAMINHAMENTO PARA CORRETOR
 ═══════════════════════════════════════════════════════════
-Quando necessário, inclua: [ENCAMINHAR_CORRETOR]`;
+Quando o cliente pedir para agendar visita, falar com corretor, ou demonstrar forte interesse de compra, inclua: [ENCAMINHAR_CORRETOR]`;
 
 const formatPrice = (price: number): string => {
   return price.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0, maximumFractionDigits: 0 });
@@ -157,7 +196,14 @@ serve(async (req) => {
       .order('created_at', { ascending: true })
       .limit(20);
 
-    // 2. Query available properties
+    // 2. Detect intent from message + history
+    const intent = detectIntent(message, history);
+    const clientMessageCount = (history || []).filter(m => m.sender_type === 'client').length + 1;
+    const temperature = calculateTemperature(clientMessageCount, intent);
+
+    console.log(`[WhatsApp AI] Intent: ${intent.type}, scheduling: ${intent.isScheduling}, temp: ${temperature}, msgs: ${clientMessageCount}`);
+
+    // 3. Query available properties
     const { data: properties } = await supabase
       .from('properties')
       .select('id, title, price, location, property_type, purpose, bedrooms, bathrooms, area, parking_spaces, description, amenities')
@@ -165,7 +211,7 @@ serve(async (req) => {
       .order('featured', { ascending: false })
       .limit(30);
 
-    // 3. Build properties context
+    // 4. Build properties context
     let propertiesContext = '';
     if (properties && properties.length > 0) {
       propertiesContext = '\n\n═══ IMÓVEIS DISPONÍVEIS NO SISTEMA ═══\n';
@@ -185,7 +231,7 @@ serve(async (req) => {
       propertiesContext = '\n\n⚠️ Nenhum imóvel encontrado no sistema. Encaminhe para o corretor Taylor.\n';
     }
 
-    // 4. Build conversation messages for AI
+    // 5. Build conversation messages for AI
     const aiMessages: Array<{ role: string; content: string }> = [];
     aiMessages.push({
       role: 'system',
@@ -209,7 +255,7 @@ serve(async (req) => {
       aiMessages.push({ role: 'user', content: message });
     }
 
-    // 5. Call AI API
+    // 6. Call AI API
     const aiUrl = LOVABLE_API_KEY 
       ? 'https://ai.gateway.lovable.dev/v1/chat/completions'
       : 'https://api.openai.com/v1/chat/completions';
@@ -237,7 +283,7 @@ serve(async (req) => {
     const aiData = await aiResponse.json();
     let reply = aiData.choices?.[0]?.message?.content || '';
 
-    // 6. Extract name and phone from message and update lead/CRM
+    // 7. Extract name and phone from message and update lead/CRM
     try {
       let extractedName: string | null = extractNameFromText(message);
       const extractedPhone: string | null = extractPhone(message);
@@ -263,7 +309,13 @@ serve(async (req) => {
         .single();
 
       if (convData?.lead_id) {
-        const leadUpdate: Record<string, unknown> = { last_interaction_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+        const leadUpdate: Record<string, unknown> = {
+          last_interaction_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          lead_temperature: temperature,
+          intent: intent.type,
+          message_count: clientMessageCount,
+        };
         const convUpdate: Record<string, unknown> = {};
         let nameUpdated = false;
         let phoneUpdated = false;
@@ -279,45 +331,97 @@ serve(async (req) => {
           phoneUpdated = true;
         }
 
-        if (Object.keys(leadUpdate).length > 2) { // more than just timestamps
-          await supabase.from('leads').update(leadUpdate).eq('id', convData.lead_id);
-          console.log(`[WhatsApp AI] ✅ Lead updated: name=${extractedName}, phone=${extractedPhone}`);
+        // Auto-tag qualification based on temperature
+        if (temperature === 'quente') {
+          leadUpdate.qualification = 'quente';
+        } else if (temperature === 'morno') {
+          leadUpdate.qualification = 'morno';
         }
+
+        // Mark visit_requested if scheduling detected
+        if (intent.isScheduling) {
+          leadUpdate.visit_requested = true;
+        }
+
+        await supabase.from('leads').update(leadUpdate).eq('id', convData.lead_id);
+        console.log(`[WhatsApp AI] ✅ Lead updated: name=${extractedName}, phone=${extractedPhone}, temp=${temperature}, intent=${intent.type}`);
+
         if (Object.keys(convUpdate).length > 0) {
           await supabase.from('omnichat_conversations').update(convUpdate).eq('id', conversationId);
         }
 
-        // Update CRM card
-        if (nameUpdated || phoneUpdated) {
-          const crmUpdate: Record<string, unknown> = { updated_at: new Date().toISOString() };
-          if (nameUpdated && extractedName) {
-            crmUpdate.cliente = extractedName;
-            crmUpdate.titulo = `Lead WhatsApp - ${extractedName}`;
-          }
-          if (phoneUpdated && extractedPhone) crmUpdate.telefone = extractedPhone;
-          await supabase.from('crm_cards').update(crmUpdate).eq('lead_id', convData.lead_id);
+        // Update CRM card with intent, temperature, and scheduling info
+        const crmUpdate: Record<string, unknown> = {
+          updated_at: new Date().toISOString(),
+          last_interaction_at: new Date().toISOString(),
+          classificacao: temperature === 'quente' ? 'quente' : temperature === 'morno' ? 'morno' : 'frio',
+        };
+        if (nameUpdated && extractedName) {
+          crmUpdate.cliente = extractedName;
+          crmUpdate.titulo = `Lead WhatsApp - ${extractedName}`;
+        }
+        if (phoneUpdated && extractedPhone) crmUpdate.telefone = extractedPhone;
+
+        // If scheduling detected, set next action and move to negotiation column
+        if (intent.isScheduling) {
+          crmUpdate.proxima_acao = 'Agendar visita - cliente solicitou';
+          crmUpdate.coluna = 'negociacao';
+          crmUpdate.prioridade = 'alta';
+          crmUpdate.lead_score = 80;
+          crmUpdate.probabilidade_fechamento = 40;
+        } else if (intent.isHot) {
+          crmUpdate.lead_score = 60;
+          crmUpdate.probabilidade_fechamento = 25;
+        }
+
+        await supabase.from('crm_cards').update(crmUpdate).eq('lead_id', convData.lead_id);
+
+        // Create CRM event for intent tracking
+        if (intent.type !== 'geral') {
+          await supabase.from('crm_events').insert({
+            lead_id: convData.lead_id,
+            event_type: intent.isScheduling ? 'agendamento_solicitado' : `intent_${intent.type}`,
+            new_value: intent.type,
+            metadata: { temperature, messageCount: clientMessageCount, source: 'whatsapp_ai' },
+          });
         }
 
         // Notify broker when name+phone complete
         if (nameUpdated || phoneUpdated) {
           const { data: leadCheck } = await supabase.from('leads').select('name, phone, whatsapp_sent').eq('id', convData.lead_id).single();
           if (leadCheck && leadCheck.name && !isFallbackName(leadCheck.name) && leadCheck.phone && !leadCheck.whatsapp_sent) {
-            // Send broker alert
-            const { data: brokers } = await supabase.from('brokers').select('whatsapp').eq('active', true).limit(1);
+            // Round-robin broker distribution
+            const { data: brokers } = await supabase.from('brokers').select('id, whatsapp, name').eq('active', true).order('created_at');
             if (brokers && brokers.length > 0) {
+              // Get last assigned broker for round-robin
+              const { data: settings } = await supabase.from('company_settings').select('last_assigned_broker_id').limit(1).single();
+              let brokerIndex = 0;
+              if (settings?.last_assigned_broker_id) {
+                const lastIdx = brokers.findIndex(b => b.id === settings.last_assigned_broker_id);
+                brokerIndex = (lastIdx + 1) % brokers.length;
+              }
+              const selectedBroker = brokers[brokerIndex];
+
+              // Assign broker to lead
+              await supabase.from('leads').update({ broker_id: selectedBroker.id }).eq('id', convData.lead_id);
+              await supabase.from('company_settings').update({ last_assigned_broker_id: selectedBroker.id }).limit(1);
+
+              const scheduleTag = intent.isScheduling ? '\n📅 Cliente pediu AGENDAMENTO de visita' : '';
               const brokerMessage = `🚨 Novo Lead no Sistema\n\n` +
                 `👤 Nome: ${leadCheck.name}\n` +
                 `📱 Telefone: ${leadCheck.phone}\n` +
-                `📍 Origem: WhatsApp\n\n` +
+                `🎯 Interesse: ${intent.type}\n` +
+                `🌡️ Temperatura: ${temperature}\n` +
+                `📍 Origem: WhatsApp${scheduleTag}\n\n` +
                 `O cliente entrou em contato e aguarda retorno.\n` +
-                `Acesse o painel para continuar o atendimento.`;
+                `Clique para atender: https://wa.me/${leadCheck.phone}`;
 
               await fetch(`${SUPABASE_URL}/functions/v1/send-whatsapp`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ to: brokers[0].whatsapp, message: brokerMessage }),
+                body: JSON.stringify({ to: selectedBroker.whatsapp, message: brokerMessage }),
               });
-              console.log('[WhatsApp AI] ✅ Broker notified');
+              console.log(`[WhatsApp AI] ✅ Broker ${selectedBroker.name} notified (round-robin)`);
             }
             await supabase.from('leads').update({ whatsapp_sent: true, whatsapp_sent_at: new Date().toISOString() }).eq('id', convData.lead_id);
           }
@@ -327,38 +431,43 @@ serve(async (req) => {
         const { data: existingLead } = await supabase.from('leads').select('id').eq('phone', sanitizedPhone).maybeSingle();
         if (existingLead) {
           await supabase.from('omnichat_conversations').update({ lead_id: existingLead.id }).eq('id', conversationId);
-          if (extractedName) {
-            await supabase.from('leads').update({ name: extractedName, updated_at: new Date().toISOString() }).eq('id', existingLead.id);
-          }
+          const leadPatch: Record<string, unknown> = {
+            updated_at: new Date().toISOString(),
+            lead_temperature: temperature,
+            intent: intent.type,
+          };
+          if (extractedName) leadPatch.name = extractedName;
+          await supabase.from('leads').update(leadPatch).eq('id', existingLead.id);
         }
       }
     } catch (extractErr) {
       console.error('[WhatsApp AI] Data extraction error:', extractErr);
     }
 
-    // 7. Check for escalation tag
-    const shouldEscalate = reply.includes('[ENCAMINHAR_CORRETOR]');
+    // 8. Check for escalation tag
+    const shouldEscalate = reply.includes('[ENCAMINHAR_CORRETOR]') || intent.isScheduling;
     reply = reply.replace('[ENCAMINHAR_CORRETOR]', '').trim();
 
     if (shouldEscalate) {
-      console.log('[WhatsApp AI] 🔄 Escalation triggered for', senderPhone);
+      console.log('[WhatsApp AI] 🔄 Escalation triggered for', senderPhone, 'reason:', intent.isScheduling ? 'scheduling' : 'ai_tag');
 
       await supabase.from('omnichat_conversations').update({
         bot_active: false,
         status: 'open',
       }).eq('id', conversationId);
 
-      // Notify broker
+      // Notify broker for escalation
       try {
-        const brokerMessage = `🔔 Lead Encaminhado pela IA\n\n` +
-          `👤 Nome: ${contactName || 'Não informado'}\n` +
-          `📱 Telefone: ${senderPhone || 'Não informado'}\n` +
-          `💬 Último interesse: ${message.substring(0, 200)}\n\n` +
-          `Cliente precisa de atendimento humano.\n` +
-          `Acesse o Omnichat para continuar.`;
-
-        const { data: brokers } = await supabase.from('brokers').select('whatsapp').eq('active', true).limit(1);
+        const { data: brokers } = await supabase.from('brokers').select('whatsapp, name').eq('active', true).limit(1);
         if (brokers && brokers.length > 0) {
+          const reason = intent.isScheduling ? '📅 Cliente quer AGENDAR VISITA' : '💬 Cliente precisa de atendimento humano';
+          const brokerMessage = `🔔 Lead Encaminhado pela IA\n\n` +
+            `👤 Nome: ${contactName || 'Não informado'}\n` +
+            `📱 Telefone: ${senderPhone || 'Não informado'}\n` +
+            `🎯 ${reason}\n` +
+            `💬 Último: ${message.substring(0, 200)}\n\n` +
+            `Clique para atender: https://wa.me/${senderPhone}`;
+
           await fetch(`${SUPABASE_URL}/functions/v1/send-whatsapp`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

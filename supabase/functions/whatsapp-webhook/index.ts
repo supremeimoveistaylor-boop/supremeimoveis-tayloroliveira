@@ -71,6 +71,12 @@ serve(async (req) => {
                 const messageText = message.text?.body || message.caption || '';
                 const mediaUrl = message.image?.url || message.video?.url || message.document?.url || null;
 
+                // Detect Meta Ads origin (click-to-WhatsApp ads send referral data)
+                const referral = message.referral || null;
+                const isFromMetaAds = !!referral;
+                const adSource = referral ? `meta_ads` : 'whatsapp';
+                const adCampaign = referral?.headline || referral?.body || null;
+
                 console.log('[WhatsApp Webhook] Message:', { from: senderPhone, text: messageText, contact: contactName });
 
                 if (connection) {
@@ -196,8 +202,9 @@ serve(async (req) => {
                         .insert({
                           name: leadName,
                           phone: sanitizedPhone,
-                          origin: 'whatsapp',
+                          origin: adSource,
                           status: 'novo',
+                          page_url: adCampaign ? `meta_ads: ${adCampaign}` : undefined,
                         })
                         .select('id')
                         .single();
