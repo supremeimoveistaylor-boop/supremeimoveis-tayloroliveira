@@ -72,62 +72,65 @@ async function resolveInstagramProfile(senderId: string, pageToken: string, page
   let username: string | null = null;
 
   try {
-    // Strategy 1: Instagram Graph API
-    console.log('[Instagram Webhook] Fetching IG profile for IGSID:', senderId);
-    const igProfileRes = await fetch(
-      `https://graph.instagram.com/v21.0/${senderId}?fields=name,username,profile_pic`,
+    // Strategy 1: Facebook Graph API (more reliable for IGSID lookups)
+    console.log('[Instagram Webhook] Fetching profile for IGSID:', senderId);
+    const fbProfileRes = await fetch(
+      `https://graph.facebook.com/v19.0/${senderId}?fields=name,username,profile_pic`,
       { headers: { 'Authorization': `Bearer ${pageToken}` } }
     );
 
-    if (igProfileRes.ok) {
-      const profile = await igProfileRes.json();
-      console.log('[Instagram Webhook] IG profile response:', JSON.stringify(profile));
+    if (fbProfileRes.ok) {
+      const profile = await fbProfileRes.json();
+      console.log('[Instagram Webhook] FB profile response:', JSON.stringify(profile));
       username = profile.username || null;
       if (profile.username) {
         displayName = `@${profile.username}`;
-      } else if (profile.name) {
+      } else if (profile.name && profile.name !== profile.id) {
         displayName = profile.name;
       }
     } else {
-      const errText = await igProfileRes.text();
-      console.warn('[Instagram Webhook] IG profile fetch failed:', igProfileRes.status, errText);
+      const errText = await fbProfileRes.text();
+      console.warn('[Instagram Webhook] FB profile fetch failed:', fbProfileRes.status, errText.substring(0, 300));
 
-      // Strategy 2: Facebook Graph API
-      const fbProfileRes = await fetch(
-        `https://graph.facebook.com/v21.0/${senderId}?fields=name,username,profile_pic`,
-        { headers: { 'Authorization': `Bearer ${pageToken}` } }
-      );
-      if (fbProfileRes.ok) {
-        const fbProfile = await fbProfileRes.json();
-        username = fbProfile.username || null;
-        if (fbProfile.username) {
-          displayName = `@${fbProfile.username}`;
-        } else if (fbProfile.name) {
-          displayName = fbProfile.name;
+      // Strategy 2: Instagram Graph API
+      try {
+        const igProfileRes = await fetch(
+          `https://graph.facebook.com/v19.0/${senderId}?fields=name,username`,
+          { headers: { 'Authorization': `Bearer ${pageToken}` } }
+        );
+        if (igProfileRes.ok) {
+          const igProfile = await igProfileRes.json();
+          username = igProfile.username || null;
+          if (igProfile.username) displayName = `@${igProfile.username}`;
+          else if (igProfile.name && igProfile.name !== igProfile.id) displayName = igProfile.name;
         }
-      } else if (pageId) {
-        // Strategy 3: Page conversations endpoint
-        try {
-          const convRes = await fetch(
-            `https://graph.facebook.com/v21.0/${pageId}/conversations?platform=instagram&fields=participants{name,username,id}&limit=50`,
-            { headers: { 'Authorization': `Bearer ${pageToken}` } }
-          );
-          if (convRes.ok) {
-            const convData = await convRes.json();
-            for (const conv of (convData.data || [])) {
-              for (const p of (conv.participants?.data || [])) {
-                if (p.id === senderId) {
-                  username = p.username || null;
-                  displayName = p.username ? `@${p.username}` : p.name || null;
-                  break;
-                }
+      } catch (e) {
+        console.warn('[Instagram Webhook] IG profile fallback error:', e);
+      }
+    }
+
+    // Strategy 3: Page conversations endpoint (if still no name)
+    if (!displayName && pageId) {
+      try {
+        const convRes = await fetch(
+          `https://graph.facebook.com/v19.0/${pageId}/conversations?platform=instagram&fields=participants{name,username,id}&limit=50`,
+          { headers: { 'Authorization': `Bearer ${pageToken}` } }
+        );
+        if (convRes.ok) {
+          const convData = await convRes.json();
+          for (const conv of (convData.data || [])) {
+            for (const p of (conv.participants?.data || [])) {
+              if (p.id === senderId) {
+                username = p.username || null;
+                displayName = p.username ? `@${p.username}` : (p.name && p.name !== p.id ? p.name : null);
+                break;
               }
-              if (displayName) break;
             }
+            if (displayName) break;
           }
-        } catch (convErr) {
-          console.warn('[Instagram Webhook] Conversations fallback error:', convErr);
         }
+      } catch (convErr) {
+        console.warn('[Instagram Webhook] Conversations fallback error:', convErr);
       }
     }
   } catch (profileErr) {
