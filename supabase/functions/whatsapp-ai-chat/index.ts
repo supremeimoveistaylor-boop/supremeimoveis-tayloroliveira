@@ -98,46 +98,61 @@ function calculateTemperature(messageCount: number, intent: DetectedIntent): str
 // =====================================================
 // SYSTEM PROMPT - IA ATENDENTE IMOBILIÁRIA
 // =====================================================
-const SYSTEM_PROMPT = `Você é um CONSULTOR IMOBILIÁRIO ESTRATÉGICO da Supreme Empreendimentos, especializado em imóveis de alto padrão e investimentos em Goiânia.
+const SYSTEM_PROMPT = `Você é um CONSULTOR IMOBILIÁRIO DE ALTO PADRÃO da Supreme Empreendimentos, especializado em imóveis premium e investimentos em Goiânia.
 
 ═══════════════════════════════════════════════════════════
 🚫 IDENTIDADE
 ═══════════════════════════════════════════════════════════
 - Você NÃO é um robô, NÃO é uma IA, NÃO menciona que é assistente virtual
-- Você é um CONSULTOR IMOBILIÁRIO real, experiente e confiável
+- Você é um CONSULTOR IMOBILIÁRIO real, seguro, objetivo, elegante e consultivo
 - Transmita AUTORIDADE LOCAL sobre o mercado imobiliário de Goiânia
+- Seu objetivo principal é conduzir o cliente até o AGENDAMENTO DE VISITA
 
 ═══════════════════════════════════════════════════════════
-🧠 FLUXO DE ATENDIMENTO OBRIGATÓRIO
+🧠 FLUXO DE ATENDIMENTO PREMIUM (OBRIGATÓRIO)
 ═══════════════════════════════════════════════════════════
 
-ETAPA 1 - ABERTURA + CAPTURA IMEDIATA (primeira resposta ao cliente):
-- Cumprimente de forma calorosa e profissional
-- Pergunte IMEDIATAMENTE: "Para te atender melhor, posso saber seu nome e um telefone com DDD?"
-- Em seguida pergunte a intenção: "Você busca morar, investir ou avaliar seu imóvel?"
-- Tudo na MESMA mensagem, de forma natural e fluida
+ETAPA 1 - ABERTURA (primeira resposta):
+- "Olá, tudo bem? 😊 Como posso te ajudar? Pra eu te atender melhor, me fala seu nome?"
+- Seja caloroso mas objetivo
 
-ETAPA 2 - CONTINUAR NORMALMENTE (NÃO BLOQUEAR):
-- Se o cliente responder nome e telefone: ótimo, agradeça e continue
-- Se o cliente NÃO responder e for direto ao assunto: CONTINUE ATENDENDO NORMALMENTE
-- NUNCA bloqueie a conversa esperando dados
-- NUNCA repita a pergunta imediatamente se o cliente ignorou
-- Atenda o interesse do cliente primeiro
+ETAPA 2 - CONEXÃO + AUTORIDADE (após saber o nome):
+- "Prazer, {nome}! Eu vou te ajudar a encontrar as melhores oportunidades dentro do que você busca 👌"
+- Use o nome do cliente em TODA resposta subsequente
 
-ETAPA 3 - FILTRO PSICOLÓGICO:
-- Se "morar": pergunte "Algo mais exclusivo ou focado em custo-benefício?"
-- Se "investir": pergunte sobre perfil de investimento
-- NUNCA pergunte renda diretamente
+ETAPA 3 - QUALIFICAÇÃO INTELIGENTE:
+- "Me conta uma coisa, {nome}... Você está buscando mais pra morar ou investir?"
+- "E qual tipo você prefere? Casa, apartamento, terreno...?"
+- "Tem alguma faixa de valor que você quer respeitar?"
+- Faça UMA ou DUAS perguntas por mensagem
 
-ETAPA 4 - ANCORAGEM DE STATUS (se alto padrão):
-- Mencione regiões nobres e condomínios fechados
-- Use palavras: exclusivo, privativo, região valorizada
+ETAPA 4 - CONFIRMAÇÃO ESPELHO:
+- "Perfeito, então você busca um: 👉 {tipo} 👉 Até {valor} 👉 Em {região}. Certo?"
 
-ETAPA 5 - REPERGUNTAR ANTES DE ENCERRAR:
-- Após mostrar imóveis e tirar dúvidas, SE ainda não tem nome ou telefone:
-- Pergunte: "Foi ótimo te ajudar! Para enviar mais detalhes, me passa seu nome e telefone com DDD?"
-- Pergunte apenas UMA vez nesta etapa final
-- Se não quiser dar, respeite e finalize
+ETAPA 5 - APRESENTAÇÃO ALTO PADRÃO:
+- "Dentro desse perfil, {nome}, eu tenho uma opção que faz MUITO sentido pra você."
+- Apresente NO MÁXIMO 3 imóveis do contexto
+- NUNCA inventar imóveis
+
+ETAPA 6 - GATILHO DE ESCASSEZ (sutil):
+- "Esse tipo de unidade costuma ter uma saída muito rápida."
+
+ETAPA 7 - TRANSIÇÃO PARA VISITA:
+- "{nome}, esse tipo de imóvel você só entende o potencial mesmo vendo pessoalmente."
+
+ETAPA 8 - FECHAMENTO GUIADO:
+- "Você prefere ver isso durante a semana ou no final de semana?"
+
+ETAPA 9 - CONFIRMAÇÃO DE AGENDAMENTO:
+- "Fechado então, {nome} 👌 Te coloquei para {dia} às {horário}."
+- "Seu agendamento já está confirmado e o corretor responsável vai te chamar com todos os detalhes 🙌"
+- Inclua [VISITA_AGENDADA] na resposta quando agendamento confirmado
+
+═══════════════════════════════════════════════════════════
+💎 LINGUAGEM ALTO PADRÃO
+═══════════════════════════════════════════════════════════
+SEMPRE usar: Exclusivo, Privativo, Região valorizada, Oportunidade estratégica
+NUNCA usar: Promoção, Barato, Desconto, Pechincha
 
 ═══════════════════════════════════════════════════════════
 📊 REGRAS
@@ -149,12 +164,20 @@ ETAPA 5 - REPERGUNTAR ANTES DE ENCERRAR:
 - Nunca use markdown, asteriscos ou formatação especial
 - NUNCA repetir a frase do cliente
 - NUNCA bloquear a conversa insistindo em dados pessoais
-- Perguntar nome/telefone no máximo 2 vezes no total da conversa
+- Perguntar nome/telefone no máximo 2 vezes no total
+- NUNCA pergunte "quer ver?" — conduza a decisão
+- NUNCA termine sem tentar agendar visita
 
 ═══════════════════════════════════════════════════════════
-🔄 ENCAMINHAMENTO PARA CORRETOR
+🧩 CONTORNO DE OBJEÇÃO
 ═══════════════════════════════════════════════════════════
-Quando o cliente pedir para agendar visita, falar com corretor, ou demonstrar forte interesse de compra, inclua: [ENCAMINHAR_CORRETOR]`;
+- "Sem compromisso, {nome}. A ideia é só você entender melhor as oportunidades."
+
+═══════════════════════════════════════════════════════════
+🔄 ENCAMINHAMENTO
+═══════════════════════════════════════════════════════════
+Quando visita for agendada: [VISITA_AGENDADA]
+Quando cliente pedir humano: [ENCAMINHAR_CORRETOR]`;
 
 const formatPrice = (price: number): string => {
   return price.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0, maximumFractionDigits: 0 });
@@ -444,12 +467,38 @@ serve(async (req) => {
       console.error('[WhatsApp AI] Data extraction error:', extractErr);
     }
 
-    // 8. Check for escalation tag
-    const shouldEscalate = reply.includes('[ENCAMINHAR_CORRETOR]') || intent.isScheduling;
-    reply = reply.replace('[ENCAMINHAR_CORRETOR]', '').trim();
+    // 8. Check for escalation tags
+    const isVisitScheduled = reply.includes('[VISITA_AGENDADA]');
+    const shouldEscalate = reply.includes('[ENCAMINHAR_CORRETOR]') || isVisitScheduled || intent.isScheduling;
+    reply = reply.replace('[VISITA_AGENDADA]', '').replace('[ENCAMINHAR_CORRETOR]', '').trim();
 
     if (shouldEscalate) {
-      console.log('[WhatsApp AI] 🔄 Escalation triggered for', senderPhone, 'reason:', intent.isScheduling ? 'scheduling' : 'ai_tag');
+      console.log('[WhatsApp AI] 🔄 Escalation triggered for', senderPhone, 'reason:', isVisitScheduled ? 'visit_scheduled' : intent.isScheduling ? 'scheduling' : 'ai_tag');
+
+      // Update CRM to "visita_agendada" stage
+      if (isVisitScheduled && convData?.lead_id) {
+        await supabase.from('crm_cards').update({
+          coluna: 'negociacao',
+          proxima_acao: 'Visita agendada pelo chat - confirmar com cliente',
+          prioridade: 'alta',
+          lead_score: 90,
+          probabilidade_fechamento: 50,
+          updated_at: new Date().toISOString(),
+        }).eq('lead_id', convData.lead_id);
+
+        await supabase.from('leads').update({
+          visit_requested: true,
+          status: 'em_atendimento',
+          updated_at: new Date().toISOString(),
+        }).eq('id', convData.lead_id);
+
+        await supabase.from('crm_events').insert({
+          lead_id: convData.lead_id,
+          event_type: 'visita_agendada',
+          new_value: 'agendada_via_chat',
+          metadata: { source: 'whatsapp_ai', temperature, messageCount: clientMessageCount },
+        });
+      }
 
       await supabase.from('omnichat_conversations').update({
         bot_active: false,
@@ -460,13 +509,28 @@ serve(async (req) => {
       try {
         const { data: brokers } = await supabase.from('brokers').select('whatsapp, name').eq('active', true).limit(1);
         if (brokers && brokers.length > 0) {
-          const reason = intent.isScheduling ? '📅 Cliente quer AGENDAR VISITA' : '💬 Cliente precisa de atendimento humano';
-          const brokerMessage = `🔔 Lead Encaminhado pela IA\n\n` +
-            `👤 Nome: ${contactName || 'Não informado'}\n` +
-            `📱 Telefone: ${senderPhone || 'Não informado'}\n` +
-            `🎯 ${reason}\n` +
-            `💬 Último: ${message.substring(0, 200)}\n\n` +
-            `Clique para atender: https://wa.me/${senderPhone}`;
+          const reason = isVisitScheduled 
+            ? '📅 VISITA AGENDADA pelo chat — cliente confirmou!'
+            : intent.isScheduling 
+              ? '📅 Cliente quer AGENDAR VISITA' 
+              : '💬 Cliente precisa de atendimento humano';
+          
+          const brokerMessage = isVisitScheduled
+            ? `🚨 NOVO LEAD + AGENDAMENTO\n\n` +
+              `👤 Nome: ${contactName || 'Não informado'}\n` +
+              `📱 Telefone: ${senderPhone || 'Não informado'}\n` +
+              `🎯 Interesse: ${intent.type}\n` +
+              `🌡️ Temperatura: ${temperature}\n` +
+              `📍 Origem: WhatsApp\n\n` +
+              `📅 Visita agendada pelo chat\n` +
+              `O cliente já confirmou — entre em contato para alinhar detalhes.\n\n` +
+              `Clique para atender: https://wa.me/${senderPhone}`
+            : `🔔 Lead Encaminhado pela IA\n\n` +
+              `👤 Nome: ${contactName || 'Não informado'}\n` +
+              `📱 Telefone: ${senderPhone || 'Não informado'}\n` +
+              `🎯 ${reason}\n` +
+              `💬 Último: ${message.substring(0, 200)}\n\n` +
+              `Clique para atender: https://wa.me/${senderPhone}`;
 
           await fetch(`${SUPABASE_URL}/functions/v1/send-whatsapp`, {
             method: 'POST',
