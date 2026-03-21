@@ -67,9 +67,13 @@ serve(async (req) => {
               for (const message of messages) {
                 const senderPhone = message.from;
                 const contactInfo = contacts.find((c: any) => c.wa_id === senderPhone);
-                const contactName = contactInfo?.profile?.name || null;
+                const rawContactName = contactInfo?.profile?.name || null;
+                // NEVER use phone number as name — only accept real profile names
+                const contactName = (rawContactName && rawContactName !== senderPhone && !/^\d+$/.test(rawContactName)) ? rawContactName : null;
                 const messageText = message.text?.body || message.caption || '';
                 const mediaUrl = message.image?.url || message.video?.url || message.document?.url || null;
+
+                console.log('[WhatsApp Webhook] 📋 Contact data:', { wa_id: senderPhone, profile_name: rawContactName, resolved_name: contactName });
 
                 // Detect Meta Ads origin (click-to-WhatsApp ads send referral data)
                 const referral = message.referral || null;

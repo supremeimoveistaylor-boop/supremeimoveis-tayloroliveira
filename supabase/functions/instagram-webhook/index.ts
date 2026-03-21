@@ -352,10 +352,10 @@ serve(async (req) => {
             }
           }
 
-          // Fallback
+          // Fallback — use "Cliente" instead of generic "Instagram User #XXXX"
           if (!displayName) {
-            const lastDigits = senderId?.slice(-4) || '0000';
-            displayName = `Instagram User #${lastDigits}`;
+            displayName = 'Cliente';
+            console.log('[Instagram Webhook] ⚠️ No profile data resolved, using fallback "Cliente" for:', senderId);
           }
 
           // =====================================================
