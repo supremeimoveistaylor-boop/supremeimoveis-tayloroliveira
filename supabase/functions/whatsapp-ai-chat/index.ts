@@ -467,12 +467,38 @@ serve(async (req) => {
       console.error('[WhatsApp AI] Data extraction error:', extractErr);
     }
 
-    // 8. Check for escalation tag
-    const shouldEscalate = reply.includes('[ENCAMINHAR_CORRETOR]') || intent.isScheduling;
-    reply = reply.replace('[ENCAMINHAR_CORRETOR]', '').trim();
+    // 8. Check for escalation tags
+    const isVisitScheduled = reply.includes('[VISITA_AGENDADA]');
+    const shouldEscalate = reply.includes('[ENCAMINHAR_CORRETOR]') || isVisitScheduled || intent.isScheduling;
+    reply = reply.replace('[VISITA_AGENDADA]', '').replace('[ENCAMINHAR_CORRETOR]', '').trim();
 
     if (shouldEscalate) {
-      console.log('[WhatsApp AI] 🔄 Escalation triggered for', senderPhone, 'reason:', intent.isScheduling ? 'scheduling' : 'ai_tag');
+      console.log('[WhatsApp AI] 🔄 Escalation triggered for', senderPhone, 'reason:', isVisitScheduled ? 'visit_scheduled' : intent.isScheduling ? 'scheduling' : 'ai_tag');
+
+      // Update CRM to "visita_agendada" stage
+      if (isVisitScheduled && convData?.lead_id) {
+        await supabase.from('crm_cards').update({
+          coluna: 'negociacao',
+          proxima_acao: 'Visita agendada pelo chat - confirmar com cliente',
+          prioridade: 'alta',
+          lead_score: 90,
+          probabilidade_fechamento: 50,
+          updated_at: new Date().toISOString(),
+        }).eq('lead_id', convData.lead_id);
+
+        await supabase.from('leads').update({
+          visit_requested: true,
+          status: 'em_atendimento',
+          updated_at: new Date().toISOString(),
+        }).eq('id', convData.lead_id);
+
+        await supabase.from('crm_events').insert({
+          lead_id: convData.lead_id,
+          event_type: 'visita_agendada',
+          new_value: 'agendada_via_chat',
+          metadata: { source: 'whatsapp_ai', temperature, messageCount: clientMessageCount },
+        });
+      }
 
       await supabase.from('omnichat_conversations').update({
         bot_active: false,
