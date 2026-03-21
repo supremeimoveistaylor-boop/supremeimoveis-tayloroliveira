@@ -66,9 +66,8 @@ function isFallbackDisplayName(name: string | null): boolean {
 
 function resolveDisplayName(conv: Conversation): string {
   if (conv.contact_name && !isFallbackDisplayName(conv.contact_name)) return conv.contact_name;
-  const id = conv.external_contact_id || "0000";
-  const suffix = id.slice(-4);
-  return conv.channel === "instagram" ? `Instagram User #${suffix}` : `WhatsApp #${suffix}`;
+  if (conv.contact_phone) return conv.contact_phone;
+  return "Cliente";
 }
 
 function getInitials(name: string): string {
