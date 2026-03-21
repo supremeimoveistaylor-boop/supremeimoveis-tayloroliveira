@@ -509,13 +509,28 @@ serve(async (req) => {
       try {
         const { data: brokers } = await supabase.from('brokers').select('whatsapp, name').eq('active', true).limit(1);
         if (brokers && brokers.length > 0) {
-          const reason = intent.isScheduling ? '📅 Cliente quer AGENDAR VISITA' : '💬 Cliente precisa de atendimento humano';
-          const brokerMessage = `🔔 Lead Encaminhado pela IA\n\n` +
-            `👤 Nome: ${contactName || 'Não informado'}\n` +
-            `📱 Telefone: ${senderPhone || 'Não informado'}\n` +
-            `🎯 ${reason}\n` +
-            `💬 Último: ${message.substring(0, 200)}\n\n` +
-            `Clique para atender: https://wa.me/${senderPhone}`;
+          const reason = isVisitScheduled 
+            ? '📅 VISITA AGENDADA pelo chat — cliente confirmou!'
+            : intent.isScheduling 
+              ? '📅 Cliente quer AGENDAR VISITA' 
+              : '💬 Cliente precisa de atendimento humano';
+          
+          const brokerMessage = isVisitScheduled
+            ? `🚨 NOVO LEAD + AGENDAMENTO\n\n` +
+              `👤 Nome: ${contactName || 'Não informado'}\n` +
+              `📱 Telefone: ${senderPhone || 'Não informado'}\n` +
+              `🎯 Interesse: ${intent.type}\n` +
+              `🌡️ Temperatura: ${temperature}\n` +
+              `📍 Origem: WhatsApp\n\n` +
+              `📅 Visita agendada pelo chat\n` +
+              `O cliente já confirmou — entre em contato para alinhar detalhes.\n\n` +
+              `Clique para atender: https://wa.me/${senderPhone}`
+            : `🔔 Lead Encaminhado pela IA\n\n` +
+              `👤 Nome: ${contactName || 'Não informado'}\n` +
+              `📱 Telefone: ${senderPhone || 'Não informado'}\n` +
+              `🎯 ${reason}\n` +
+              `💬 Último: ${message.substring(0, 200)}\n\n` +
+              `Clique para atender: https://wa.me/${senderPhone}`;
 
           await fetch(`${SUPABASE_URL}/functions/v1/send-whatsapp`, {
             method: 'POST',
