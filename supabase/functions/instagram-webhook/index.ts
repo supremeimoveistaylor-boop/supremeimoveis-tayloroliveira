@@ -414,14 +414,47 @@ serve(async (req) => {
                 unread_count: (existingConv.unread_count || 0) + 1,
                 status: 'open',
               };
-              // Update name if we have a real one and existing is fallback
-              if (!isFallbackName(displayName) && isFallbackName(existingConv.contact_name)) {
-                convUpdate.contact_name = displayName;
+
+              // Determine best name: extractedName > displayName (from API) > keep existing
+              const bestName = extractedName || (!isFallbackName(displayName) ? displayName : null);
+
+              // Update name if we have a real one and existing is fallback/null
+              if (bestName && isFallbackName(existingConv.contact_name)) {
+                convUpdate.contact_name = bestName;
+                console.log('[Instagram Webhook] 📝 Updating conv name to:', bestName);
+
+                // CASCADE to lead if linked
+                if (existingConv.lead_id) {
+                  const { data: existingLead } = await supabase
+                    .from('leads')
+                    .select('name, phone, whatsapp_sent')
+                    .eq('id', existingConv.lead_id)
+                    .single();
+
+                  if (existingLead && isFallbackName(existingLead.name)) {
+                    await supabase.from('leads').update({
+                      name: bestName,
+                      last_interaction_at: new Date().toISOString(),
+                      updated_at: new Date().toISOString(),
+                    }).eq('id', existingConv.lead_id);
+
+                    await supabase.from('crm_cards').update({
+                      cliente: bestName,
+                      titulo: `Lead Instagram - ${bestName}`,
+                      updated_at: new Date().toISOString(),
+                    }).eq('lead_id', existingConv.lead_id);
+
+                    console.log('[Instagram Webhook] ✅ Lead name cascaded:', bestName, 'for lead:', existingConv.lead_id);
+
+                    // Notify broker if we now have both name and phone
+                    if (existingLead.phone && !existingLead.whatsapp_sent) {
+                      await notifyBroker(supabase, bestName, existingLead.phone, 'Instagram');
+                      await supabase.from('leads').update({ whatsapp_sent: true, whatsapp_sent_at: new Date().toISOString() }).eq('id', existingConv.lead_id);
+                    }
+                  }
+                }
               }
-              // Update with extracted name (always takes priority)
-              if (extractedName) {
-                convUpdate.contact_name = extractedName;
-              }
+
               // Update phone if extracted
               if (extractedPhone && !existingConv.contact_phone) {
                 convUpdate.contact_phone = extractedPhone;

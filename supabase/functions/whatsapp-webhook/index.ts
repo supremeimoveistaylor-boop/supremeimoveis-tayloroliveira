@@ -68,7 +68,12 @@ serve(async (req) => {
                 const senderPhone = message.from;
                 const contactInfo = contacts.find((c: any) => c.wa_id === senderPhone);
                 const rawContactName = contactInfo?.profile?.name || null;
-                // NEVER use phone number as name — only accept real profile names
+                
+                // ENHANCED LOGGING: Show exactly what the API sends
+                console.log('[WhatsApp Webhook] 📋 RAW contacts array:', JSON.stringify(contacts));
+                console.log('[WhatsApp Webhook] 📋 RAW profile.name:', rawContactName);
+                
+                // Accept name if it's not just digits and not the phone number
                 const contactName = (rawContactName && rawContactName !== senderPhone && !/^\d+$/.test(rawContactName)) ? rawContactName : null;
                 const messageText = message.text?.body || message.caption || '';
                 const mediaUrl = message.image?.url || message.video?.url || message.document?.url || null;
@@ -81,7 +86,7 @@ serve(async (req) => {
                 const adSource = referral ? `meta_ads` : 'whatsapp';
                 const adCampaign = referral?.headline || referral?.body || null;
 
-                console.log('[WhatsApp Webhook] Message:', { from: senderPhone, text: messageText, contact: contactName });
+                console.log('[WhatsApp Webhook] Message:', { from: senderPhone, text: messageText, contact: contactName, hasReferral: isFromMetaAds });
 
                 if (connection) {
                   // Create or update omnichat conversation
@@ -104,9 +109,10 @@ serve(async (req) => {
                       status: 'open',
                       contact_phone: senderPhone,
                     };
-                    // Always update name from WhatsApp profile if current is a fallback
+                    // Always update name from WhatsApp profile if current is null/fallback
                     if (contactName && (!existingConv.contact_name || existingConv.contact_name === 'Visitante' || existingConv.contact_name === 'Cliente' || /^\d+$/.test(existingConv.contact_name))) {
                       convUpdate.contact_name = contactName;
+                      console.log('[WhatsApp Webhook] 📝 Updating conv name to:', contactName);
                     }
                     await supabase.from('omnichat_conversations').update(convUpdate).eq('id', convId);
                   } else {
