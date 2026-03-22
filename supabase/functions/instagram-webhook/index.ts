@@ -352,10 +352,9 @@ serve(async (req) => {
             }
           }
 
-          // Fallback — use "Cliente" instead of generic "Instagram User #XXXX"
+          // Fallback — keep null, NEVER save "Cliente" to DB
           if (!displayName) {
-            displayName = 'Cliente';
-            console.log('[Instagram Webhook] ⚠️ No profile data resolved, using fallback "Cliente" for:', senderId);
+            console.log('[Instagram Webhook] ⚠️ No profile data resolved, keeping name as null for:', senderId);
           }
 
           // =====================================================
