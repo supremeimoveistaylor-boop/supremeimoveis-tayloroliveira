@@ -387,7 +387,7 @@ serve(async (req) => {
               message_type: attachments.length > 0 ? 'media' : 'text',
               content: messageText,
               contact_instagram_id: senderId,
-              contact_name: extractedName || displayName,
+              contact_name: extractedName || displayName || null,
               meta_message_id: messageId,
               media_url: mediaUrl,
               status: 'received',
