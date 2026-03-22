@@ -443,7 +443,7 @@ serve(async (req) => {
                   user_id: connection.user_id,
                   channel: 'instagram',
                   external_contact_id: senderId,
-                  contact_name: extractedName || displayName,
+                  contact_name: extractedName || displayName || null,
                   contact_phone: extractedPhone,
                   connection_id: connection.id,
                   bot_active: botActive,
