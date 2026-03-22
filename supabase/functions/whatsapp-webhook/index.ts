@@ -109,9 +109,10 @@ serve(async (req) => {
                       status: 'open',
                       contact_phone: senderPhone,
                     };
-                    // Always update name from WhatsApp profile if current is a fallback
+                    // Always update name from WhatsApp profile if current is null/fallback
                     if (contactName && (!existingConv.contact_name || existingConv.contact_name === 'Visitante' || existingConv.contact_name === 'Cliente' || /^\d+$/.test(existingConv.contact_name))) {
                       convUpdate.contact_name = contactName;
+                      console.log('[WhatsApp Webhook] 📝 Updating conv name to:', contactName);
                     }
                     await supabase.from('omnichat_conversations').update(convUpdate).eq('id', convId);
                   } else {
