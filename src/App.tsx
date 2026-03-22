@@ -33,6 +33,7 @@ import BuscaMapa from "./pages/BuscaMapa";
 import GeoLanding from "./pages/GeoLanding";
 import Blog from "./pages/Blog";
 import BlogPostPage from "./pages/BlogPost";
+import ShareTarget from "./pages/ShareTarget";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Chat agora é injetado via script no <head> (index.html), não via React
