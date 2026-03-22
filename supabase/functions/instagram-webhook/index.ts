@@ -352,10 +352,9 @@ serve(async (req) => {
             }
           }
 
-          // Fallback — use "Cliente" instead of generic "Instagram User #XXXX"
+          // Fallback — keep null, NEVER save "Cliente" to DB
           if (!displayName) {
-            displayName = 'Cliente';
-            console.log('[Instagram Webhook] ⚠️ No profile data resolved, using fallback "Cliente" for:', senderId);
+            console.log('[Instagram Webhook] ⚠️ No profile data resolved, keeping name as null for:', senderId);
           }
 
           // =====================================================
@@ -388,7 +387,7 @@ serve(async (req) => {
               message_type: attachments.length > 0 ? 'media' : 'text',
               content: messageText,
               contact_instagram_id: senderId,
-              contact_name: extractedName || displayName,
+              contact_name: extractedName || displayName || null,
               meta_message_id: messageId,
               media_url: mediaUrl,
               status: 'received',
@@ -444,7 +443,7 @@ serve(async (req) => {
                   user_id: connection.user_id,
                   channel: 'instagram',
                   external_contact_id: senderId,
-                  contact_name: extractedName || displayName,
+                  contact_name: extractedName || displayName || null,
                   contact_phone: extractedPhone,
                   connection_id: connection.id,
                   bot_active: botActive,
@@ -499,7 +498,7 @@ serve(async (req) => {
                   console.log('[Instagram Webhook] ✅ Linked to existing lead by phone:', existingLeadId);
                 } else {
                   // Create new lead (temporary if no name)
-                  const leadName = extractedName || (isFallbackName(displayName) ? 'Visitante' : displayName);
+                  const leadName = extractedName || (displayName && !isFallbackName(displayName) ? displayName : null);
                   const { data: newLead } = await supabase
                     .from('leads')
                     .insert({

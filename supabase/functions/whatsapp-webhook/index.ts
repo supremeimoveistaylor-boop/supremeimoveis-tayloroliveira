@@ -200,7 +200,7 @@ serve(async (req) => {
                       
                       console.log('[WhatsApp Webhook] ✅ Lead existente atualizado:', existingLead.id, 'nome:', contactName);
                     } else {
-                      const leadName = contactName || 'Visitante';
+                      const leadName = contactName || null;
                       const { data: newLead } = await supabase
                         .from('leads')
                         .insert({
