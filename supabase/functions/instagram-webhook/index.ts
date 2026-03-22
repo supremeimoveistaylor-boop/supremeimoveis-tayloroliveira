@@ -498,7 +498,7 @@ serve(async (req) => {
                   console.log('[Instagram Webhook] ✅ Linked to existing lead by phone:', existingLeadId);
                 } else {
                   // Create new lead (temporary if no name)
-                  const leadName = extractedName || (isFallbackName(displayName) ? 'Visitante' : displayName);
+                  const leadName = extractedName || (displayName && !isFallbackName(displayName) ? displayName : null);
                   const { data: newLead } = await supabase
                     .from('leads')
                     .insert({
