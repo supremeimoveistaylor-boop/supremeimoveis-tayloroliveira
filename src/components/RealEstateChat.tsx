@@ -385,6 +385,37 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
     }
   }, [leadSaveAttempted]);
 
+  // Atualizar lead existente com dados parciais (nome OU telefone)
+  const updateLeadPartialData = useCallback(async (name: string | null, phone: string | null) => {
+    const currentLeadId = leadId;
+    if (!currentLeadId) return;
+    
+    const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    const isFallback = (v: string | null) => !v || v === "Visitante do Chat" || v === "A definir" || v === "Cliente";
+    
+    if (name && name.length >= 2) updates.name = name;
+    if (phone && phone.replace(/\D/g, "").length >= 10) updates.phone = phone.replace(/\D/g, "");
+    
+    if (Object.keys(updates).length <= 1) return; // only updated_at
+    
+    try {
+      await supabase.from("leads").update(updates).eq("id", currentLeadId);
+      console.log(`[Chat] 📝 Lead ${currentLeadId} atualizado parcialmente:`, updates);
+      
+      // Sync CRM card
+      const crmUpdate: Record<string, unknown> = { updated_at: new Date().toISOString() };
+      if (updates.name) { crmUpdate.cliente = updates.name; crmUpdate.titulo = `Lead Chat - ${updates.name}`; }
+      if (updates.phone) crmUpdate.telefone = updates.phone;
+      
+      if (Object.keys(crmUpdate).length > 1) {
+        await supabase.from("crm_cards").update(crmUpdate).eq("lead_id", currentLeadId);
+        console.log(`[Chat] 📝 CRM card sincronizado para lead ${currentLeadId}`);
+      }
+    } catch (e) {
+      console.error("[Chat] Erro ao atualizar lead parcialmente:", e);
+    }
+  }, [leadId]);
+
   // Função de extração silenciosa + scoring chamada a cada mensagem do usuário
   const silentExtract = useCallback((text: string) => {
     try {
