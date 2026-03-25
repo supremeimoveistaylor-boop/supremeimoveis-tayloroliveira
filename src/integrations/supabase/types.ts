@@ -2208,6 +2208,7 @@ export type Database = {
         Returns: string
       }
       calculate_lead_score: { Args: { p_lead_id: string }; Returns: number }
+      cascade_delete_lead: { Args: { p_lead_id: string }; Returns: Json }
       cleanup_old_chat_messages: { Args: never; Returns: number }
       finish_chat_session: {
         Args: { p_session_id: string; p_summary?: string }
