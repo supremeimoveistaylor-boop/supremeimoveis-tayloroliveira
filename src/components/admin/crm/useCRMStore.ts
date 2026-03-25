@@ -154,25 +154,50 @@ export function useCRMStore(currentUserId?: string, currentUserRole: Collaborato
     }
   }, []);
 
-  // Delete card
+  // Delete card with cascade
   const deleteCard = useCallback(async (column: KanbanColumn, cardId: string) => {
     if (!permissions.canDelete) return false;
     try {
-      const { error } = await (supabase as any)
-        .from('crm_cards')
-        .delete()
-        .eq('id', cardId);
+      const card = allCards.find(c => c.id === cardId);
 
-      if (error) {
-        console.error('Error deleting card:', error);
-        return false;
+      // If card has a linked lead, use cascade delete function
+      if (card?.lead_id) {
+        const { data, error } = await supabase.rpc('cascade_delete_lead', { p_lead_id: card.lead_id });
+        if (error) {
+          console.error('Error cascade deleting lead:', error);
+          // Fallback: try deleting just the card
+          const { error: cardError } = await (supabase as any)
+            .from('crm_cards')
+            .delete()
+            .eq('id', cardId);
+          if (cardError) {
+            console.error('Error deleting card:', cardError);
+            return false;
+          }
+        } else {
+          console.log('Cascade delete result:', data);
+          // Also remove card if not already deleted by cascade (card without matching lead_id in crm_cards)
+        }
+      } else {
+        // No linked lead, just delete the card
+        const { error } = await (supabase as any)
+          .from('crm_cards')
+          .delete()
+          .eq('id', cardId);
+        if (error) {
+          console.error('Error deleting card:', error);
+          return false;
+        }
       }
+
+      // Optimistic: remove from local state immediately
+      setAllCards(prev => prev.filter(c => c.id !== cardId));
       return true;
     } catch (e) {
       console.error('Failed to delete card:', e);
       return false;
     }
-  }, [permissions.canDelete]);
+  }, [permissions.canDelete, allCards]);
 
   // Move card
   const moveCard = useCallback(async (fromColumn: KanbanColumn, toColumn: KanbanColumn, cardId: string) => {
