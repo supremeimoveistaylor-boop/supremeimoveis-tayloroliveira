@@ -423,14 +423,16 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
       let currentPhone = clientPhone;
       const hadName = !!currentName;
       const hadPhone = !!currentPhone;
+      let newNameExtracted = false;
+      let newPhoneExtracted = false;
 
       if (!currentName) {
         const name = extractNameFromText(text);
-        if (name) { setClientName(name); currentName = name; }
+        if (name) { setClientName(name); currentName = name; newNameExtracted = true; }
       }
       if (!currentPhone) {
         const phone = extractPhoneFromText(text);
-        if (phone) { setClientPhone(phone); currentPhone = phone; }
+        if (phone) { setClientPhone(phone); currentPhone = phone; newPhoneExtracted = true; }
       }
       if (!propertyType) {
         const pt = extractPropertyTypeFromText(text);
@@ -456,11 +458,17 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
       const scoreDelta = analyzeSentiment(text);
       updateLeadScore(scoreDelta);
 
+      // Atualizar lead existente com dados parciais (nome OU telefone)
+      if (newNameExtracted || newPhoneExtracted) {
+        console.log(`[Chat] 🔍 Dados extraídos - Nome: ${currentName || 'N/A'}, Telefone: ${currentPhone || 'N/A'}`);
+        updateLeadPartialData(currentName, currentPhone);
+      }
+
       if (currentName && currentPhone) {
         saveLeadSilently(currentName, currentPhone);
       }
     } catch (_) {}
-  }, [clientName, clientPhone, propertyType, storeInterest, extractNameFromText, extractPhoneFromText, extractPropertyTypeFromText, extractStoreInterest, analyzeSentiment, updateLeadScore, saveLeadSilently]);
+  }, [clientName, clientPhone, propertyType, storeInterest, extractNameFromText, extractPhoneFromText, extractPropertyTypeFromText, extractStoreInterest, analyzeSentiment, updateLeadScore, saveLeadSilently, updateLeadPartialData]);
 
   const startConversation = useCallback(async (overrideLeadId?: string) => {
     if (hasStarted) return;
