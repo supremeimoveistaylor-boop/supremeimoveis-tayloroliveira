@@ -786,10 +786,57 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
 
     // Extração silenciosa de dados do lead (updates refs synchronously too)
     if (inputMessage.trim()) {
-      silentExtract(inputMessage.trim());
+      const textToAnalyze = inputMessage.trim();
+      silentExtract(textToAnalyze);
+      
+      // Contextual extraction: if AI asked for name and user replied with short text
+      if (!clientNameRef.current && messages.length >= 1) {
+        const lastMsg = messages[messages.length - 1];
+        if (lastMsg.role === "assistant") {
+          const lastText = typeof lastMsg.content === "string" ? lastMsg.content : "";
+          const aiAskedName = /como (?:posso |devo )?(?:te )?chamar/i.test(lastText) ||
+            /qual (?:[eé] )?(?:o )?seu nome/i.test(lastText) ||
+            /me diga seu nome/i.test(lastText) ||
+            /com quem (?:eu )?falo/i.test(lastText);
+          
+          if (aiAskedName) {
+            const cleaned = textToAnalyze
+              .replace(/^(oi|olá|hey|bom dia|boa tarde|boa noite|prazer)[,!.\s]*/i, "")
+              .replace(/[.,!?]+$/, "")
+              .trim();
+            const words = cleaned.split(/\s+/).filter(w => w.length > 0);
+            const isName = words.length >= 1 && words.length <= 4 &&
+              /^[a-záàâãéèêíïóôõöúçñ\s]+$/i.test(cleaned) && cleaned.length >= 2;
+            if (isName) {
+              const capitalizedName = words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
+              setClientName(capitalizedName);
+              clientNameRef.current = capitalizedName;
+              console.log(`[Chat] 🧠 Nome contextual extraído: "${capitalizedName}"`);
+              updateLeadPartialData(capitalizedName, clientPhoneRef.current);
+            }
+          }
+          
+          // Contextual phone extraction
+          const aiAskedPhone = /(?:telefone|whatsapp|celular|contato|número)/i.test(lastText) &&
+            /(?:qual|me (?:passa|envie|informe)|pode)/i.test(lastText);
+          if (aiAskedPhone && !clientPhoneRef.current) {
+            const phoneMatch = textToAnalyze.match(/(\d[\d\s.\-()]{8,})/);
+            if (phoneMatch) {
+              const cleanPhone = phoneMatch[1].replace(/[\s.\-()]/g, "");
+              if (cleanPhone.length >= 10 && cleanPhone.length <= 13) {
+                setClientPhone(cleanPhone);
+                clientPhoneRef.current = cleanPhone;
+                console.log(`[Chat] 📞 Telefone contextual extraído: "${cleanPhone}"`);
+                updateLeadPartialData(clientNameRef.current, cleanPhone);
+              }
+            }
+          }
+        }
+      }
+      
       // Sync refs immediately after extraction
-      const extractedName = extractNameFromText(inputMessage.trim());
-      const extractedPhone = extractPhoneFromText(inputMessage.trim());
+      const extractedName = extractNameFromText(textToAnalyze);
+      const extractedPhone = extractPhoneFromText(textToAnalyze);
       if (extractedName && !clientNameRef.current) clientNameRef.current = extractedName;
       if (extractedPhone && !clientPhoneRef.current) clientPhoneRef.current = extractedPhone;
     }
