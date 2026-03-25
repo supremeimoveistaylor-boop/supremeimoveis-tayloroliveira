@@ -840,26 +840,41 @@ Acesse o painel para mais detalhes.`;
 
         // Atualizar tabela leads (compatibilidade)
         if (Object.keys(updates).length > 0) {
+          console.log(`📝 Atualizando lead ${currentLeadId} com:`, JSON.stringify(updates));
           await supabase.from("leads").update(updates).eq("id", currentLeadId);
           
-          // Se nome foi extraído, atualizar CRM card existente também
-          if (updates.name) {
+          // Se nome ou telefone extraído, atualizar CRM card e conversations
+          if (updates.name || updates.phone) {
             const { data: existingCrmCard } = await supabase
               .from("crm_cards")
-              .select("id")
+              .select("id, cliente")
               .eq("lead_id", currentLeadId)
               .limit(1)
               .maybeSingle();
             
             if (existingCrmCard) {
+              const isFallbackName = (n: string | null) => !n || n === "Visitante do Chat" || n === "Cliente" || n === "A definir";
               const crmUpdate: Record<string, unknown> = {
-                cliente: updates.name,
-                titulo: `Lead Chat - ${updates.name}`,
                 updated_at: new Date().toISOString(),
+                last_interaction_at: new Date().toISOString(),
               };
+              if (updates.name && isFallbackName(existingCrmCard.cliente)) {
+                crmUpdate.cliente = updates.name;
+                crmUpdate.titulo = `Lead Chat - ${updates.name}`;
+              }
               if (updates.phone) crmUpdate.telefone = updates.phone;
               await supabase.from("crm_cards").update(crmUpdate).eq("id", existingCrmCard.id);
-              console.log(`✅ CRM card nome atualizado: ${existingCrmCard.id} → ${updates.name}`);
+              console.log(`✅ CRM card atualizado: ${existingCrmCard.id} → nome=${updates.name}, tel=${updates.phone}`);
+            }
+
+            // Atualizar omnichat_conversations se existir
+            const convUpdate: Record<string, unknown> = {};
+            if (updates.name) convUpdate.contact_name = updates.name;
+            if (updates.phone) convUpdate.contact_phone = updates.phone;
+            if (Object.keys(convUpdate).length > 0) {
+              await supabase.from("omnichat_conversations")
+                .update(convUpdate)
+                .eq("lead_id", currentLeadId);
             }
           }
 
