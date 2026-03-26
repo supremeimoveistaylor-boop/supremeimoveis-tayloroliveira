@@ -116,14 +116,17 @@ serve(async (req) => {
                     }
                     await supabase.from('omnichat_conversations').update(convUpdate).eq('id', convId);
                   } else {
-                    // Check if any agent is online
+                    // Check if any agent is TRULY online (last_seen within 30 minutes)
+                    const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
                     const { data: onlineAgents } = await supabase
                       .from('agent_status')
                       .select('user_id')
                       .eq('status', 'online')
+                      .gte('last_seen', thirtyMinAgo)
                       .limit(1);
 
                     const botActive = !onlineAgents || onlineAgents.length === 0;
+                    console.log('[WhatsApp Webhook] 🤖 Bot active:', botActive, '(recent agents:', onlineAgents?.length || 0, ')');
 
                     const { data: newConv } = await supabase
                       .from('omnichat_conversations')
