@@ -462,14 +462,17 @@ serve(async (req) => {
               }
               await supabase.from('omnichat_conversations').update(convUpdate).eq('id', convId);
             } else {
-              // Check if any agent is online
+              // Check if any agent is TRULY online (last_seen within 30 minutes)
+              const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
               const { data: onlineAgents } = await supabase
                 .from('agent_status')
                 .select('user_id')
                 .eq('status', 'online')
+                .gte('last_seen', thirtyMinAgo)
                 .limit(1);
 
               const botActive = !onlineAgents || onlineAgents.length === 0;
+              console.log('[Instagram Webhook] 🤖 Bot active:', botActive, '(online agents with recent heartbeat:', onlineAgents?.length || 0, ')');
 
               const { data: newConv } = await supabase
                 .from('omnichat_conversations')
@@ -700,7 +703,7 @@ serve(async (req) => {
             }
 
             // =====================================================
-            // STEP 7: If bot active, trigger AI reply
+            // STEP 7: If bot active (or no real agent online), trigger AI reply
             // =====================================================
             const { data: conv } = await supabase
               .from('omnichat_conversations')
@@ -708,7 +711,25 @@ serve(async (req) => {
               .eq('id', convId)
               .single();
 
-            if (conv?.bot_active && messageText) {
+            // Re-check agent status for existing conversations too
+            let shouldBotReply = conv?.bot_active;
+            if (!shouldBotReply) {
+              const recentThreshold = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+              const { data: recentAgents } = await supabase
+                .from('agent_status')
+                .select('user_id')
+                .eq('status', 'online')
+                .gte('last_seen', recentThreshold)
+                .limit(1);
+              if (!recentAgents || recentAgents.length === 0) {
+                shouldBotReply = true;
+                // Activate bot for this conversation
+                await supabase.from('omnichat_conversations').update({ bot_active: true }).eq('id', convId);
+                console.log('[Instagram Webhook] 🤖 Re-activated bot (no recent agents online)');
+              }
+            }
+
+            if (shouldBotReply && messageText) {
               try {
                 // Build messages array matching real-estate-chat format
                 const { data: historyMsgs } = await supabase
