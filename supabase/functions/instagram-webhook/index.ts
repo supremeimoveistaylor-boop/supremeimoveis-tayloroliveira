@@ -321,13 +321,13 @@ serve(async (req) => {
           if (senderId === igUserId) continue;
 
           // =====================================================
-          // STEP 1: Resolve display name
+          // STEP 1: Resolve display name — ALWAYS call Meta API
           // =====================================================
           let displayName: string | null = null;
           let igUsername: string | null = null;
           const pageToken = connection.access_token_encrypted;
 
-          // Check if we already have a real name saved
+          // Check existing conversation
           const { data: existingConvCheck } = await supabase
             .from('omnichat_conversations')
             .select('contact_name, contact_phone, lead_id')
@@ -336,25 +336,22 @@ serve(async (req) => {
             .eq('external_contact_id', senderId)
             .maybeSingle();
 
-          // Reuse existing real name
-          if (existingConvCheck?.contact_name && !isFallbackName(existingConvCheck.contact_name)) {
-            displayName = existingConvCheck.contact_name;
-            console.log('[Instagram Webhook] 👤 Reusing saved name:', displayName);
-          }
+          // ALWAYS call Meta API to resolve profile (even if we have a name)
+          console.log('[Instagram Webhook] 🔍 SENDER ID:', senderId);
+          console.log('[Instagram Webhook] 🔍 Calling Meta API for profile resolution...');
+          const profile = await resolveInstagramProfile(senderId, pageToken, connection.page_id);
+          console.log('[Instagram Webhook] 🔍 PROFILE DATA:', JSON.stringify(profile));
 
-          // Try API resolution if no real name yet
-          if (!displayName) {
-            const profile = await resolveInstagramProfile(senderId, pageToken, connection.page_id);
+          if (profile.displayName) {
             displayName = profile.displayName;
             igUsername = profile.username;
-            if (displayName) {
-              console.log('[Instagram Webhook] 👤 Profile resolved:', displayName);
-            }
-          }
-
-          // Fallback — keep null, NEVER save "Cliente" to DB
-          if (!displayName) {
-            console.log('[Instagram Webhook] ⚠️ No profile data resolved, keeping name as null for:', senderId);
+            console.log('[Instagram Webhook] ✅ NAME FROM API:', displayName);
+          } else if (existingConvCheck?.contact_name && !isFallbackName(existingConvCheck.contact_name)) {
+            // Only fall back to saved name if API returned nothing
+            displayName = existingConvCheck.contact_name;
+            console.log('[Instagram Webhook] 👤 Reusing saved name (API returned nothing):', displayName);
+          } else {
+            console.log('[Instagram Webhook] ⚠️ No profile data resolved from API for:', senderId);
           }
 
           // =====================================================
