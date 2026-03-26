@@ -72,40 +72,44 @@ async function resolveInstagramProfile(senderId: string, pageToken: string, page
   let username: string | null = null;
 
   try {
-    // Strategy 1: Facebook Graph API (more reliable for IGSID lookups)
-    console.log('[Instagram Webhook] Fetching profile for IGSID:', senderId);
-    const fbProfileRes = await fetch(
-      `https://graph.facebook.com/v19.0/${senderId}?fields=name,username,profile_pic`,
-      { headers: { 'Authorization': `Bearer ${pageToken}` } }
-    );
+    // Strategy 1: Facebook Graph API — primary method for IGSID
+    console.log('[Instagram Webhook] 🔍 Strategy 1: FB Graph API for IGSID:', senderId);
+    const fbProfileUrl = `https://graph.facebook.com/v19.0/${senderId}?fields=name,username,profile_pic`;
+    console.log('[Instagram Webhook] 🔍 API URL:', fbProfileUrl);
+    const fbProfileRes = await fetch(fbProfileUrl, { headers: { 'Authorization': `Bearer ${pageToken}` } });
+
+    const fbRawText = await fbProfileRes.text();
+    console.log('[Instagram Webhook] 🔍 Strategy 1 response status:', fbProfileRes.status);
+    console.log('[Instagram Webhook] 🔍 Strategy 1 response body:', fbRawText.substring(0, 500));
 
     if (fbProfileRes.ok) {
-      const profile = await fbProfileRes.json();
-      console.log('[Instagram Webhook] FB profile response:', JSON.stringify(profile));
+      const profile = JSON.parse(fbRawText);
       username = profile.username || null;
       if (profile.username) {
         displayName = `@${profile.username}`;
-      } else if (profile.name && profile.name !== profile.id) {
+      } else if (profile.name && profile.name !== profile.id && !isFallbackName(profile.name)) {
         displayName = profile.name;
       }
+      console.log('[Instagram Webhook] ✅ Strategy 1 resolved — name:', displayName, 'username:', username);
     } else {
-      const errText = await fbProfileRes.text();
-      console.warn('[Instagram Webhook] FB profile fetch failed:', fbProfileRes.status, errText.substring(0, 300));
+      console.warn('[Instagram Webhook] ❌ Strategy 1 failed:', fbProfileRes.status, fbRawText.substring(0, 300));
 
-      // Strategy 2: Instagram Graph API
+      // Strategy 2: Try with different fields
       try {
-        const igProfileRes = await fetch(
-          `https://graph.facebook.com/v19.0/${senderId}?fields=name,username`,
-          { headers: { 'Authorization': `Bearer ${pageToken}` } }
-        );
-        if (igProfileRes.ok) {
-          const igProfile = await igProfileRes.json();
+        console.log('[Instagram Webhook] 🔍 Strategy 2: Trying with follower_count field...');
+        const ig2Url = `https://graph.facebook.com/v19.0/${senderId}?fields=name,username,follower_count`;
+        const ig2Res = await fetch(ig2Url, { headers: { 'Authorization': `Bearer ${pageToken}` } });
+        const ig2Text = await ig2Res.text();
+        console.log('[Instagram Webhook] 🔍 Strategy 2 response:', ig2Res.status, ig2Text.substring(0, 300));
+        if (ig2Res.ok) {
+          const igProfile = JSON.parse(ig2Text);
           username = igProfile.username || null;
           if (igProfile.username) displayName = `@${igProfile.username}`;
-          else if (igProfile.name && igProfile.name !== igProfile.id) displayName = igProfile.name;
+          else if (igProfile.name && igProfile.name !== igProfile.id && !isFallbackName(igProfile.name)) displayName = igProfile.name;
+          console.log('[Instagram Webhook] ✅ Strategy 2 resolved — name:', displayName);
         }
       } catch (e) {
-        console.warn('[Instagram Webhook] IG profile fallback error:', e);
+        console.warn('[Instagram Webhook] ❌ Strategy 2 error:', e);
       }
     }
 
@@ -321,13 +325,13 @@ serve(async (req) => {
           if (senderId === igUserId) continue;
 
           // =====================================================
-          // STEP 1: Resolve display name
+          // STEP 1: Resolve display name — ALWAYS call Meta API
           // =====================================================
           let displayName: string | null = null;
           let igUsername: string | null = null;
           const pageToken = connection.access_token_encrypted;
 
-          // Check if we already have a real name saved
+          // Check existing conversation
           const { data: existingConvCheck } = await supabase
             .from('omnichat_conversations')
             .select('contact_name, contact_phone, lead_id')
@@ -336,25 +340,22 @@ serve(async (req) => {
             .eq('external_contact_id', senderId)
             .maybeSingle();
 
-          // Reuse existing real name
-          if (existingConvCheck?.contact_name && !isFallbackName(existingConvCheck.contact_name)) {
-            displayName = existingConvCheck.contact_name;
-            console.log('[Instagram Webhook] 👤 Reusing saved name:', displayName);
-          }
+          // ALWAYS call Meta API to resolve profile (even if we have a name)
+          console.log('[Instagram Webhook] 🔍 SENDER ID:', senderId);
+          console.log('[Instagram Webhook] 🔍 Calling Meta API for profile resolution...');
+          const profile = await resolveInstagramProfile(senderId, pageToken, connection.page_id);
+          console.log('[Instagram Webhook] 🔍 PROFILE DATA:', JSON.stringify(profile));
 
-          // Try API resolution if no real name yet
-          if (!displayName) {
-            const profile = await resolveInstagramProfile(senderId, pageToken, connection.page_id);
+          if (profile.displayName) {
             displayName = profile.displayName;
             igUsername = profile.username;
-            if (displayName) {
-              console.log('[Instagram Webhook] 👤 Profile resolved:', displayName);
-            }
-          }
-
-          // Fallback — keep null, NEVER save "Cliente" to DB
-          if (!displayName) {
-            console.log('[Instagram Webhook] ⚠️ No profile data resolved, keeping name as null for:', senderId);
+            console.log('[Instagram Webhook] ✅ NAME FROM API:', displayName);
+          } else if (existingConvCheck?.contact_name && !isFallbackName(existingConvCheck.contact_name)) {
+            // Only fall back to saved name if API returned nothing
+            displayName = existingConvCheck.contact_name;
+            console.log('[Instagram Webhook] 👤 Reusing saved name (API returned nothing):', displayName);
+          } else {
+            console.log('[Instagram Webhook] ⚠️ No profile data resolved from API for:', senderId);
           }
 
           // =====================================================
@@ -501,7 +502,7 @@ serve(async (req) => {
             });
 
             // =====================================================
-            // STEP 5: Lead management (DEDUP - never create duplicates)
+            // STEP 5: Lead management — UNCONDITIONAL SAVE
             // =====================================================
             try {
               const { data: convForLead } = await supabase
@@ -509,6 +510,10 @@ serve(async (req) => {
                 .select('lead_id')
                 .eq('id', convId)
                 .single();
+
+              // Determine the best name to use
+              const bestLeadName = extractedName || (displayName && !isFallbackName(displayName) ? displayName : null);
+              console.log('[Instagram Webhook] 🔍 Best lead name resolved:', bestLeadName, '(extracted:', extractedName, ', api:', displayName, ')');
 
               if (!convForLead?.lead_id) {
                 // Check dedup by phone first
@@ -523,19 +528,30 @@ serve(async (req) => {
                 }
 
                 if (existingLeadId) {
-                  // Link existing lead
+                  // Link existing lead and UNCONDITIONALLY update name if we have one
                   await supabase.from('omnichat_conversations').update({ lead_id: existingLeadId }).eq('id', convId);
                   const leadUpdate: Record<string, unknown> = { last_interaction_at: new Date().toISOString(), updated_at: new Date().toISOString() };
-                  if (extractedName) leadUpdate.name = extractedName;
+                  if (bestLeadName) {
+                    // Only update if current name is fallback
+                    const { data: currentLead } = await supabase.from('leads').select('name').eq('id', existingLeadId).single();
+                    if (isFallbackName(currentLead?.name)) {
+                      leadUpdate.name = bestLeadName;
+                      // Also update CRM
+                      await supabase.from('crm_cards').update({
+                        cliente: bestLeadName,
+                        titulo: `Lead Instagram - ${bestLeadName}`,
+                        updated_at: new Date().toISOString(),
+                      }).eq('lead_id', existingLeadId);
+                    }
+                  }
                   await supabase.from('leads').update(leadUpdate).eq('id', existingLeadId);
-                  console.log('[Instagram Webhook] ✅ Linked to existing lead by phone:', existingLeadId);
+                  console.log('[Instagram Webhook] ✅ Linked to existing lead by phone:', existingLeadId, 'name:', bestLeadName);
                 } else {
-                  // Create new lead (temporary if no name)
-                  const leadName = extractedName || (displayName && !isFallbackName(displayName) ? displayName : null);
+                  // Create new lead — use bestLeadName (NEVER fallback)
                   const { data: newLead } = await supabase
                     .from('leads')
                     .insert({
-                      name: leadName,
+                      name: bestLeadName,
                       phone: extractedPhone,
                       origin: 'instagram',
                       status: 'novo',
@@ -548,10 +564,10 @@ serve(async (req) => {
                       lead_id: newLead.id,
                     }).eq('id', convId);
 
-                    // Create CRM card
+                    // Create CRM card — name can be null, that's OK
                     await supabase.from('crm_cards').insert({
-                      titulo: `Lead Instagram - ${leadName}`,
-                      cliente: leadName,
+                      titulo: bestLeadName ? `Lead Instagram - ${bestLeadName}` : `Lead Instagram - ${senderId}`,
+                      cliente: bestLeadName || senderId,
                       telefone: extractedPhone || null,
                       coluna: 'leads',
                       origem_lead: 'instagram',
@@ -563,44 +579,71 @@ serve(async (req) => {
                       valor_estimado: 0,
                     });
 
-                    console.log('[Instagram Webhook] ✅ Lead + CRM card created:', newLead.id);
+                    console.log('[Instagram Webhook] ✅ NAME SALVO:', bestLeadName, 'Lead ID:', newLead.id);
 
                     // If already has name+phone, notify broker
-                    if (extractedName && extractedPhone) {
-                      await notifyBroker(supabase, extractedName, extractedPhone, 'Instagram');
+                    if (bestLeadName && !isFallbackName(bestLeadName) && extractedPhone) {
+                      await notifyBroker(supabase, bestLeadName, extractedPhone, 'Instagram');
                       await supabase.from('leads').update({ whatsapp_sent: true, whatsapp_sent_at: new Date().toISOString() }).eq('id', newLead.id);
                     }
                   }
                 }
               } else {
-                // Update existing lead with better data
+                // Lead already exists — UNCONDITIONALLY update if we have better data
+                const { data: currentLead } = await supabase.from('leads').select('name, phone, whatsapp_sent').eq('id', convForLead.lead_id).single();
+                
                 const leadUpdate: Record<string, unknown> = {
                   last_interaction_at: new Date().toISOString(),
                   updated_at: new Date().toISOString(),
                 };
-                if (extractedName) leadUpdate.name = extractedName;
-                if (extractedPhone) leadUpdate.phone = extractedPhone;
+                
+                // Update name if current is fallback and we have a real name
+                if (bestLeadName && isFallbackName(currentLead?.name)) {
+                  leadUpdate.name = bestLeadName;
+                  console.log('[Instagram Webhook] 📝 Updating lead name to:', bestLeadName);
+                }
+                if (extractedPhone && !currentLead?.phone) {
+                  leadUpdate.phone = extractedPhone;
+                }
                 
                 await supabase.from('leads').update(leadUpdate).eq('id', convForLead.lead_id);
 
-                // Also update CRM card if exists
-                if (extractedName || extractedPhone) {
-                  const crmUpdate: Record<string, unknown> = { updated_at: new Date().toISOString() };
-                  if (extractedName) {
-                    crmUpdate.cliente = extractedName;
-                    crmUpdate.titulo = `Lead Instagram - ${extractedName}`;
-                  }
-                  if (extractedPhone) crmUpdate.telefone = extractedPhone;
-                  await supabase.from('crm_cards').update(crmUpdate).eq('lead_id', convForLead.lead_id);
+                // UNCONDITIONALLY sync CRM card
+                if (bestLeadName && isFallbackName(currentLead?.name)) {
+                  await supabase.from('crm_cards').update({
+                    cliente: bestLeadName,
+                    titulo: `Lead Instagram - ${bestLeadName}`,
+                    updated_at: new Date().toISOString(),
+                    last_interaction_at: new Date().toISOString(),
+                  }).eq('lead_id', convForLead.lead_id);
+                }
+                if (extractedPhone) {
+                  await supabase.from('crm_cards').update({
+                    telefone: extractedPhone,
+                    updated_at: new Date().toISOString(),
+                  }).eq('lead_id', convForLead.lead_id);
                 }
 
-                // Check if we should notify broker (name+phone now complete)
-                if (extractedName || extractedPhone) {
-                  const { data: leadCheck } = await supabase.from('leads').select('name, phone, whatsapp_sent').eq('id', convForLead.lead_id).single();
-                  if (leadCheck && leadCheck.name && !isFallbackName(leadCheck.name) && leadCheck.phone && !leadCheck.whatsapp_sent) {
-                    await notifyBroker(supabase, leadCheck.name, leadCheck.phone, 'Instagram');
-                    await supabase.from('leads').update({ whatsapp_sent: true, whatsapp_sent_at: new Date().toISOString() }).eq('id', convForLead.lead_id);
-                  }
+                // UNCONDITIONALLY sync omnichat_conversations
+                const convSync: Record<string, unknown> = {};
+                if (bestLeadName && isFallbackName(existingConvCheck?.contact_name ?? null)) {
+                  convSync.contact_name = bestLeadName;
+                }
+                if (extractedPhone && !existingConvCheck?.contact_phone) {
+                  convSync.contact_phone = extractedPhone;
+                }
+                if (Object.keys(convSync).length > 0) {
+                  await supabase.from('omnichat_conversations').update(convSync).eq('id', convId);
+                }
+
+                console.log('[Instagram Webhook] ✅ NAME SALVO:', bestLeadName, 'Lead:', convForLead.lead_id);
+
+                // Check if we should notify broker
+                const updatedName = bestLeadName || currentLead?.name;
+                const updatedPhone = extractedPhone || currentLead?.phone;
+                if (updatedName && !isFallbackName(updatedName) && updatedPhone && !currentLead?.whatsapp_sent) {
+                  await notifyBroker(supabase, updatedName, updatedPhone, 'Instagram');
+                  await supabase.from('leads').update({ whatsapp_sent: true, whatsapp_sent_at: new Date().toISOString() }).eq('id', convForLead.lead_id);
                 }
               }
             } catch (leadErr) {
