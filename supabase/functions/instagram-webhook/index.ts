@@ -498,7 +498,7 @@ serve(async (req) => {
             });
 
             // =====================================================
-            // STEP 5: Lead management (DEDUP - never create duplicates)
+            // STEP 5: Lead management — UNCONDITIONAL SAVE
             // =====================================================
             try {
               const { data: convForLead } = await supabase
@@ -506,6 +506,10 @@ serve(async (req) => {
                 .select('lead_id')
                 .eq('id', convId)
                 .single();
+
+              // Determine the best name to use
+              const bestLeadName = extractedName || (displayName && !isFallbackName(displayName) ? displayName : null);
+              console.log('[Instagram Webhook] 🔍 Best lead name resolved:', bestLeadName, '(extracted:', extractedName, ', api:', displayName, ')');
 
               if (!convForLead?.lead_id) {
                 // Check dedup by phone first
@@ -520,19 +524,30 @@ serve(async (req) => {
                 }
 
                 if (existingLeadId) {
-                  // Link existing lead
+                  // Link existing lead and UNCONDITIONALLY update name if we have one
                   await supabase.from('omnichat_conversations').update({ lead_id: existingLeadId }).eq('id', convId);
                   const leadUpdate: Record<string, unknown> = { last_interaction_at: new Date().toISOString(), updated_at: new Date().toISOString() };
-                  if (extractedName) leadUpdate.name = extractedName;
+                  if (bestLeadName) {
+                    // Only update if current name is fallback
+                    const { data: currentLead } = await supabase.from('leads').select('name').eq('id', existingLeadId).single();
+                    if (isFallbackName(currentLead?.name)) {
+                      leadUpdate.name = bestLeadName;
+                      // Also update CRM
+                      await supabase.from('crm_cards').update({
+                        cliente: bestLeadName,
+                        titulo: `Lead Instagram - ${bestLeadName}`,
+                        updated_at: new Date().toISOString(),
+                      }).eq('lead_id', existingLeadId);
+                    }
+                  }
                   await supabase.from('leads').update(leadUpdate).eq('id', existingLeadId);
-                  console.log('[Instagram Webhook] ✅ Linked to existing lead by phone:', existingLeadId);
+                  console.log('[Instagram Webhook] ✅ Linked to existing lead by phone:', existingLeadId, 'name:', bestLeadName);
                 } else {
-                  // Create new lead (temporary if no name)
-                  const leadName = extractedName || (displayName && !isFallbackName(displayName) ? displayName : null);
+                  // Create new lead — use bestLeadName (NEVER fallback)
                   const { data: newLead } = await supabase
                     .from('leads')
                     .insert({
-                      name: leadName,
+                      name: bestLeadName,
                       phone: extractedPhone,
                       origin: 'instagram',
                       status: 'novo',
@@ -545,10 +560,10 @@ serve(async (req) => {
                       lead_id: newLead.id,
                     }).eq('id', convId);
 
-                    // Create CRM card
+                    // Create CRM card — name can be null, that's OK
                     await supabase.from('crm_cards').insert({
-                      titulo: `Lead Instagram - ${leadName}`,
-                      cliente: leadName,
+                      titulo: bestLeadName ? `Lead Instagram - ${bestLeadName}` : `Lead Instagram - ${senderId}`,
+                      cliente: bestLeadName || senderId,
                       telefone: extractedPhone || null,
                       coluna: 'leads',
                       origem_lead: 'instagram',
@@ -560,44 +575,71 @@ serve(async (req) => {
                       valor_estimado: 0,
                     });
 
-                    console.log('[Instagram Webhook] ✅ Lead + CRM card created:', newLead.id);
+                    console.log('[Instagram Webhook] ✅ NAME SALVO:', bestLeadName, 'Lead ID:', newLead.id);
 
                     // If already has name+phone, notify broker
-                    if (extractedName && extractedPhone) {
-                      await notifyBroker(supabase, extractedName, extractedPhone, 'Instagram');
+                    if (bestLeadName && !isFallbackName(bestLeadName) && extractedPhone) {
+                      await notifyBroker(supabase, bestLeadName, extractedPhone, 'Instagram');
                       await supabase.from('leads').update({ whatsapp_sent: true, whatsapp_sent_at: new Date().toISOString() }).eq('id', newLead.id);
                     }
                   }
                 }
               } else {
-                // Update existing lead with better data
+                // Lead already exists — UNCONDITIONALLY update if we have better data
+                const { data: currentLead } = await supabase.from('leads').select('name, phone, whatsapp_sent').eq('id', convForLead.lead_id).single();
+                
                 const leadUpdate: Record<string, unknown> = {
                   last_interaction_at: new Date().toISOString(),
                   updated_at: new Date().toISOString(),
                 };
-                if (extractedName) leadUpdate.name = extractedName;
-                if (extractedPhone) leadUpdate.phone = extractedPhone;
+                
+                // Update name if current is fallback and we have a real name
+                if (bestLeadName && isFallbackName(currentLead?.name)) {
+                  leadUpdate.name = bestLeadName;
+                  console.log('[Instagram Webhook] 📝 Updating lead name to:', bestLeadName);
+                }
+                if (extractedPhone && !currentLead?.phone) {
+                  leadUpdate.phone = extractedPhone;
+                }
                 
                 await supabase.from('leads').update(leadUpdate).eq('id', convForLead.lead_id);
 
-                // Also update CRM card if exists
-                if (extractedName || extractedPhone) {
-                  const crmUpdate: Record<string, unknown> = { updated_at: new Date().toISOString() };
-                  if (extractedName) {
-                    crmUpdate.cliente = extractedName;
-                    crmUpdate.titulo = `Lead Instagram - ${extractedName}`;
-                  }
-                  if (extractedPhone) crmUpdate.telefone = extractedPhone;
-                  await supabase.from('crm_cards').update(crmUpdate).eq('lead_id', convForLead.lead_id);
+                // UNCONDITIONALLY sync CRM card
+                if (bestLeadName && isFallbackName(currentLead?.name)) {
+                  await supabase.from('crm_cards').update({
+                    cliente: bestLeadName,
+                    titulo: `Lead Instagram - ${bestLeadName}`,
+                    updated_at: new Date().toISOString(),
+                    last_interaction_at: new Date().toISOString(),
+                  }).eq('lead_id', convForLead.lead_id);
+                }
+                if (extractedPhone) {
+                  await supabase.from('crm_cards').update({
+                    telefone: extractedPhone,
+                    updated_at: new Date().toISOString(),
+                  }).eq('lead_id', convForLead.lead_id);
                 }
 
-                // Check if we should notify broker (name+phone now complete)
-                if (extractedName || extractedPhone) {
-                  const { data: leadCheck } = await supabase.from('leads').select('name, phone, whatsapp_sent').eq('id', convForLead.lead_id).single();
-                  if (leadCheck && leadCheck.name && !isFallbackName(leadCheck.name) && leadCheck.phone && !leadCheck.whatsapp_sent) {
-                    await notifyBroker(supabase, leadCheck.name, leadCheck.phone, 'Instagram');
-                    await supabase.from('leads').update({ whatsapp_sent: true, whatsapp_sent_at: new Date().toISOString() }).eq('id', convForLead.lead_id);
-                  }
+                // UNCONDITIONALLY sync omnichat_conversations
+                const convSync: Record<string, unknown> = {};
+                if (bestLeadName && isFallbackName(existingConvCheck?.contact_name ?? null)) {
+                  convSync.contact_name = bestLeadName;
+                }
+                if (extractedPhone && !existingConvCheck?.contact_phone) {
+                  convSync.contact_phone = extractedPhone;
+                }
+                if (Object.keys(convSync).length > 0) {
+                  await supabase.from('omnichat_conversations').update(convSync).eq('id', convId);
+                }
+
+                console.log('[Instagram Webhook] ✅ NAME SALVO:', bestLeadName, 'Lead:', convForLead.lead_id);
+
+                // Check if we should notify broker
+                const updatedName = bestLeadName || currentLead?.name;
+                const updatedPhone = extractedPhone || currentLead?.phone;
+                if (updatedName && !isFallbackName(updatedName) && updatedPhone && !currentLead?.whatsapp_sent) {
+                  await notifyBroker(supabase, updatedName, updatedPhone, 'Instagram');
+                  await supabase.from('leads').update({ whatsapp_sent: true, whatsapp_sent_at: new Date().toISOString() }).eq('id', convForLead.lead_id);
                 }
               }
             } catch (leadErr) {
