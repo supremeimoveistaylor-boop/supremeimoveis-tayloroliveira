@@ -72,40 +72,44 @@ async function resolveInstagramProfile(senderId: string, pageToken: string, page
   let username: string | null = null;
 
   try {
-    // Strategy 1: Facebook Graph API (more reliable for IGSID lookups)
-    console.log('[Instagram Webhook] Fetching profile for IGSID:', senderId);
-    const fbProfileRes = await fetch(
-      `https://graph.facebook.com/v19.0/${senderId}?fields=name,username,profile_pic`,
-      { headers: { 'Authorization': `Bearer ${pageToken}` } }
-    );
+    // Strategy 1: Facebook Graph API — primary method for IGSID
+    console.log('[Instagram Webhook] 🔍 Strategy 1: FB Graph API for IGSID:', senderId);
+    const fbProfileUrl = `https://graph.facebook.com/v19.0/${senderId}?fields=name,username,profile_pic`;
+    console.log('[Instagram Webhook] 🔍 API URL:', fbProfileUrl);
+    const fbProfileRes = await fetch(fbProfileUrl, { headers: { 'Authorization': `Bearer ${pageToken}` } });
+
+    const fbRawText = await fbProfileRes.text();
+    console.log('[Instagram Webhook] 🔍 Strategy 1 response status:', fbProfileRes.status);
+    console.log('[Instagram Webhook] 🔍 Strategy 1 response body:', fbRawText.substring(0, 500));
 
     if (fbProfileRes.ok) {
-      const profile = await fbProfileRes.json();
-      console.log('[Instagram Webhook] FB profile response:', JSON.stringify(profile));
+      const profile = JSON.parse(fbRawText);
       username = profile.username || null;
       if (profile.username) {
         displayName = `@${profile.username}`;
-      } else if (profile.name && profile.name !== profile.id) {
+      } else if (profile.name && profile.name !== profile.id && !isFallbackName(profile.name)) {
         displayName = profile.name;
       }
+      console.log('[Instagram Webhook] ✅ Strategy 1 resolved — name:', displayName, 'username:', username);
     } else {
-      const errText = await fbProfileRes.text();
-      console.warn('[Instagram Webhook] FB profile fetch failed:', fbProfileRes.status, errText.substring(0, 300));
+      console.warn('[Instagram Webhook] ❌ Strategy 1 failed:', fbProfileRes.status, fbRawText.substring(0, 300));
 
-      // Strategy 2: Instagram Graph API
+      // Strategy 2: Try with different fields
       try {
-        const igProfileRes = await fetch(
-          `https://graph.facebook.com/v19.0/${senderId}?fields=name,username`,
-          { headers: { 'Authorization': `Bearer ${pageToken}` } }
-        );
-        if (igProfileRes.ok) {
-          const igProfile = await igProfileRes.json();
+        console.log('[Instagram Webhook] 🔍 Strategy 2: Trying with follower_count field...');
+        const ig2Url = `https://graph.facebook.com/v19.0/${senderId}?fields=name,username,follower_count`;
+        const ig2Res = await fetch(ig2Url, { headers: { 'Authorization': `Bearer ${pageToken}` } });
+        const ig2Text = await ig2Res.text();
+        console.log('[Instagram Webhook] 🔍 Strategy 2 response:', ig2Res.status, ig2Text.substring(0, 300));
+        if (ig2Res.ok) {
+          const igProfile = JSON.parse(ig2Text);
           username = igProfile.username || null;
           if (igProfile.username) displayName = `@${igProfile.username}`;
-          else if (igProfile.name && igProfile.name !== igProfile.id) displayName = igProfile.name;
+          else if (igProfile.name && igProfile.name !== igProfile.id && !isFallbackName(igProfile.name)) displayName = igProfile.name;
+          console.log('[Instagram Webhook] ✅ Strategy 2 resolved — name:', displayName);
         }
       } catch (e) {
-        console.warn('[Instagram Webhook] IG profile fallback error:', e);
+        console.warn('[Instagram Webhook] ❌ Strategy 2 error:', e);
       }
     }
 
