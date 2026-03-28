@@ -255,10 +255,30 @@ serve(async (req) => {
     }
 
     // 5. Build conversation messages for AI
+    // Check if name is missing and how many times bot already asked
+    const isNameMissing = isFallbackName(contactName);
+    let nameAskCount = 0;
+    if (isNameMissing && history) {
+      for (const msg of history) {
+        if (msg.sender_type !== 'client' && msg.content) {
+          if (/como (?:posso |devo )?(?:te )?chamar|qual (?:[eé] )?(?:o )?seu nome|saber seu nome|me fala seu nome/i.test(msg.content)) {
+            nameAskCount++;
+          }
+        }
+      }
+    }
+
+    let nameInstruction = '';
+    if (isNameMissing && nameAskCount === 0) {
+      nameInstruction = `\n\n🚨 INSTRUÇÃO PRIORITÁRIA: O nome do cliente ainda NÃO foi capturado. Na sua PRIMEIRA resposta, pergunte de forma natural: "Pra te atender melhor e te enviar as melhores opções, como posso te chamar?" — faça isso ANTES de qualquer outra coisa.`;
+    } else if (isNameMissing && nameAskCount === 1) {
+      nameInstruction = `\n\n🚨 INSTRUÇÃO: O nome do cliente ainda não foi identificado. Tente novamente de forma sutil: "Ah, e como posso te chamar pra te atender melhor?" — apenas mais uma tentativa.`;
+    }
+
     const aiMessages: Array<{ role: string; content: string }> = [];
     aiMessages.push({
       role: 'system',
-      content: SYSTEM_PROMPT + propertiesContext + `\n\nNome do cliente: ${contactName || 'Não informado'}\nTelefone do cliente: ${senderPhone || 'Não informado'}`
+      content: SYSTEM_PROMPT + propertiesContext + nameInstruction + `\n\nNome do cliente: ${contactName || 'Não informado'}\nTelefone do cliente: ${senderPhone || 'Não informado'}`
     });
 
     if (history && history.length > 0) {
@@ -311,15 +331,30 @@ serve(async (req) => {
       let extractedName: string | null = extractNameFromText(message);
       const extractedPhone: string | null = extractPhone(message);
 
-      // Contextual name: if AI asked and user replied with 1-3 words
+      // Contextual name: if AI asked and user replied with short text
       if (!extractedName && history && history.length > 0) {
         const lastBotMsg = [...history].reverse().find(m => m.sender_type !== 'client');
-        if (lastBotMsg?.content && /como (?:posso )?(?:te )?chamar|qual (?:é )?(?:o )?seu nome|saber seu nome/i.test(lastBotMsg.content)) {
+        if (lastBotMsg?.content && /como (?:posso |devo )?(?:te )?chamar|qual (?:[eé] )?(?:o )?seu nome|saber seu nome|me fala seu nome/i.test(lastBotMsg.content)) {
           const cleaned = message.trim().replace(/[.,!?]+$/, "").trim();
-          const words = cleaned.split(/\s+/);
-          if (words.length >= 1 && words.length <= 4 && /^[a-záàâãéèêíïóôõöúçñ\s]+$/i.test(cleaned) && cleaned.length >= 2) {
+          // Remove common prefixes like "Meu nome é", "Pode me chamar de", etc.
+          const withoutPrefix = cleaned.replace(/^(meu nome [eé]|me chamo|pode me chamar de|sou o|sou a|eu sou)\s+/i, '').trim();
+          const finalText = withoutPrefix || cleaned;
+          const words = finalText.split(/\s+/);
+          if (words.length >= 1 && words.length <= 4 && /^[a-záàâãéèêíïóôõöúçñ\s]+$/i.test(finalText) && finalText.length >= 2) {
             extractedName = words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
+            console.log('[WhatsApp AI] 👤 NOME CAPTURADO (contextual):', extractedName);
           }
+        }
+      }
+
+      // Also try: if message is just 1-3 capitalized words and name is still missing, likely a name
+      if (!extractedName && isFallbackName(contactName)) {
+        const cleaned = message.trim().replace(/[.,!?]+$/, "").trim();
+        const words = cleaned.split(/\s+/);
+        if (words.length >= 1 && words.length <= 3 && /^[A-ZÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ][a-záàâãéèêíïóôõöúçñ]+(\s+[A-ZÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ][a-záàâãéèêíïóôõöúçñ]+)*$/.test(cleaned) && cleaned.length >= 2 && cleaned.length <= 40) {
+          // Looks like a proper name (capitalized words only)
+          extractedName = cleaned;
+          console.log('[WhatsApp AI] 👤 NOME CAPTURADO (capitalized pattern):', extractedName);
         }
       }
 
