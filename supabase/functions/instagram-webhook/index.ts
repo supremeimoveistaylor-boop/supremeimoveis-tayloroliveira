@@ -774,8 +774,8 @@ serve(async (req) => {
                   contextualName = normalizeLeadName(contextualName);
                   if (contextualName) {
                     console.log('NOME DETECTADO:', contextualName);
+                    await syncLeadData(supabase, convId, senderId, { name: contextualName });
                   }
-                  await syncLeadData(supabase, convId, senderId, { name: contextualName });
                 }
               }
 
