@@ -47,13 +47,31 @@ function extractNameFromText(text: string): string | null {
   for (const pattern of patterns) {
     const match = text.match(pattern);
     if (match) {
-      const name = match[1].trim().replace(/[.,!?]+$/, "").trim();
-      if (name.length >= 2 && name.length <= 50) {
-        return name.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
+      const normalized = normalizeLeadName(match[1]);
+      if (normalized) {
+        return normalized;
       }
     }
   }
   return null;
+}
+
+function normalizeLeadName(rawName: string | null | undefined): string | null {
+  if (!rawName) return null;
+
+  const clean = rawName
+    .trim()
+    .replace(/[.,!?]+$/, "")
+    .replace(/[^a-záàâãéèêíïóôõöúçñ\s'-]/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!clean) return null;
+
+  const firstName = clean.split(" ")[0]?.trim();
+  if (!firstName || firstName.length < 2 || firstName.length > 40) return null;
+
+  return firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
 }
 
 // =====================================================
@@ -84,6 +102,7 @@ async function resolveInstagramProfile(senderId: string, pageToken: string, page
 
     if (fbProfileRes.ok) {
       const profile = JSON.parse(fbRawText);
+      console.log('META PROFILE RESPONSE:', profile);
       username = profile.username || null;
       if (profile.username) {
         displayName = `@${profile.username}`;
@@ -103,6 +122,7 @@ async function resolveInstagramProfile(senderId: string, pageToken: string, page
         console.log('[Instagram Webhook] 🔍 Strategy 2 response:', ig2Res.status, ig2Text.substring(0, 300));
         if (ig2Res.ok) {
           const igProfile = JSON.parse(ig2Text);
+          console.log('META PROFILE RESPONSE:', igProfile);
           username = igProfile.username || null;
           if (igProfile.username) displayName = `@${igProfile.username}`;
           else if (igProfile.name && igProfile.name !== igProfile.id && !isFallbackName(igProfile.name)) displayName = igProfile.name;
@@ -155,64 +175,95 @@ async function syncLeadData(
 ) {
   if (!updates.name && !updates.phone) return;
 
-  // 1. Update omnichat_conversations
-  const convUpdate: Record<string, unknown> = {};
-  if (updates.name) convUpdate.contact_name = updates.name;
-  if (updates.phone) convUpdate.contact_phone = updates.phone;
-  if (Object.keys(convUpdate).length > 0) {
-    await supabase.from('omnichat_conversations').update(convUpdate).eq('id', convId);
-    console.log('[Instagram Webhook] ✅ Conversation updated:', convUpdate);
-  }
+  const normalizedName = normalizeLeadName(updates.name);
+  const nowIso = new Date().toISOString();
 
-  // 2. Update channel_messages for this contact
-  const chMsgUpdate: Record<string, unknown> = {};
-  if (updates.name) chMsgUpdate.contact_name = updates.name;
-  if (Object.keys(chMsgUpdate).length > 0) {
-    await supabase.from('channel_messages').update(chMsgUpdate).eq('contact_instagram_id', senderId);
-  }
-
-  // 3. Update lead
   const { data: convData } = await supabase
     .from('omnichat_conversations')
-    .select('lead_id')
+    .select('lead_id, contact_name, contact_phone')
     .eq('id', convId)
     .single();
 
-  if (convData?.lead_id) {
-    const leadUpdate: Record<string, unknown> = { updated_at: new Date().toISOString() };
-    if (updates.name) leadUpdate.name = updates.name;
-    if (updates.phone) leadUpdate.phone = updates.phone;
-    leadUpdate.last_interaction_at = new Date().toISOString();
-    await supabase.from('leads').update(leadUpdate).eq('id', convData.lead_id);
-    console.log('[Instagram Webhook] ✅ Lead updated:', leadUpdate);
+  const shouldUpdateConvName = !!normalizedName && isFallbackName(convData?.contact_name ?? null);
+  const shouldUpdateConvPhone = !!updates.phone && !convData?.contact_phone;
 
-    // 4. Update CRM card if exists
-    const crmUpdate: Record<string, unknown> = { updated_at: new Date().toISOString() };
-    if (updates.name) {
-      crmUpdate.cliente = updates.name;
-      crmUpdate.titulo = `Lead Instagram - ${updates.name}`;
+  if (shouldUpdateConvName || shouldUpdateConvPhone) {
+    const convUpdate: Record<string, unknown> = {};
+    if (shouldUpdateConvName) convUpdate.contact_name = normalizedName;
+    if (shouldUpdateConvPhone) convUpdate.contact_phone = updates.phone;
+    await supabase.from('omnichat_conversations').update(convUpdate).eq('id', convId);
+    if (shouldUpdateConvName) {
+      console.log('NOME SALVO NO BANCO');
+      console.log('UI ATUALIZADA COM NOME');
     }
-    if (updates.phone) crmUpdate.telefone = updates.phone;
-    crmUpdate.last_interaction_at = new Date().toISOString();
-    await supabase.from('crm_cards').update(crmUpdate).eq('lead_id', convData.lead_id);
+  }
 
-    // 5. Send broker WhatsApp alert when we have BOTH name and phone
-    if (updates.name && updates.phone) {
-      await notifyBroker(supabase, updates.name, updates.phone, 'Instagram');
-    } else if (updates.phone) {
-      // Check if lead already has name
-      const { data: leadData } = await supabase.from('leads').select('name').eq('id', convData.lead_id).single();
-      if (leadData?.name && !isFallbackName(leadData.name)) {
-        await notifyBroker(supabase, leadData.name, updates.phone, 'Instagram');
+  if (shouldUpdateConvName) {
+    await supabase
+      .from('channel_messages')
+      .update({ contact_name: normalizedName })
+      .eq('contact_instagram_id', senderId);
+  }
+
+  if (!convData?.lead_id) return;
+
+  const { data: currentLead } = await supabase
+    .from('leads')
+    .select('name, phone, whatsapp_sent')
+    .eq('id', convData.lead_id)
+    .single();
+
+  const shouldUpdateLeadName = !!normalizedName && isFallbackName(currentLead?.name ?? null);
+  const shouldUpdateLeadPhone = !!updates.phone && !currentLead?.phone;
+
+  const leadUpdate: Record<string, unknown> = {
+    updated_at: nowIso,
+    last_interaction_at: nowIso,
+  };
+  if (shouldUpdateLeadName) leadUpdate.name = normalizedName;
+  if (shouldUpdateLeadPhone) leadUpdate.phone = updates.phone;
+  await supabase.from('leads').update(leadUpdate).eq('id', convData.lead_id);
+
+  if (shouldUpdateLeadName || shouldUpdateLeadPhone) {
+    const { data: crmCards } = await supabase
+      .from('crm_cards')
+      .select('id, cliente')
+      .eq('lead_id', convData.lead_id);
+
+    for (const card of crmCards || []) {
+      const shouldUpdateCrmName = shouldUpdateLeadName && isFallbackName(card.cliente);
+      const shouldUpdateCrmPhone = shouldUpdateLeadPhone;
+      if (!shouldUpdateCrmName && !shouldUpdateCrmPhone) continue;
+
+      const crmUpdate: Record<string, unknown> = {
+        updated_at: nowIso,
+        last_interaction_at: nowIso,
+      };
+
+      if (shouldUpdateCrmName) {
+        crmUpdate.cliente = normalizedName;
+        crmUpdate.titulo = `Lead Instagram - ${normalizedName}`;
       }
-    } else if (updates.name) {
-      // Check if lead already has phone
-      const { data: leadData } = await supabase.from('leads').select('phone, whatsapp_sent').eq('id', convData.lead_id).single();
-      if (leadData?.phone && !leadData.whatsapp_sent) {
-        await notifyBroker(supabase, updates.name, leadData.phone, 'Instagram');
-        await supabase.from('leads').update({ whatsapp_sent: true, whatsapp_sent_at: new Date().toISOString() }).eq('id', convData.lead_id);
-      }
+      if (shouldUpdateCrmPhone) crmUpdate.telefone = updates.phone;
+
+      await supabase.from('crm_cards').update(crmUpdate).eq('id', card.id);
     }
+
+    if (shouldUpdateLeadName) {
+      console.log('NOME SALVO NO BANCO');
+      console.log('UI ATUALIZADA COM NOME');
+    }
+  }
+
+  const finalName = shouldUpdateLeadName ? normalizedName : currentLead?.name;
+  const finalPhone = shouldUpdateLeadPhone ? updates.phone : currentLead?.phone;
+
+  if (finalName && !isFallbackName(finalName) && finalPhone && !currentLead?.whatsapp_sent) {
+    await notifyBroker(supabase, finalName, finalPhone, 'Instagram');
+    await supabase
+      .from('leads')
+      .update({ whatsapp_sent: true, whatsapp_sent_at: nowIso })
+      .eq('id', convData.lead_id);
   }
 }
 
@@ -286,6 +337,7 @@ serve(async (req) => {
   if (req.method === 'POST') {
     try {
       const body = await req.json();
+      console.log('WEBHOOK RECEIVED:', body);
       console.log('[Instagram Webhook] Event received:', JSON.stringify(body, null, 2));
 
       if (body.object !== 'instagram') {
@@ -378,6 +430,9 @@ serve(async (req) => {
             if (messageText) {
               extractedName = extractNameFromText(messageText);
               extractedPhone = extractPhone(messageText);
+              if (extractedName) {
+                console.log('NOME DETECTADO:', extractedName);
+              }
             }
 
             // Save to channel_messages (legacy)
@@ -414,7 +469,9 @@ serve(async (req) => {
                 last_message_preview: messageText.substring(0, 100),
                 unread_count: (existingConv.unread_count || 0) + 1,
                 status: 'open',
+                bot_active: true,
               };
+              console.log('BOT ATIVADO PARA INSTAGRAM');
 
               // Determine best name: extractedName > displayName (from API) > keep existing
               const bestName = extractedName || (!isFallbackName(displayName) ? displayName : null);
@@ -462,17 +519,8 @@ serve(async (req) => {
               }
               await supabase.from('omnichat_conversations').update(convUpdate).eq('id', convId);
             } else {
-              // Check if any agent is TRULY online (last_seen within 30 minutes)
-              const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
-              const { data: onlineAgents } = await supabase
-                .from('agent_status')
-                .select('user_id')
-                .eq('status', 'online')
-                .gte('last_seen', thirtyMinAgo)
-                .limit(1);
-
-              const botActive = !onlineAgents || onlineAgents.length === 0;
-              console.log('[Instagram Webhook] 🤖 Bot active:', botActive, '(online agents with recent heartbeat:', onlineAgents?.length || 0, ')');
+              const botActive = true;
+              console.log('BOT ATIVADO PARA INSTAGRAM');
 
               const { data: newConv } = await supabase
                 .from('omnichat_conversations')
@@ -583,6 +631,10 @@ serve(async (req) => {
                     });
 
                     console.log('[Instagram Webhook] ✅ NAME SALVO:', bestLeadName, 'Lead ID:', newLead.id);
+                    if (bestLeadName) {
+                      console.log('NOME SALVO NO BANCO');
+                      console.log('UI ATUALIZADA COM NOME');
+                    }
 
                     // If already has name+phone, notify broker
                     if (bestLeadName && !isFallbackName(bestLeadName) && extractedPhone) {
@@ -640,6 +692,10 @@ serve(async (req) => {
                 }
 
                 console.log('[Instagram Webhook] ✅ NAME SALVO:', bestLeadName, 'Lead:', convForLead.lead_id);
+                if (bestLeadName) {
+                  console.log('NOME SALVO NO BANCO');
+                  console.log('UI ATUALIZADA COM NOME');
+                }
 
                 // Check if we should notify broker
                 const updatedName = bestLeadName || currentLead?.name;
@@ -650,7 +706,7 @@ serve(async (req) => {
                 }
               }
             } catch (leadErr) {
-              console.error('[Instagram Webhook] Lead sync error:', leadErr);
+              console.error('ERRO CAPTURA NOME INSTAGRAM:', leadErr);
             }
 
             // =====================================================
@@ -712,6 +768,10 @@ serve(async (req) => {
 
                 // Sync name across all records
                 if (contextualName) {
+                  contextualName = normalizeLeadName(contextualName);
+                  if (contextualName) {
+                    console.log('NOME DETECTADO:', contextualName);
+                  }
                   await syncLeadData(supabase, convId, senderId, { name: contextualName });
                 }
               }
@@ -730,31 +790,18 @@ serve(async (req) => {
             // =====================================================
             const { data: conv } = await supabase
               .from('omnichat_conversations')
-              .select('bot_active, contact_name')
+              .select('bot_active, contact_name, lead_id')
               .eq('id', convId)
               .single();
 
-            // Re-check agent status for existing conversations too
-            let shouldBotReply = conv?.bot_active;
-            if (!shouldBotReply) {
-              const recentThreshold = new Date(Date.now() - 30 * 60 * 1000).toISOString();
-              const { data: recentAgents } = await supabase
-                .from('agent_status')
-                .select('user_id')
-                .eq('status', 'online')
-                .gte('last_seen', recentThreshold)
-                .limit(1);
-              if (!recentAgents || recentAgents.length === 0) {
-                shouldBotReply = true;
-                // Activate bot for this conversation
-                await supabase.from('omnichat_conversations').update({ bot_active: true }).eq('id', convId);
-                console.log('[Instagram Webhook] 🤖 Re-activated bot (no recent agents online)');
-              }
-            }
+            let shouldBotReply = !!messageText;
+            await supabase.from('omnichat_conversations').update({ bot_active: true }).eq('id', convId);
+            console.log('BOT ATIVADO PARA INSTAGRAM');
 
             if (shouldBotReply && messageText) {
               try {
-                // Build messages array matching real-estate-chat format
+                console.log('IA EXECUTANDO PARA INSTAGRAM');
+                // Build history for name-attempt checks
                 const { data: historyMsgs } = await supabase
                   .from('omnichat_messages')
                   .select('sender_type, content')
@@ -762,13 +809,18 @@ serve(async (req) => {
                   .order('created_at', { ascending: true })
                   .limit(20);
 
-                const chatMessages = (historyMsgs || []).map(m => ({
-                  role: m.sender_type === 'client' ? 'user' : 'assistant',
-                  content: m.content || '',
-                }));
-
                 // Check if name is still missing — tell AI to ask
-                const currentName = conv.contact_name || displayName;
+                let leadName: string | null = null;
+                if (conv?.lead_id) {
+                  const { data: leadData } = await supabase
+                    .from('leads')
+                    .select('name')
+                    .eq('id', conv.lead_id)
+                    .single();
+                  leadName = leadData?.name || null;
+                }
+
+                const currentName = leadName || conv?.contact_name || displayName;
                 const nameMissing = isFallbackName(currentName);
                 let nameAskCount = 0;
                 if (nameMissing && historyMsgs) {
@@ -781,27 +833,34 @@ serve(async (req) => {
                   }
                 }
 
-                let nameHint = '';
-                if (nameMissing && nameAskCount === 0) {
-                  nameHint = ' | INSTRUÇÃO: O nome do cliente NÃO foi capturado. Pergunte de forma natural: "Pra te atender melhor, como posso te chamar?"';
-                } else if (nameMissing && nameAskCount === 1) {
-                  nameHint = ' | INSTRUÇÃO: Nome ainda não identificado. Tente uma última vez: "Ah, e como posso te chamar pra te atender melhor?"';
-                }
-
-                const chatRes = await fetch(`${SUPABASE_URL}/functions/v1/real-estate-chat`, {
+                const chatRes = await fetch(`${SUPABASE_URL}/functions/v1/whatsapp-ai-chat`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
-                    messages: chatMessages,
-                    skipLeadCreation: true,
-                    origin: 'instagram',
-                    clientName: (nameMissing ? 'Não informado' : currentName) + nameHint,
+                    message: messageText,
+                    senderPhone: senderId,
+                    conversationId: convId,
+                    contactName: nameMissing ? 'Não informado' : currentName,
                   }),
                 });
+
+                if (!chatRes.ok) {
+                  const aiError = await chatRes.text();
+                  throw new Error(`whatsapp-ai-chat ${chatRes.status}: ${aiError}`);
+                }
+
                 const chatData = await chatRes.json();
                 const aiReply = chatData?.reply || chatData?.response;
 
-                if (aiReply && connection.page_id) {
+                let finalReply = aiReply;
+                if (nameMissing && nameAskCount < 2) {
+                  finalReply = nameAskCount === 0
+                    ? 'Pra te atender melhor e te enviar as melhores opções, como posso te chamar?'
+                    : 'Ah, e como posso te chamar pra te atender melhor?';
+                  console.log('PERGUNTA DE NOME DISPARADA');
+                }
+
+                if (finalReply && connection.page_id) {
                   // Send AI reply via Instagram
                   const sendUrl = `https://graph.facebook.com/v19.0/${connection.page_id}/messages`;
                   await fetch(sendUrl, {
@@ -812,7 +871,7 @@ serve(async (req) => {
                     },
                     body: JSON.stringify({
                       recipient: { id: senderId },
-                      message: { text: aiReply },
+                      message: { text: finalReply },
                     }),
                   });
 
@@ -821,18 +880,18 @@ serve(async (req) => {
                     conversation_id: convId,
                     sender_type: 'bot',
                     channel: 'instagram',
-                    content: aiReply,
+                    content: finalReply,
                   });
 
                   await supabase.from('omnichat_conversations').update({
                     last_message_at: new Date().toISOString(),
-                    last_message_preview: aiReply.substring(0, 100),
+                    last_message_preview: finalReply.substring(0, 100),
                   }).eq('id', convId);
 
                   console.log('[Instagram Webhook] ✅ AI replied to', senderId);
                 }
               } catch (aiErr) {
-                console.error('[Instagram Webhook] AI response error:', aiErr);
+                console.error('ERRO CAPTURA NOME INSTAGRAM:', aiErr);
               }
             }
 
@@ -851,7 +910,7 @@ serve(async (req) => {
 
       return new Response('ok', { status: 200, headers: { 'Content-Type': 'text/plain' } });
     } catch (error) {
-      console.error('[Instagram Webhook] Error:', error);
+      console.error('ERRO CAPTURA NOME INSTAGRAM:', error);
       return new Response('ok', { status: 200, headers: { 'Content-Type': 'text/plain' } });
     }
   }
