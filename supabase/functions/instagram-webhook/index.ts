@@ -655,51 +655,74 @@ serve(async (req) => {
 
             // =====================================================
             // STEP 6: Contextual name extraction (bot asked for name)
+            // Works for BOTH new and existing conversations
             // =====================================================
-            if (messageText && existingConv && isFallbackName(existingConv.contact_name)) {
-              let contextualName: string | null = extractedName;
+            {
+              const { data: convForNameCheck } = await supabase
+                .from('omnichat_conversations')
+                .select('contact_name, lead_id')
+                .eq('id', convId)
+                .single();
 
-              if (!contextualName) {
-                // Check if the previous bot message asked for the name
-                const { data: lastBotMsg } = await supabase
-                  .from('omnichat_messages')
-                  .select('content')
-                  .eq('conversation_id', convId)
-                  .eq('sender_type', 'bot')
-                  .order('created_at', { ascending: false })
-                  .limit(1)
-                  .maybeSingle();
+              if (messageText && isFallbackName(convForNameCheck?.contact_name ?? null)) {
+                let contextualName: string | null = extractedName;
 
-                if (lastBotMsg?.content) {
-                  const botText = lastBotMsg.content.toLowerCase();
-                  const askedName = /como (?:posso |devo )?(?:te )?chamar/i.test(botText) ||
-                    /qual (?:[eé] )?(?:o )?seu nome/i.test(botText) ||
-                    /seu nome/i.test(botText) ||
-                    /como te chamar/i.test(botText) ||
-                    /saber seu nome/i.test(botText);
+                if (!contextualName) {
+                  // Check if the previous bot message asked for the name
+                  const { data: lastBotMsg } = await supabase
+                    .from('omnichat_messages')
+                    .select('content')
+                    .eq('conversation_id', convId)
+                    .eq('sender_type', 'bot')
+                    .order('created_at', { ascending: false })
+                    .limit(1)
+                    .maybeSingle();
 
-                  if (askedName) {
-                    const cleaned = messageText.trim().replace(/[.,!?]+$/, "").trim();
-                    const words = cleaned.split(/\s+/);
-                    if (words.length >= 1 && words.length <= 4 &&
-                      /^[a-záàâãéèêíïóôõöúçñ\s]+$/i.test(cleaned) &&
-                      cleaned.length >= 2 && cleaned.length <= 60) {
-                      contextualName = words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
-                      console.log('[Instagram Webhook] 👤 Name from context (bot asked):', contextualName);
+                  if (lastBotMsg?.content) {
+                    const askedName = /como (?:posso |devo )?(?:te )?chamar/i.test(lastBotMsg.content) ||
+                      /qual (?:[eé] )?(?:o )?seu nome/i.test(lastBotMsg.content) ||
+                      /seu nome/i.test(lastBotMsg.content) ||
+                      /como te chamar/i.test(lastBotMsg.content) ||
+                      /saber seu nome/i.test(lastBotMsg.content) ||
+                      /me fala seu nome/i.test(lastBotMsg.content);
+
+                    if (askedName) {
+                      const cleaned = messageText.trim().replace(/[.,!?]+$/, "").trim();
+                      const withoutPrefix = cleaned.replace(/^(meu nome [eé]|me chamo|pode me chamar de|sou o|sou a|eu sou)\s+/i, '').trim();
+                      const finalText = withoutPrefix || cleaned;
+                      const words = finalText.split(/\s+/);
+                      if (words.length >= 1 && words.length <= 4 &&
+                        /^[a-záàâãéèêíïóôõöúçñ\s]+$/i.test(finalText) &&
+                        finalText.length >= 2 && finalText.length <= 60) {
+                        contextualName = words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
+                        console.log('[Instagram Webhook] 👤 NOME CAPTURADO (bot asked):', contextualName);
+                      }
                     }
                   }
                 }
+
+                // Also try: if message is just 1-3 capitalized words, likely a name response
+                if (!contextualName) {
+                  const cleaned = messageText.trim().replace(/[.,!?]+$/, "").trim();
+                  if (/^[A-ZÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ][a-záàâãéèêíïóôõöúçñ]+(\s+[A-ZÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ][a-záàâãéèêíïóôõöúçñ]+)*$/.test(cleaned) && cleaned.length >= 2 && cleaned.length <= 40 && cleaned.split(/\s+/).length <= 3) {
+                    contextualName = cleaned;
+                    console.log('[Instagram Webhook] 👤 NOME CAPTURADO (capitalized pattern):', contextualName);
+                  }
+                }
+
+                // Sync name across all records
+                if (contextualName) {
+                  await syncLeadData(supabase, convId, senderId, { name: contextualName });
+                }
               }
 
-              // Sync name across all records
-              if (contextualName) {
-                await syncLeadData(supabase, convId, senderId, { name: contextualName });
+              // Sync phone if extracted
+              if (extractedPhone) {
+                const currentPhone = existingConv?.contact_phone || convForNameCheck?.contact_name;
+                if (!existingConv?.contact_phone) {
+                  await syncLeadData(supabase, convId, senderId, { phone: extractedPhone });
+                }
               }
-            }
-
-            // Sync phone if extracted (even for non-fallback names)
-            if (extractedPhone && existingConv && !existingConv.contact_phone) {
-              await syncLeadData(supabase, convId, senderId, { phone: extractedPhone });
             }
 
             // =====================================================
