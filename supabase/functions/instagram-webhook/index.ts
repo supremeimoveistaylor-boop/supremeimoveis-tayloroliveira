@@ -178,11 +178,12 @@ async function syncLeadData(
   const normalizedName = normalizeLeadName(updates.name);
   const nowIso = new Date().toISOString();
 
-  const { data: convData } = await supabase
-    .from('omnichat_conversations')
+  const { data: convDataRaw } = await (supabase
+    .from('omnichat_conversations') as any)
     .select('lead_id, contact_name, contact_phone')
     .eq('id', convId)
     .single();
+  const convData = convDataRaw as any;
 
   const shouldUpdateConvName = !!normalizedName && isFallbackName(convData?.contact_name ?? null);
   const shouldUpdateConvPhone = !!updates.phone && !convData?.contact_phone;
@@ -191,7 +192,7 @@ async function syncLeadData(
     const convUpdate: Record<string, unknown> = {};
     if (shouldUpdateConvName) convUpdate.contact_name = normalizedName;
     if (shouldUpdateConvPhone) convUpdate.contact_phone = updates.phone;
-    await supabase.from('omnichat_conversations').update(convUpdate).eq('id', convId);
+    await (supabase.from('omnichat_conversations') as any).update(convUpdate).eq('id', convId);
     if (shouldUpdateConvName) {
       console.log('NOME SALVO NO BANCO');
       console.log('UI ATUALIZADA COM NOME');
@@ -199,19 +200,20 @@ async function syncLeadData(
   }
 
   if (shouldUpdateConvName) {
-    await supabase
-      .from('channel_messages')
+    await (supabase
+      .from('channel_messages') as any)
       .update({ contact_name: normalizedName })
       .eq('contact_instagram_id', senderId);
   }
 
   if (!convData?.lead_id) return;
 
-  const { data: currentLead } = await supabase
-    .from('leads')
+  const { data: currentLeadRaw } = await (supabase
+    .from('leads') as any)
     .select('name, phone, whatsapp_sent')
     .eq('id', convData.lead_id)
     .single();
+  const currentLead = currentLeadRaw as any;
 
   const shouldUpdateLeadName = !!normalizedName && isFallbackName(currentLead?.name ?? null);
   const shouldUpdateLeadPhone = !!updates.phone && !currentLead?.phone;
@@ -222,15 +224,16 @@ async function syncLeadData(
   };
   if (shouldUpdateLeadName) leadUpdate.name = normalizedName;
   if (shouldUpdateLeadPhone) leadUpdate.phone = updates.phone;
-  await supabase.from('leads').update(leadUpdate).eq('id', convData.lead_id);
+  await (supabase.from('leads') as any).update(leadUpdate).eq('id', convData.lead_id);
 
   if (shouldUpdateLeadName || shouldUpdateLeadPhone) {
-    const { data: crmCards } = await supabase
-      .from('crm_cards')
+    const { data: crmCardsRaw } = await (supabase
+      .from('crm_cards') as any)
       .select('id, cliente')
       .eq('lead_id', convData.lead_id);
+    const crmCards = (crmCardsRaw || []) as any[];
 
-    for (const card of crmCards || []) {
+    for (const card of crmCards) {
       const shouldUpdateCrmName = shouldUpdateLeadName && isFallbackName(card.cliente);
       const shouldUpdateCrmPhone = shouldUpdateLeadPhone;
       if (!shouldUpdateCrmName && !shouldUpdateCrmPhone) continue;
@@ -246,7 +249,7 @@ async function syncLeadData(
       }
       if (shouldUpdateCrmPhone) crmUpdate.telefone = updates.phone;
 
-      await supabase.from('crm_cards').update(crmUpdate).eq('id', card.id);
+      await (supabase.from('crm_cards') as any).update(crmUpdate).eq('id', card.id);
     }
 
     if (shouldUpdateLeadName) {
@@ -260,8 +263,8 @@ async function syncLeadData(
 
   if (finalName && !isFallbackName(finalName) && finalPhone && !currentLead?.whatsapp_sent) {
     await notifyBroker(supabase, finalName, finalPhone, 'Instagram');
-    await supabase
-      .from('leads')
+    await (supabase
+      .from('leads') as any)
       .update({ whatsapp_sent: true, whatsapp_sent_at: nowIso })
       .eq('id', convData.lead_id);
   }
