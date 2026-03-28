@@ -168,7 +168,7 @@ async function resolveInstagramProfile(senderId: string, pageToken: string, page
 // HELPER: Sync name/phone across all related records
 // =====================================================
 async function syncLeadData(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   convId: string,
   senderId: string,
   updates: { name?: string; phone?: string }
@@ -274,18 +274,18 @@ async function syncLeadData(
 // HELPER: Notify broker via WhatsApp
 // =====================================================
 async function notifyBroker(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   name: string,
   phone: string,
   origin: string
 ) {
   try {
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-    const { data: brokers } = await supabase
+    const { data: brokers } = await (supabase
       .from('brokers')
       .select('whatsapp')
       .eq('active', true)
-      .limit(1);
+      .limit(1)) as { data: Array<{ whatsapp: string }> | null };
 
     if (brokers && brokers.length > 0) {
       const brokerMessage = `🚨 Novo Lead no Sistema\n\n` +
@@ -753,7 +753,7 @@ serve(async (req) => {
                       if (words.length >= 1 && words.length <= 4 &&
                         /^[a-záàâãéèêíïóôõöúçñ\s]+$/i.test(finalText) &&
                         finalText.length >= 2 && finalText.length <= 60) {
-                        contextualName = words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
+                        contextualName = words.map((w: string) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
                         console.log('[Instagram Webhook] 👤 NOME CAPTURADO (bot asked):', contextualName);
                       }
                     }
