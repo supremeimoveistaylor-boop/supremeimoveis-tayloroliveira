@@ -767,6 +767,27 @@ serve(async (req) => {
                   content: m.content || '',
                 }));
 
+                // Check if name is still missing — tell AI to ask
+                const currentName = conv.contact_name || displayName;
+                const nameMissing = isFallbackName(currentName);
+                let nameAskCount = 0;
+                if (nameMissing && historyMsgs) {
+                  for (const m of historyMsgs) {
+                    if (m.sender_type !== 'client' && m.content) {
+                      if (/como (?:posso |devo )?(?:te )?chamar|qual (?:[eé] )?(?:o )?seu nome|saber seu nome|me fala seu nome/i.test(m.content)) {
+                        nameAskCount++;
+                      }
+                    }
+                  }
+                }
+
+                let nameHint = '';
+                if (nameMissing && nameAskCount === 0) {
+                  nameHint = ' | INSTRUÇÃO: O nome do cliente NÃO foi capturado. Pergunte de forma natural: "Pra te atender melhor, como posso te chamar?"';
+                } else if (nameMissing && nameAskCount === 1) {
+                  nameHint = ' | INSTRUÇÃO: Nome ainda não identificado. Tente uma última vez: "Ah, e como posso te chamar pra te atender melhor?"';
+                }
+
                 const chatRes = await fetch(`${SUPABASE_URL}/functions/v1/real-estate-chat`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
@@ -774,7 +795,7 @@ serve(async (req) => {
                     messages: chatMessages,
                     skipLeadCreation: true,
                     origin: 'instagram',
-                    clientName: conv.contact_name || displayName,
+                    clientName: (nameMissing ? 'Não informado' : currentName) + nameHint,
                   }),
                 });
                 const chatData = await chatRes.json();
