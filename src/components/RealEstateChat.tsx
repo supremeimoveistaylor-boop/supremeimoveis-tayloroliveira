@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
 import { trackChatOpened, trackChatFirstMessage, trackChatNameCaptured, trackChatPhoneCaptured, trackChatLeadInterest, trackChatFinished } from "@/lib/analytics";
+import { getStoredUTMData } from "@/lib/utm-capture";
 // Lead capture removido - extração silenciosa ativa
 
 // Notification sound using Web Audio API
@@ -368,10 +369,20 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
     if (leadSaveAttempted) return;
     setLeadSaveAttempted(true);
     try {
+      const utmData = getStoredUTMData();
       const response = await fetch(LEADS_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clientName: name, clientPhone: phone, origin: "Chat" }),
+        body: JSON.stringify({
+          clientName: name,
+          clientPhone: phone,
+          origin: "Chat",
+          source: utmData?.source || 'chat',
+          source_detail: utmData?.source_detail || 'site',
+          medium: utmData?.medium || null,
+          campaign: utmData?.campaign || null,
+          origin_url: utmData?.origin_url || window.location.href,
+        }),
       });
       const json = await response.json().catch(() => ({} as any));
       if (response.ok && json?.leadId) {

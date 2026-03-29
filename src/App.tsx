@@ -4,6 +4,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
+import { captureUTMParams } from "@/lib/utm-capture";
+
+// Capture UTM params on initial load
+captureUTMParams();
 import Index from "./pages/Index";
 import Comprar from "./pages/Comprar";
 import Alugar from "./pages/Alugar";
