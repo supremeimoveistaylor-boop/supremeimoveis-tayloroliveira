@@ -608,6 +608,9 @@ serve(async (req) => {
                       name: bestLeadName,
                       phone: extractedPhone,
                       origin: 'instagram',
+                      source: 'instagram',
+                      source_detail: 'direct',
+                      medium: 'social',
                       status: 'novo',
                     })
                     .select('id')
@@ -625,6 +628,10 @@ serve(async (req) => {
                       telefone: extractedPhone || null,
                       coluna: 'leads',
                       origem_lead: 'instagram',
+                      source: 'instagram',
+                      source_detail: 'direct',
+                      campaign: null,
+                      medium: 'social',
                       classificacao: 'frio',
                       prioridade: 'normal',
                       lead_id: newLead.id,
