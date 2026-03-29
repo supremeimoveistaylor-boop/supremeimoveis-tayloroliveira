@@ -856,11 +856,19 @@ serve(async (req) => {
                 const aiReply = chatData?.reply || chatData?.response;
 
                 let finalReply = aiReply;
-                if (nameMissing && nameAskCount < 2) {
-                  finalReply = nameAskCount === 0
-                    ? 'Pra te atender melhor e te enviar as melhores opções, como posso te chamar?'
-                    : 'Ah, e como posso te chamar pra te atender melhor?';
+                
+                // If AI reply exists, check if it already asks for name
+                const aiAlreadyAsksName = finalReply && /como (?:posso |devo )?(?:te )?chamar|qual (?:[eé] )?(?:o )?seu nome|saber seu nome|me fala seu nome/i.test(finalReply);
+                
+                if (nameMissing && nameAskCount < 2 && !aiAlreadyAsksName) {
+                  // AI didn't ask for name — append the question naturally
+                  const nameQuestion = nameAskCount === 0
+                    ? '\n\nPra te atender melhor e te enviar as melhores opções, como posso te chamar?'
+                    : '\n\nAh, e como posso te chamar pra te atender melhor?';
+                  finalReply = finalReply ? finalReply + nameQuestion : nameQuestion.trim();
                   console.log('PERGUNTA DE NOME DISPARADA');
+                } else if (nameMissing && aiAlreadyAsksName) {
+                  console.log('PERGUNTA DE NOME DISPARADA (via IA)');
                 }
 
                 if (finalReply && connection.page_id) {
