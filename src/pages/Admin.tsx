@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, Home, Edit, Trash2, ArrowLeft, Users, UserCheck, MessageSquare, Headphones, MessageCircle, BarChart3, TrendingUp, LayoutDashboard, CalendarCheck, Kanban, Wallet, Phone, Archive, HardDrive, Newspaper } from 'lucide-react';
+import { Plus, Home, Edit, Trash2, ArrowLeft, Users, UserCheck, MessageSquare, Headphones, MessageCircle, BarChart3, TrendingUp, LayoutDashboard, CalendarCheck, Kanban, Wallet, Phone, Archive, HardDrive, Newspaper, Globe } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LeadsImobiliariosPanel } from '@/components/admin/LeadsImobiliariosPanel';
@@ -23,6 +23,7 @@ import { useLeadNotification } from '@/hooks/useLeadNotification';
 import { CaptacaoImoveisPanel } from '@/components/admin/CaptacaoImoveisPanel';
 import { StorageCleanupPanel } from '@/components/admin/StorageCleanupPanel';
 import { BlogAdminPanel } from '@/components/admin/BlogAdminPanel';
+import { SourceAnalyticsPanel } from '@/components/admin/SourceAnalyticsPanel';
 
 interface Property {
   id: string;
@@ -59,7 +60,7 @@ const Admin = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'properties' | 'users' | 'leads' | 'attendants' | 'sessions' | 'metrics' | 'conversions' | 'visits' | 'crm' | 'financial' | 'omnichat' | 'archive' | 'captacao' | 'storage' | 'blog'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'properties' | 'users' | 'leads' | 'attendants' | 'sessions' | 'metrics' | 'conversions' | 'visits' | 'crm' | 'financial' | 'omnichat' | 'archive' | 'captacao' | 'storage' | 'blog' | 'sources'>('dashboard');
   const [accessDenied, setAccessDenied] = useState(false);
 
   // Enable real-time lead notifications with sound
@@ -389,6 +390,13 @@ const Admin = () => {
             Storage
           </Button>
           <Button
+            variant={activeTab === 'sources' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('sources')}
+          >
+            <Globe className="mr-2 h-4 w-4" />
+            Origens
+          </Button>
+          <Button
             variant={activeTab === 'blog' ? 'default' : 'outline'}
             onClick={() => setActiveTab('blog')}
           >
@@ -628,6 +636,11 @@ const Admin = () => {
         {/* Captação de Imóveis Tab */}
         {activeTab === 'captacao' && (
           <CaptacaoImoveisPanel />
+        )}
+
+        {/* Sources Tab */}
+        {activeTab === 'sources' && (
+          <SourceAnalyticsPanel />
         )}
 
         {/* Blog Tab */}

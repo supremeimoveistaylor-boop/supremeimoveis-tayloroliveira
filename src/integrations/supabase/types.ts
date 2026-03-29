@@ -715,6 +715,7 @@ export type Database = {
         Row: {
           ai_last_analysis_at: string | null
           ai_summary: string | null
+          campaign: string | null
           classificacao: string | null
           cliente: string
           coluna: string
@@ -725,6 +726,7 @@ export type Database = {
           last_interaction_at: string | null
           lead_id: string | null
           lead_score: number | null
+          medium: string | null
           notas: string | null
           origem_lead: string | null
           prioridade: string | null
@@ -732,6 +734,8 @@ export type Database = {
           proxima_acao: string | null
           proximo_agendamento: string | null
           responsavel: string | null
+          source: string | null
+          source_detail: string | null
           telefone: string | null
           titulo: string
           ultimo_followup_at: string | null
@@ -741,6 +745,7 @@ export type Database = {
         Insert: {
           ai_last_analysis_at?: string | null
           ai_summary?: string | null
+          campaign?: string | null
           classificacao?: string | null
           cliente: string
           coluna?: string
@@ -751,6 +756,7 @@ export type Database = {
           last_interaction_at?: string | null
           lead_id?: string | null
           lead_score?: number | null
+          medium?: string | null
           notas?: string | null
           origem_lead?: string | null
           prioridade?: string | null
@@ -758,6 +764,8 @@ export type Database = {
           proxima_acao?: string | null
           proximo_agendamento?: string | null
           responsavel?: string | null
+          source?: string | null
+          source_detail?: string | null
           telefone?: string | null
           titulo: string
           ultimo_followup_at?: string | null
@@ -767,6 +775,7 @@ export type Database = {
         Update: {
           ai_last_analysis_at?: string | null
           ai_summary?: string | null
+          campaign?: string | null
           classificacao?: string | null
           cliente?: string
           coluna?: string
@@ -777,6 +786,7 @@ export type Database = {
           last_interaction_at?: string | null
           lead_id?: string | null
           lead_score?: number | null
+          medium?: string | null
           notas?: string | null
           origem_lead?: string | null
           prioridade?: string | null
@@ -784,6 +794,8 @@ export type Database = {
           proxima_acao?: string | null
           proximo_agendamento?: string | null
           responsavel?: string | null
+          source?: string | null
+          source_detail?: string | null
           telefone?: string | null
           titulo?: string
           ultimo_followup_at?: string | null
@@ -1034,6 +1046,7 @@ export type Database = {
         Row: {
           broker_id: string | null
           budget_range: string | null
+          campaign: string | null
           conversion_count: number | null
           created_at: string
           email: string | null
@@ -1049,15 +1062,19 @@ export type Database = {
           lead_score: number | null
           lead_segment: string | null
           lead_temperature: string | null
+          medium: string | null
           message_count: number | null
           name: string | null
           nurturing_flow_status: string | null
           origin: string | null
+          origin_url: string | null
           page_url: string | null
           phone: string | null
           property_id: string | null
           qualification: string | null
           score_breakdown: Json | null
+          source: string | null
+          source_detail: string | null
           status: string
           updated_at: string
           visit_date: string | null
@@ -1068,6 +1085,7 @@ export type Database = {
         Insert: {
           broker_id?: string | null
           budget_range?: string | null
+          campaign?: string | null
           conversion_count?: number | null
           created_at?: string
           email?: string | null
@@ -1083,15 +1101,19 @@ export type Database = {
           lead_score?: number | null
           lead_segment?: string | null
           lead_temperature?: string | null
+          medium?: string | null
           message_count?: number | null
           name?: string | null
           nurturing_flow_status?: string | null
           origin?: string | null
+          origin_url?: string | null
           page_url?: string | null
           phone?: string | null
           property_id?: string | null
           qualification?: string | null
           score_breakdown?: Json | null
+          source?: string | null
+          source_detail?: string | null
           status?: string
           updated_at?: string
           visit_date?: string | null
@@ -1102,6 +1124,7 @@ export type Database = {
         Update: {
           broker_id?: string | null
           budget_range?: string | null
+          campaign?: string | null
           conversion_count?: number | null
           created_at?: string
           email?: string | null
@@ -1117,15 +1140,19 @@ export type Database = {
           lead_score?: number | null
           lead_segment?: string | null
           lead_temperature?: string | null
+          medium?: string | null
           message_count?: number | null
           name?: string | null
           nurturing_flow_status?: string | null
           origin?: string | null
+          origin_url?: string | null
           page_url?: string | null
           phone?: string | null
           property_id?: string | null
           qualification?: string | null
           score_breakdown?: Json | null
+          source?: string | null
+          source_detail?: string | null
           status?: string
           updated_at?: string
           visit_date?: string | null
@@ -1162,6 +1189,7 @@ export type Database = {
           archived_at: string
           broker_id: string | null
           budget_range: string | null
+          campaign: string | null
           conversion_count: number | null
           created_at: string
           email: string | null
@@ -1177,15 +1205,19 @@ export type Database = {
           lead_score: number | null
           lead_segment: string | null
           lead_temperature: string | null
+          medium: string | null
           message_count: number | null
           name: string | null
           nurturing_flow_status: string | null
           origin: string | null
+          origin_url: string | null
           page_url: string | null
           phone: string | null
           property_id: string | null
           qualification: string | null
           score_breakdown: Json | null
+          source: string | null
+          source_detail: string | null
           status: string
           updated_at: string
           visit_date: string | null
@@ -1197,6 +1229,7 @@ export type Database = {
           archived_at?: string
           broker_id?: string | null
           budget_range?: string | null
+          campaign?: string | null
           conversion_count?: number | null
           created_at: string
           email?: string | null
@@ -1212,15 +1245,19 @@ export type Database = {
           lead_score?: number | null
           lead_segment?: string | null
           lead_temperature?: string | null
+          medium?: string | null
           message_count?: number | null
           name?: string | null
           nurturing_flow_status?: string | null
           origin?: string | null
+          origin_url?: string | null
           page_url?: string | null
           phone?: string | null
           property_id?: string | null
           qualification?: string | null
           score_breakdown?: Json | null
+          source?: string | null
+          source_detail?: string | null
           status: string
           updated_at: string
           visit_date?: string | null
@@ -1232,6 +1269,7 @@ export type Database = {
           archived_at?: string
           broker_id?: string | null
           budget_range?: string | null
+          campaign?: string | null
           conversion_count?: number | null
           created_at?: string
           email?: string | null
@@ -1247,15 +1285,19 @@ export type Database = {
           lead_score?: number | null
           lead_segment?: string | null
           lead_temperature?: string | null
+          medium?: string | null
           message_count?: number | null
           name?: string | null
           nurturing_flow_status?: string | null
           origin?: string | null
+          origin_url?: string | null
           page_url?: string | null
           phone?: string | null
           property_id?: string | null
           qualification?: string | null
           score_breakdown?: Json | null
+          source?: string | null
+          source_detail?: string | null
           status?: string
           updated_at?: string
           visit_date?: string | null

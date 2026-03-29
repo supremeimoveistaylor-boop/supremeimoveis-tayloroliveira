@@ -77,7 +77,7 @@ serve(async (req: Request): Promise<Response> => {
       auth: { persistSession: false }
     });
 
-    let body: { clientName?: string; clientPhone?: string; clientInterest?: string; origin?: string };
+    let body: { clientName?: string; clientPhone?: string; clientInterest?: string; origin?: string; source?: string; source_detail?: string; medium?: string; campaign?: string; origin_url?: string };
     try {
       body = await req.json();
     } catch {
@@ -87,7 +87,7 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    const { clientName, clientPhone, clientInterest, origin = "chat" } = body;
+    const { clientName, clientPhone, clientInterest, origin = "chat", source, source_detail, medium, campaign, origin_url } = body;
 
     if (!clientName || !clientPhone) {
       return new Response(
@@ -136,6 +136,11 @@ serve(async (req: Request): Promise<Response> => {
           phone: sanitizedPhone,
           intent: clientInterest || null,
           origin,
+          source: source || origin || 'chat',
+          source_detail: source_detail || null,
+          medium: medium || null,
+          campaign: campaign || null,
+          origin_url: origin_url || null,
           status: "novo",
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
@@ -184,6 +189,10 @@ serve(async (req: Request): Promise<Response> => {
             email: null,
             coluna: "leads",
             origem_lead: origin || "chat",
+            source: source || origin || 'chat',
+            source_detail: source_detail || null,
+            campaign: campaign || null,
+            medium: medium || null,
             lead_score: 0,
             classificacao: "frio",
             probabilidade_fechamento: 10,
