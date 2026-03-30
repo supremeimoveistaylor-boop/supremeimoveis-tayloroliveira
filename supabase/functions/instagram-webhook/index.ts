@@ -31,9 +31,26 @@ function extractPhone(text: string): string | null {
 }
 
 // =====================================================
+// HELPER: Words to ignore as names
+// =====================================================
+const IGNORE_WORDS = new Set([
+  'ok', 'sim', 'não', 'nao', 'quero', 'oi', 'olá', 'ola', 'bom', 'boa',
+  'dia', 'tarde', 'noite', 'obrigado', 'obrigada', 'valeu', 'beleza',
+  'legal', 'certo', 'claro', 'pode', 'queria', 'gostaria', 'preciso',
+  'tenho', 'casa', 'apartamento', 'imovel', 'imóvel', 'comprar', 'alugar',
+  'vender', 'quanto', 'preço', 'preco', 'onde', 'como', 'qual', 'que',
+  'tem', 'tudo', 'bem', 'tchau', 'bye', 'até', 'ate', 'aqui', 'ali',
+  'isso', 'esse', 'essa', 'este', 'esta', 'favor', 'por', 'para',
+  'muito', 'mais', 'menos', 'quando', 'porque', 'pois', 'então', 'entao',
+  'estou', 'vou', 'quero', 'gostei', 'interesse', 'interessado', 'interessada',
+  'hey', 'hello', 'hi', 'thanks', 'yes', 'no', 'please',
+]);
+
+// =====================================================
 // HELPER: Extract name from text
 // =====================================================
 function extractNameFromText(text: string): string | null {
+  // Pattern-based extraction (explicit name statements)
   const patterns = [
     /meu nome [eé] ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
     /me chamo ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
@@ -43,15 +60,38 @@ function extractNameFromText(text: string): string | null {
     /aqui [eé] a ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
     /pode me chamar de ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
     /meu nome:?\s*([a-záàâãéèêíïóôõöúçñ\s]+)/i,
+    /eu sou ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
+    /chamo ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
   ];
   for (const pattern of patterns) {
     const match = text.match(pattern);
     if (match) {
       const normalized = normalizeLeadName(match[1]);
-      if (normalized) {
+      if (normalized && !IGNORE_WORDS.has(normalized.toLowerCase())) {
         return normalized;
       }
     }
+  }
+  return null;
+}
+
+// =====================================================
+// HELPER: Try to extract a bare name (1-3 words, no numbers, not a common word)
+// =====================================================
+function extractBareName(text: string): string | null {
+  const cleaned = text.trim().replace(/[.,!?]+$/, '').trim();
+  // Must be alphabetic, 2-40 chars, 1-3 words
+  if (!/^[a-záàâãéèêíïóôõöúçñ\s'-]+$/i.test(cleaned)) return null;
+  if (cleaned.length < 2 || cleaned.length > 40) return null;
+  const words = cleaned.split(/\s+/);
+  if (words.length > 3) return null;
+  // Check if ALL words are ignored
+  if (words.every(w => IGNORE_WORDS.has(w.toLowerCase()))) return null;
+  // First word must not be an ignored word
+  if (IGNORE_WORDS.has(words[0].toLowerCase())) return null;
+  const normalized = normalizeLeadName(cleaned);
+  if (normalized && !IGNORE_WORDS.has(normalized.toLowerCase())) {
+    return normalized;
   }
   return null;
 }
@@ -79,7 +119,17 @@ function normalizeLeadName(rawName: string | null | undefined): string | null {
 // =====================================================
 function isFallbackName(name: string | null): boolean {
   if (!name) return true;
-  return /^Instagram User #\d+$/.test(name) || /^\d+$/.test(name) || name === 'Visitante' || name === 'Visitante do Chat' || name === 'Cliente' || name === 'A definir' || name === 'Não informado' || /^WhatsApp #?\d+$/.test(name);
+  const n = name.trim();
+  if (!n) return true;
+  // Pure numeric (Instagram sender IDs like "7891234567890")
+  if (/^\d+$/.test(n)) return true;
+  // Known placeholders
+  if (/^Instagram User #?\d+$/i.test(n)) return true;
+  if (/^WhatsApp #?\d+$/i.test(n)) return true;
+  if (['Visitante', 'Visitante do Chat', 'Cliente', 'A definir', 'Não informado', 'Desconhecido', 'Unknown'].includes(n)) return true;
+  // Mostly numeric with some separators (e.g., "789-123-4567")
+  if (n.replace(/[\s\-_.]/g, '').length > 0 && /^\d[\d\s\-_.]+$/.test(n)) return true;
+  return false;
 }
 
 // =====================================================
@@ -744,35 +794,33 @@ serve(async (req) => {
                     .limit(1)
                     .maybeSingle();
 
-                  if (lastBotMsg?.content) {
-                    const askedName = /como (?:posso |devo )?(?:te )?chamar/i.test(lastBotMsg.content) ||
-                      /qual (?:[eé] )?(?:o )?seu nome/i.test(lastBotMsg.content) ||
-                      /seu nome/i.test(lastBotMsg.content) ||
-                      /como te chamar/i.test(lastBotMsg.content) ||
-                      /saber seu nome/i.test(lastBotMsg.content) ||
-                      /me fala seu nome/i.test(lastBotMsg.content);
+                  const askedName = lastBotMsg?.content && (
+                    /como (?:posso |devo )?(?:te )?chamar/i.test(lastBotMsg.content) ||
+                    /qual (?:[eé] )?(?:o )?seu nome/i.test(lastBotMsg.content) ||
+                    /seu nome/i.test(lastBotMsg.content) ||
+                    /como te chamar/i.test(lastBotMsg.content) ||
+                    /saber seu nome/i.test(lastBotMsg.content) ||
+                    /me fala seu nome/i.test(lastBotMsg.content)
+                  );
 
-                    if (askedName) {
-                      const cleaned = messageText.trim().replace(/[.,!?]+$/, "").trim();
-                      const withoutPrefix = cleaned.replace(/^(meu nome [eé]|me chamo|pode me chamar de|sou o|sou a|eu sou)\s+/i, '').trim();
-                      const finalText = withoutPrefix || cleaned;
-                      const words = finalText.split(/\s+/);
-                      if (words.length >= 1 && words.length <= 4 &&
-                        /^[a-záàâãéèêíïóôõöúçñ\s]+$/i.test(finalText) &&
-                        finalText.length >= 2 && finalText.length <= 60) {
-                        contextualName = words.map((w: string) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
-                        console.log('[Instagram Webhook] 👤 NOME CAPTURADO (bot asked):', contextualName);
-                      }
+                  if (askedName) {
+                    // Bot asked for name — be aggressive: try extractBareName
+                    const cleaned = messageText.trim().replace(/[.,!?]+$/, "").trim();
+                    const withoutPrefix = cleaned.replace(/^(meu nome [eé]|me chamo|pode me chamar de|sou o|sou a|eu sou|é|e)\s+/i, '').trim();
+                    const finalText = withoutPrefix || cleaned;
+                    const bareName = extractBareName(finalText);
+                    if (bareName) {
+                      contextualName = bareName;
+                      console.log('[Instagram Webhook] 👤 NOME CAPTURADO (bot asked):', contextualName);
                     }
                   }
                 }
 
-                // Also try: if message is just 1-3 capitalized words, likely a name response
+                // Also try: if message is just 1-3 words that look like a name (any casing)
                 if (!contextualName) {
-                  const cleaned = messageText.trim().replace(/[.,!?]+$/, "").trim();
-                  if (/^[A-ZÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ][a-záàâãéèêíïóôõöúçñ]+(\s+[A-ZÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ][a-záàâãéèêíïóôõöúçñ]+)*$/.test(cleaned) && cleaned.length >= 2 && cleaned.length <= 40 && cleaned.split(/\s+/).length <= 3) {
-                    contextualName = cleaned;
-                    console.log('[Instagram Webhook] 👤 NOME CAPTURADO (capitalized pattern):', contextualName);
+                  contextualName = extractBareName(messageText);
+                  if (contextualName) {
+                    console.log('[Instagram Webhook] 👤 NOME CAPTURADO (bare name):', contextualName);
                   }
                 }
 
@@ -781,6 +829,7 @@ serve(async (req) => {
                   contextualName = normalizeLeadName(contextualName);
                   if (contextualName) {
                     console.log('NOME DETECTADO:', contextualName);
+                    console.log('NOME SUBSTITUÍDO:', contextualName);
                     await syncLeadData(supabase, convId, senderId, { name: contextualName });
                   }
                 }
