@@ -77,6 +77,26 @@ serve(async (req) => {
       query = query.eq("featured", featured);
     }
 
+    if (typeof is_public === "boolean") {
+      query = query.eq("is_public", is_public);
+    }
+
+    if (property_type) {
+      query = query.eq("property_type", property_type);
+    }
+
+    if (price_min) {
+      query = query.gte("price", price_min);
+    }
+
+    if (price_max) {
+      query = query.lte("price", price_max);
+    }
+
+    if (location_search) {
+      query = query.ilike("location", `%${location_search}%`);
+    }
+
     console.log("Executing query for properties...");
     const { data, error } = await query;
 
