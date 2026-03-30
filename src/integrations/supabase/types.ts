@@ -1741,6 +1741,7 @@ export type Database = {
           featured: boolean | null
           id: string
           images: string[] | null
+          is_public: boolean
           latitude: number | null
           listing_status: string | null
           location: string
@@ -1770,6 +1771,7 @@ export type Database = {
           featured?: boolean | null
           id?: string
           images?: string[] | null
+          is_public?: boolean
           latitude?: number | null
           listing_status?: string | null
           location: string
@@ -1799,6 +1801,7 @@ export type Database = {
           featured?: boolean | null
           id?: string
           images?: string[] | null
+          is_public?: boolean
           latitude?: number | null
           listing_status?: string | null
           location?: string
