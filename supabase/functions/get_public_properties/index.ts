@@ -33,7 +33,7 @@ serve(async (req) => {
   try {
     console.log("Edge function called:", req.method);
 
-    const { limit = 100, featured, id, include_all_statuses = false, status }: { limit?: number; featured?: boolean; id?: string; include_all_statuses?: boolean; status?: string } =
+    const { limit = 100, featured, id, include_all_statuses = false, status, is_public, property_type, price_min, price_max, location_search }: { limit?: number; featured?: boolean; id?: string; include_all_statuses?: boolean; status?: string; is_public?: boolean; property_type?: string; price_min?: number; price_max?: number; location_search?: string } =
       req.method === "POST" ? await req.json().catch(() => ({})) : {};
 
     const safeLimit = Math.max(1, Math.min(200, Number(limit) || 100));
