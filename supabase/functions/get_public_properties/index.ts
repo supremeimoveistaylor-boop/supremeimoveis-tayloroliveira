@@ -33,7 +33,7 @@ serve(async (req) => {
   try {
     console.log("Edge function called:", req.method);
 
-    const { limit = 100, featured, id, include_all_statuses = false, status }: { limit?: number; featured?: boolean; id?: string; include_all_statuses?: boolean; status?: string } =
+    const { limit = 100, featured, id, include_all_statuses = false, status, is_public, property_type, price_min, price_max, location_search }: { limit?: number; featured?: boolean; id?: string; include_all_statuses?: boolean; status?: string; is_public?: boolean; property_type?: string; price_min?: number; price_max?: number; location_search?: string } =
       req.method === "POST" ? await req.json().catch(() => ({})) : {};
 
     const safeLimit = Math.max(1, Math.min(200, Number(limit) || 100));
@@ -62,7 +62,7 @@ serve(async (req) => {
 
     let query = supabase
       .from("properties")
-      .select("id, title, description, price, location, property_type, purpose, bedrooms, bathrooms, parking_spaces, area, images, status, featured, whatsapp_link, youtube_link, amenities, property_code, latitude, longitude, listing_status, previous_price, delivery_date, created_at, updated_at")
+      .select("id, title, description, price, location, property_type, purpose, bedrooms, bathrooms, parking_spaces, area, images, status, featured, whatsapp_link, youtube_link, amenities, property_code, latitude, longitude, listing_status, previous_price, delivery_date, is_public, created_at, updated_at")
       .order("created_at", { ascending: false })
       .limit(safeLimit);
 
@@ -75,6 +75,26 @@ serve(async (req) => {
 
     if (typeof featured === "boolean") {
       query = query.eq("featured", featured);
+    }
+
+    if (typeof is_public === "boolean") {
+      query = query.eq("is_public", is_public);
+    }
+
+    if (property_type) {
+      query = query.eq("property_type", property_type);
+    }
+
+    if (price_min) {
+      query = query.gte("price", price_min);
+    }
+
+    if (price_max) {
+      query = query.lte("price", price_max);
+    }
+
+    if (location_search) {
+      query = query.ilike("location", `%${location_search}%`);
     }
 
     console.log("Executing query for properties...");

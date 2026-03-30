@@ -38,6 +38,8 @@ import GeoLanding from "./pages/GeoLanding";
 import Blog from "./pages/Blog";
 import BlogPostPage from "./pages/BlogPost";
 import ShareTarget from "./pages/ShareTarget";
+import Parcerias from "./pages/Parcerias";
+import ParceriasImovel from "./pages/ParceriasImovel";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Chat agora é injetado via script no <head> (index.html), não via React
@@ -91,6 +93,8 @@ const App = () => (
                 <Route path="/blog" element={<Blog />} />
                 <Route path="/blog/:slug" element={<BlogPostPage />} />
                 <Route path="/share" element={<ShareTarget />} />
+                <Route path="/parcerias" element={<Parcerias />} />
+                <Route path="/parcerias/imovel/:id" element={<ParceriasImovel />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
                 <Route path="*" element={<NotFound />} />
