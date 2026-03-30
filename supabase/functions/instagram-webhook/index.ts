@@ -119,7 +119,17 @@ function normalizeLeadName(rawName: string | null | undefined): string | null {
 // =====================================================
 function isFallbackName(name: string | null): boolean {
   if (!name) return true;
-  return /^Instagram User #\d+$/.test(name) || /^\d+$/.test(name) || name === 'Visitante' || name === 'Visitante do Chat' || name === 'Cliente' || name === 'A definir' || name === 'Não informado' || /^WhatsApp #?\d+$/.test(name);
+  const n = name.trim();
+  if (!n) return true;
+  // Pure numeric (Instagram sender IDs like "7891234567890")
+  if (/^\d+$/.test(n)) return true;
+  // Known placeholders
+  if (/^Instagram User #?\d+$/i.test(n)) return true;
+  if (/^WhatsApp #?\d+$/i.test(n)) return true;
+  if (['Visitante', 'Visitante do Chat', 'Cliente', 'A definir', 'Não informado', 'Desconhecido', 'Unknown'].includes(n)) return true;
+  // Mostly numeric with some separators (e.g., "789-123-4567")
+  if (n.replace(/[\s\-_.]/g, '').length > 0 && /^\d[\d\s\-_.]+$/.test(n)) return true;
+  return false;
 }
 
 // =====================================================
