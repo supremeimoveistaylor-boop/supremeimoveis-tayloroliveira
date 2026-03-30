@@ -31,9 +31,26 @@ function extractPhone(text: string): string | null {
 }
 
 // =====================================================
+// HELPER: Words to ignore as names
+// =====================================================
+const IGNORE_WORDS = new Set([
+  'ok', 'sim', 'não', 'nao', 'quero', 'oi', 'olá', 'ola', 'bom', 'boa',
+  'dia', 'tarde', 'noite', 'obrigado', 'obrigada', 'valeu', 'beleza',
+  'legal', 'certo', 'claro', 'pode', 'queria', 'gostaria', 'preciso',
+  'tenho', 'casa', 'apartamento', 'imovel', 'imóvel', 'comprar', 'alugar',
+  'vender', 'quanto', 'preço', 'preco', 'onde', 'como', 'qual', 'que',
+  'tem', 'tudo', 'bem', 'tchau', 'bye', 'até', 'ate', 'aqui', 'ali',
+  'isso', 'esse', 'essa', 'este', 'esta', 'favor', 'por', 'para',
+  'muito', 'mais', 'menos', 'quando', 'porque', 'pois', 'então', 'entao',
+  'estou', 'vou', 'quero', 'gostei', 'interesse', 'interessado', 'interessada',
+  'hey', 'hello', 'hi', 'thanks', 'yes', 'no', 'please',
+]);
+
+// =====================================================
 // HELPER: Extract name from text
 // =====================================================
 function extractNameFromText(text: string): string | null {
+  // Pattern-based extraction (explicit name statements)
   const patterns = [
     /meu nome [eé] ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
     /me chamo ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
@@ -43,15 +60,38 @@ function extractNameFromText(text: string): string | null {
     /aqui [eé] a ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
     /pode me chamar de ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
     /meu nome:?\s*([a-záàâãéèêíïóôõöúçñ\s]+)/i,
+    /eu sou ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
+    /chamo ([a-záàâãéèêíïóôõöúçñ\s]+)/i,
   ];
   for (const pattern of patterns) {
     const match = text.match(pattern);
     if (match) {
       const normalized = normalizeLeadName(match[1]);
-      if (normalized) {
+      if (normalized && !IGNORE_WORDS.has(normalized.toLowerCase())) {
         return normalized;
       }
     }
+  }
+  return null;
+}
+
+// =====================================================
+// HELPER: Try to extract a bare name (1-3 words, no numbers, not a common word)
+// =====================================================
+function extractBareName(text: string): string | null {
+  const cleaned = text.trim().replace(/[.,!?]+$/, '').trim();
+  // Must be alphabetic, 2-40 chars, 1-3 words
+  if (!/^[a-záàâãéèêíïóôõöúçñ\s'-]+$/i.test(cleaned)) return null;
+  if (cleaned.length < 2 || cleaned.length > 40) return null;
+  const words = cleaned.split(/\s+/);
+  if (words.length > 3) return null;
+  // Check if ALL words are ignored
+  if (words.every(w => IGNORE_WORDS.has(w.toLowerCase()))) return null;
+  // First word must not be an ignored word
+  if (IGNORE_WORDS.has(words[0].toLowerCase())) return null;
+  const normalized = normalizeLeadName(cleaned);
+  if (normalized && !IGNORE_WORDS.has(normalized.toLowerCase())) {
+    return normalized;
   }
   return null;
 }
