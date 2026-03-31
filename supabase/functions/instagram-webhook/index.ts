@@ -357,6 +357,105 @@ async function notifyBroker(
   }
 }
 
+// =====================================================
+// INTERCEPTOR: processIncomingMessage — runs BEFORE AI
+// Detects name from message text and saves immediately
+// =====================================================
+async function processIncomingMessage(
+  supabase: any,
+  messageText: string,
+  convId: string,
+  leadId: string | null,
+  channel: string,
+): Promise<string | null> {
+  if (!messageText || !messageText.trim()) return null;
+
+  const text = messageText.trim();
+
+  // Skip messages that are clearly not names
+  if (/^\d+$/.test(text)) return null;
+  const lowerText = text.toLowerCase().replace(/[.,!?]+$/, '').trim();
+  if (IGNORE_WORDS.has(lowerText)) return null;
+
+  // 1. Pattern-based extraction
+  let detectedName = extractNameFromText(text);
+
+  // 2. Contextual: bot asked for name
+  if (!detectedName) {
+    const { data: lastBotMsg } = await supabase
+      .from('omnichat_messages')
+      .select('content')
+      .eq('conversation_id', convId)
+      .eq('sender_type', 'bot')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const botAskedName = lastBotMsg?.content && /como (?:posso |devo )?(?:te )?chamar|qual (?:[eé] )?(?:o )?seu nome|saber seu nome|me fala seu nome/i.test(lastBotMsg.content);
+
+    if (botAskedName) {
+      const cleaned = text.replace(/^(meu nome [eé]|me chamo|pode me chamar de|sou o|sou a|eu sou|é|e)\s+/i, '').trim();
+      detectedName = extractBareName(cleaned) || extractBareName(text);
+    }
+  }
+
+  // 3. Bare name: 1-3 words starting with uppercase
+  if (!detectedName) {
+    const words = text.split(/\s+/);
+    if (words.length <= 3 && /^[A-ZÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ]/.test(text)) {
+      detectedName = extractBareName(text);
+    }
+  }
+
+  if (!detectedName || detectedName.length < 3 || /\d/.test(detectedName)) return null;
+
+  // LOG OBRIGATÓRIO
+  console.log('CAPTURA NOME:', { mensagem: text, nome_detectado: detectedName, canal: channel, convId });
+
+  // Check if name is needed
+  const { data: convData } = await supabase
+    .from('omnichat_conversations')
+    .select('contact_name, lead_id')
+    .eq('id', convId)
+    .single();
+
+  const effectiveLeadId = leadId || convData?.lead_id;
+
+  if (!isFallbackName(convData?.contact_name)) {
+    return convData?.contact_name;
+  }
+
+  const nowIso = new Date().toISOString();
+
+  // SAVE: omnichat_conversations
+  await supabase.from('omnichat_conversations').update({ contact_name: detectedName }).eq('id', convId);
+  console.log('[processIncomingMessage] ✅ omnichat_conversations.contact_name =', detectedName);
+
+  // SAVE: leads + crm_cards
+  if (effectiveLeadId) {
+    const { data: lead } = await supabase.from('leads').select('name').eq('id', effectiveLeadId).single();
+    if (isFallbackName(lead?.name)) {
+      await supabase.from('leads').update({ name: detectedName, last_interaction_at: nowIso, updated_at: nowIso }).eq('id', effectiveLeadId);
+      console.log('[processIncomingMessage] ✅ leads.name =', detectedName);
+    }
+
+    const { data: crmCards } = await supabase.from('crm_cards').select('id, cliente').eq('lead_id', effectiveLeadId);
+    for (const card of (crmCards || [])) {
+      if (isFallbackName(card.cliente)) {
+        await supabase.from('crm_cards').update({
+          cliente: detectedName,
+          titulo: `Lead ${channel === 'whatsapp' ? 'WhatsApp' : 'Instagram'} - ${detectedName}`,
+          updated_at: nowIso,
+          last_interaction_at: nowIso,
+        }).eq('id', card.id);
+        console.log('[processIncomingMessage] ✅ crm_cards.cliente =', detectedName);
+      }
+    }
+  }
+
+  return detectedName;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -845,7 +944,31 @@ serve(async (req) => {
             }
 
             // =====================================================
-            // STEP 7: If bot active (or no real agent online), trigger AI reply
+            // STEP 7: INTERCEPTOR processIncomingMessage — ANTES da IA
+            // =====================================================
+            try {
+              const { data: convForIntercept } = await supabase
+                .from('omnichat_conversations')
+                .select('lead_id')
+                .eq('id', convId)
+                .single();
+
+              const interceptedName = await processIncomingMessage(
+                supabase,
+                messageText,
+                convId,
+                convForIntercept?.lead_id || null,
+                'instagram',
+              );
+              if (interceptedName) {
+                displayName = interceptedName;
+              }
+            } catch (interceptErr) {
+              console.error('[Instagram Webhook] processIncomingMessage error:', interceptErr);
+            }
+
+            // =====================================================
+            // STEP 8: If bot active, trigger AI reply
             // =====================================================
             const { data: conv } = await supabase
               .from('omnichat_conversations')
