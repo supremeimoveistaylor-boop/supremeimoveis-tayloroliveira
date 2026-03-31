@@ -4,8 +4,19 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, MapPin, Home, Building2, TreePine, Bed, Bath, Car, Maximize, MessageCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { ArrowLeft, MapPin, Bed, Bath, Car, Maximize, MessageCircle, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 interface PropertyDetail {
   id: string;
@@ -21,6 +32,8 @@ interface PropertyDetail {
   bathrooms: number | null;
   parking_spaces: number | null;
   amenities: string[] | null;
+  whatsapp_link: string | null;
+  exclusive_broker_id: string | null;
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -30,6 +43,28 @@ const TYPE_LABELS: Record<string, string> = {
 const formatCurrency = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(v);
 
+/**
+ * Extract a WhatsApp number from whatsapp_link field.
+ * Supports formats: "https://wa.me/55...", "https://api.whatsapp.com/send?phone=55...", or raw number.
+ */
+function extractWhatsAppNumber(link: string | null | undefined): string | null {
+  if (!link || !link.trim()) return null;
+  const trimmed = link.trim();
+
+  // wa.me/NUMBER
+  const waMe = trimmed.match(/wa\.me\/(\d+)/);
+  if (waMe) return waMe[1];
+
+  // api.whatsapp.com/send?phone=NUMBER
+  const apiWa = trimmed.match(/phone=(\d+)/);
+  if (apiWa) return apiWa[1];
+
+  // Raw number (digits only)
+  if (/^\d{10,15}$/.test(trimmed)) return trimmed;
+
+  return null;
+}
+
 export default function ParceriasImovel() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -37,9 +72,16 @@ export default function ParceriasImovel() {
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
 
+  // Interest modal state (fallback when no WhatsApp)
+  const [showInterestModal, setShowInterestModal] = useState(false);
+  const [interestName, setInterestName] = useState("");
+  const [interestPhone, setInterestPhone] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
   useEffect(() => {
     if (!id) return;
-    const fetch = async () => {
+    const fetchProperty = async () => {
       setLoading(true);
       try {
         const { data, error } = await supabase.functions.invoke("get_public_properties", {
@@ -54,7 +96,7 @@ export default function ParceriasImovel() {
         setLoading(false);
       }
     };
-    fetch();
+    fetchProperty();
   }, [id]);
 
   // SEO
@@ -67,8 +109,57 @@ export default function ParceriasImovel() {
   }, [property]);
 
   const handleInterest = () => {
-    const msg = encodeURIComponent(`Olá! Tenho interesse no imóvel: ${property?.title} (${formatCurrency(property?.price || 0)}) - ${property?.location}`);
-    window.open(`https://wa.me/5562993541825?text=${msg}`, "_blank");
+    if (!property) return;
+
+    const whatsappNumber = extractWhatsAppNumber(property.whatsapp_link);
+
+    if (whatsappNumber) {
+      const msg = encodeURIComponent(
+        `Olá! Tenho interesse no imóvel: ${property.title} (${formatCurrency(property.price)}) - ${property.location}`
+      );
+      window.open(`https://wa.me/${whatsappNumber}?text=${msg}`, "_blank");
+    } else {
+      // No WhatsApp available — open lead capture modal
+      setShowInterestModal(true);
+    }
+  };
+
+  const handleSubmitInterest = async () => {
+    if (!interestName.trim() || !interestPhone.trim()) {
+      toast({ title: "Preencha nome e telefone", variant: "destructive" });
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.functions.invoke("real_estate_leads", {
+        body: {
+          name: interestName.trim(),
+          phone: interestPhone.trim(),
+          origin: "vitrine_parcerias",
+          intent: `Interesse no imóvel: ${property?.title}`,
+          page_url: window.location.href,
+          property_id: property?.id,
+        },
+      });
+
+      if (error) throw error;
+
+      setSubmitted(true);
+      toast({ title: "Interesse registrado com sucesso!" });
+    } catch (e) {
+      console.error("Error submitting interest:", e);
+      toast({ title: "Erro ao registrar interesse. Tente novamente.", variant: "destructive" });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const resetModal = () => {
+    setShowInterestModal(false);
+    setInterestName("");
+    setInterestPhone("");
+    setSubmitted(false);
   };
 
   if (loading) {
@@ -197,6 +288,60 @@ export default function ParceriasImovel() {
           </div>
         </div>
       </div>
+
+      {/* Interest Modal (fallback when no WhatsApp) */}
+      <Dialog open={showInterestModal} onOpenChange={(open) => { if (!open) resetModal(); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{submitted ? "Interesse Registrado!" : "Registrar Interesse"}</DialogTitle>
+            <DialogDescription>
+              {submitted
+                ? "Em breve entraremos em contato com você."
+                : `Informe seus dados para demonstrar interesse no imóvel: ${property?.title}`}
+            </DialogDescription>
+          </DialogHeader>
+
+          {submitted ? (
+            <div className="flex flex-col items-center py-6 gap-3">
+              <CheckCircle2 className="h-12 w-12 text-primary" />
+              <p className="text-sm text-muted-foreground text-center">
+                Recebemos seu interesse e nossa equipe entrará em contato em breve.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="interest-name">Nome</Label>
+                <Input
+                  id="interest-name"
+                  placeholder="Seu nome"
+                  value={interestName}
+                  onChange={(e) => setInterestName(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="interest-phone">Telefone</Label>
+                <Input
+                  id="interest-phone"
+                  placeholder="(00) 00000-0000"
+                  value={interestPhone}
+                  onChange={(e) => setInterestPhone(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            {submitted ? (
+              <Button onClick={resetModal}>Fechar</Button>
+            ) : (
+              <Button onClick={handleSubmitInterest} disabled={submitting}>
+                {submitting ? "Enviando..." : "Enviar"}
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <footer className="border-t mt-12 py-6 text-center text-sm text-muted-foreground">
         <p>© {new Date().getFullYear()} Supreme Empreendimentos · Vitrine de Parcerias</p>
