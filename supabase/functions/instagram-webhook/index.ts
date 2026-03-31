@@ -845,7 +845,31 @@ serve(async (req) => {
             }
 
             // =====================================================
-            // STEP 7: If bot active (or no real agent online), trigger AI reply
+            // STEP 7: INTERCEPTOR processIncomingMessage — ANTES da IA
+            // =====================================================
+            try {
+              const { data: convForIntercept } = await supabase
+                .from('omnichat_conversations')
+                .select('lead_id')
+                .eq('id', convId)
+                .single();
+
+              const interceptedName = await processIncomingMessage(
+                supabase,
+                messageText,
+                convId,
+                convForIntercept?.lead_id || null,
+                'instagram',
+              );
+              if (interceptedName) {
+                displayName = interceptedName;
+              }
+            } catch (interceptErr) {
+              console.error('[Instagram Webhook] processIncomingMessage error:', interceptErr);
+            }
+
+            // =====================================================
+            // STEP 8: If bot active, trigger AI reply
             // =====================================================
             const { data: conv } = await supabase
               .from('omnichat_conversations')
