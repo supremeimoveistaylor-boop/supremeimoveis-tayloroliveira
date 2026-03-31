@@ -470,6 +470,31 @@ serve(async (req) => {
                     console.error('[WhatsApp Webhook] Lead sync error:', leadErr);
                   }
 
+                  // =====================================================
+                  // INTERCEPTOR: processIncomingMessage — ANTES da IA
+                  // =====================================================
+                  try {
+                    const { data: convForIntercept } = await supabase
+                      .from('omnichat_conversations')
+                      .select('lead_id')
+                      .eq('id', convId)
+                      .single();
+                    
+                    const interceptedName = await processIncomingMessage(
+                      supabase,
+                      messageText,
+                      convId,
+                      convForIntercept?.lead_id || null,
+                      'whatsapp',
+                    );
+                    if (interceptedName) {
+                      // Use intercepted name for AI context
+                      contactName = interceptedName;
+                    }
+                  } catch (interceptErr) {
+                    console.error('[WhatsApp Webhook] processIncomingMessage error:', interceptErr);
+                  }
+
                   // If bot is active and no agent online, trigger AI response
                   const { data: conv } = await supabase
                     .from('omnichat_conversations')
