@@ -52,7 +52,14 @@ function extractNameFromText(text: string): string | null {
 
 function isFallbackName(name: string | null): boolean {
   if (!name) return true;
-  return /^WhatsApp \d+$/.test(name) || /^WhatsApp #?\d+$/.test(name) || /^Visitante/.test(name) || name === 'Não informado' || name === 'A definir' || name === 'Cliente' || /^\d+$/.test(name) || /^Instagram User #\d+$/.test(name);
+  const n = name.trim();
+  if (!n) return true;
+  if (/^\d+$/.test(n)) return true;
+  if (/^WhatsApp \d+$/.test(n) || /^WhatsApp #?\d+$/.test(n)) return true;
+  if (/^Instagram User #?\d+$/i.test(n)) return true;
+  if (['Visitante', 'Visitante do Chat', 'Cliente', 'A definir', 'Não informado', 'Desconhecido', 'Unknown'].includes(n)) return true;
+  if (n.replace(/[\s\-_.]/g, '').length > 0 && /^\d[\d\s\-_.]+$/.test(n)) return true;
+  return false;
 }
 
 // =====================================================
