@@ -399,6 +399,24 @@ serve(async (req) => {
                       }
                       await supabase.from('crm_cards').update(crmUpdate).eq('lead_id', existingLead.id);
                       
+                      // Notify broker if not yet notified for this lead
+                      if (!existingLead.whatsapp_sent) {
+                        try {
+                          const BROKER_WHATSAPP = '556282251082';
+                          const displayName = contactName || existingLead.name || sanitizedPhone;
+                          const brokerMessage = `🚨 *Novo Lead WhatsApp*\n\n👤 Nome: ${displayName}\n📱 Telefone: ${sanitizedPhone}\n📍 Origem: WhatsApp\n💬 Mensagem: ${messageText.substring(0, 200) || '(mídia)'}\n\n📲 Responder: https://wa.me/${sanitizedPhone}`;
+                          await fetch(`${SUPABASE_URL}/functions/v1/send-whatsapp`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ to: BROKER_WHATSAPP, message: brokerMessage }),
+                          });
+                          await supabase.from('leads').update({ whatsapp_sent: true, whatsapp_sent_at: new Date().toISOString() }).eq('id', existingLead.id);
+                          console.log('[WhatsApp Webhook] ✅ Broker notificado (lead existente):', displayName);
+                        } catch (notifyErr) {
+                          console.error('[WhatsApp Webhook] Broker notification error (existing):', notifyErr);
+                        }
+                      }
+                      
                       console.log('[WhatsApp Webhook] ✅ Lead existente atualizado:', existingLead.id, 'nome:', contactName);
                     } else {
                       const leadName = contactName || null;
@@ -444,23 +462,20 @@ serve(async (req) => {
                           valor_estimado: 0,
                         });
                         
-                        // Notify broker immediately since WhatsApp gives us phone + possibly name
-                        if (contactName && !isFallback(contactName)) {
-                          try {
-                            const { data: brokers } = await supabase.from('brokers').select('whatsapp').eq('active', true).limit(1);
-                            if (brokers && brokers.length > 0) {
-                              const brokerMessage = `🚨 Novo Lead no Sistema\n\n👤 Nome: ${contactName}\n📱 Telefone: ${sanitizedPhone}\n📍 Origem: WhatsApp\n\nO cliente entrou em contato e aguarda retorno.`;
-                              await fetch(`${SUPABASE_URL}/functions/v1/send-whatsapp`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ to: brokers[0].whatsapp, message: brokerMessage }),
-                              });
-                              await supabase.from('leads').update({ whatsapp_sent: true, whatsapp_sent_at: new Date().toISOString() }).eq('id', newLead.id);
-                              console.log('[WhatsApp Webhook] ✅ Broker notificado para novo lead:', contactName);
-                            }
-                          } catch (notifyErr) {
-                            console.error('[WhatsApp Webhook] Broker notification error:', notifyErr);
-                          }
+                        // Notify broker for EVERY new lead
+                        try {
+                          const BROKER_WHATSAPP = '556282251082';
+                          const displayName = contactName || sanitizedPhone;
+                          const brokerMessage = `🚨 *Novo Lead WhatsApp*\n\n👤 Nome: ${displayName}\n📱 Telefone: ${sanitizedPhone}\n📍 Origem: WhatsApp\n💬 Mensagem: ${messageText.substring(0, 200) || '(mídia)'}\n\n📲 Responder: https://wa.me/${sanitizedPhone}`;
+                          await fetch(`${SUPABASE_URL}/functions/v1/send-whatsapp`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ to: BROKER_WHATSAPP, message: brokerMessage }),
+                          });
+                          await supabase.from('leads').update({ whatsapp_sent: true, whatsapp_sent_at: new Date().toISOString() }).eq('id', newLead.id);
+                          console.log('[WhatsApp Webhook] ✅ Broker notificado (novo lead):', displayName);
+                        } catch (notifyErr) {
+                          console.error('[WhatsApp Webhook] Broker notification error:', notifyErr);
                         }
                         
                         console.log('[WhatsApp Webhook] ✅ Novo lead + CRM card criado:', sanitizedPhone, 'nome:', leadName);
