@@ -399,6 +399,24 @@ serve(async (req) => {
                       }
                       await supabase.from('crm_cards').update(crmUpdate).eq('lead_id', existingLead.id);
                       
+                      // Notify broker if not yet notified for this lead
+                      if (!existingLead.whatsapp_sent) {
+                        try {
+                          const BROKER_WHATSAPP = '556282251082';
+                          const displayName = contactName || existingLead.name || sanitizedPhone;
+                          const brokerMessage = `🚨 *Novo Lead WhatsApp*\n\n👤 Nome: ${displayName}\n📱 Telefone: ${sanitizedPhone}\n📍 Origem: WhatsApp\n💬 Mensagem: ${messageText.substring(0, 200) || '(mídia)'}\n\n📲 Responder: https://wa.me/${sanitizedPhone}`;
+                          await fetch(`${SUPABASE_URL}/functions/v1/send-whatsapp`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ to: BROKER_WHATSAPP, message: brokerMessage }),
+                          });
+                          await supabase.from('leads').update({ whatsapp_sent: true, whatsapp_sent_at: new Date().toISOString() }).eq('id', existingLead.id);
+                          console.log('[WhatsApp Webhook] ✅ Broker notificado (lead existente):', displayName);
+                        } catch (notifyErr) {
+                          console.error('[WhatsApp Webhook] Broker notification error (existing):', notifyErr);
+                        }
+                      }
+                      
                       console.log('[WhatsApp Webhook] ✅ Lead existente atualizado:', existingLead.id, 'nome:', contactName);
                     } else {
                       const leadName = contactName || null;
