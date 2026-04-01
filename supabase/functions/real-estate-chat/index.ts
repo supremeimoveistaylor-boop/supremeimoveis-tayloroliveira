@@ -1293,6 +1293,48 @@ Entre em contato imediatamente.`;
           }
         }
 
+        // --- NOTIFICAÇÃO UNIVERSAL PARA CORRETOR (todos os leads, todos os canais) ---
+        // Enviar para o corretor fixo, independente de qualificação, usando flag whatsapp_sent
+        try {
+          const { data: leadForNotify } = await supabase
+            .from("leads")
+            .select("whatsapp_sent, name, phone")
+            .eq("id", currentLeadId)
+            .single();
+
+          if (leadForNotify && !leadForNotify.whatsapp_sent && (leadName !== "Visitante" || leadPhone)) {
+            const BROKER_WHATSAPP = '5562999918353';
+            const displayName = leadName || leadPhone || 'Visitante';
+            const contactLink = leadPhone ? `https://wa.me/${leadPhone.replace(/\D/g, '')}` : 'N/A';
+            const lastUserMsg = messages.filter((m: ChatMessage) => m.role === 'user').pop();
+            const lastMsgText = typeof lastUserMsg?.content === 'string' ? lastUserMsg.content : '';
+
+            const brokerMessage = `🚨 *Novo Lead Chat do Site*\n\n` +
+              `👤 Nome: ${displayName}\n` +
+              `📱 Telefone: ${leadPhone || 'Não informado'}\n` +
+              `📍 Origem: Chat do Site\n` +
+              `💬 Mensagem: ${lastMsgText.substring(0, 200) || '(sem mensagem)'}\n` +
+              `📊 Score: ${leadScoreNum}/100 (${leadScore})\n\n` +
+              `📲 Responder: ${contactLink}`;
+
+            const sendWhatsappUrl = `${SUPABASE_URL}/functions/v1/send-whatsapp`;
+            fetch(sendWhatsappUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ to: BROKER_WHATSAPP, message: brokerMessage }),
+            }).then(async (r) => {
+              if (r.ok) {
+                console.log(`✅ Corretor notificado (5562999918353) - Lead Chat: ${displayName}`);
+                await supabase.from("leads").update({ whatsapp_sent: true, whatsapp_sent_at: new Date().toISOString() }).eq("id", currentLeadId);
+              } else {
+                console.error(`❌ Falha notificação corretor`);
+              }
+            }).catch(err => console.error("WhatsApp broker notification error:", err));
+          }
+        } catch (notifyErr) {
+          console.error("Broker notification error (non-blocking):", notifyErr);
+        }
+
         console.log(`📊 Pipeline invisível: ${leadName} → ${leadScore} (${leadScoreNum}) | urgência: ${urgencia}`);
       } catch (pipelineError) {
         // Pipeline silencioso - nunca bloqueia o chat
