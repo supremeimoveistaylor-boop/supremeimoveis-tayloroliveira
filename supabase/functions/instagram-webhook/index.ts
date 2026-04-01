@@ -327,31 +327,27 @@ async function notifyBroker(
   supabase: any,
   name: string,
   phone: string,
-  origin: string
+  origin: string,
+  lastMessage?: string
 ) {
   try {
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-    const { data: brokers } = await (supabase
-      .from('brokers')
-      .select('whatsapp')
-      .eq('active', true)
-      .limit(1)) as { data: Array<{ whatsapp: string }> | null };
+    const BROKER_WHATSAPP = '5562999918353';
+    const contactLink = phone ? `https://wa.me/${phone.replace(/\D/g, '')}` : 'N/A';
 
-    if (brokers && brokers.length > 0) {
-      const brokerMessage = `🚨 Novo Lead no Sistema\n\n` +
-        `👤 Nome: ${name}\n` +
-        `📱 Telefone: ${phone}\n` +
-        `📍 Origem: ${origin}\n\n` +
-        `O cliente entrou em contato e aguarda retorno.\n` +
-        `Acesse o painel para continuar o atendimento.`;
+    const brokerMessage = `🚨 *Novo Lead ${origin}*\n\n` +
+      `👤 Nome: ${name}\n` +
+      `📱 Telefone: ${phone || 'Não informado'}\n` +
+      `📍 Origem: ${origin}\n` +
+      `💬 Mensagem: ${(lastMessage || '').substring(0, 200) || '(sem mensagem)'}\n\n` +
+      `📲 Responder: ${contactLink}`;
 
-      await fetch(`${SUPABASE_URL}/functions/v1/send-whatsapp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: brokers[0].whatsapp, message: brokerMessage }),
-      });
-      console.log(`[Instagram Webhook] ✅ Broker notified: ${name} / ${phone}`);
-    }
+    await fetch(`${SUPABASE_URL}/functions/v1/send-whatsapp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to: BROKER_WHATSAPP, message: brokerMessage }),
+    });
+    console.log(`[Instagram Webhook] ✅ Broker notified (5562999918353): ${name} / ${phone}`);
   } catch (notifyErr) {
     console.error('[Instagram Webhook] Broker notification error:', notifyErr);
   }

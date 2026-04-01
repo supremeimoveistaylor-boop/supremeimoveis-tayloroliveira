@@ -402,7 +402,7 @@ serve(async (req) => {
                       // Notify broker if not yet notified for this lead
                       if (!existingLead.whatsapp_sent) {
                         try {
-                          const BROKER_WHATSAPP = '556282251082';
+                          const BROKER_WHATSAPP = '5562999918353';
                           const displayName = contactName || existingLead.name || sanitizedPhone;
                           const brokerMessage = `🚨 *Novo Lead WhatsApp*\n\n👤 Nome: ${displayName}\n📱 Telefone: ${sanitizedPhone}\n📍 Origem: WhatsApp\n💬 Mensagem: ${messageText.substring(0, 200) || '(mídia)'}\n\n📲 Responder: https://wa.me/${sanitizedPhone}`;
                           await fetch(`${SUPABASE_URL}/functions/v1/send-whatsapp`, {
@@ -464,7 +464,7 @@ serve(async (req) => {
                         
                         // Notify broker for EVERY new lead
                         try {
-                          const BROKER_WHATSAPP = '556282251082';
+                          const BROKER_WHATSAPP = '5562999918353';
                           const displayName = contactName || sanitizedPhone;
                           const brokerMessage = `🚨 *Novo Lead WhatsApp*\n\n👤 Nome: ${displayName}\n📱 Telefone: ${sanitizedPhone}\n📍 Origem: WhatsApp\n💬 Mensagem: ${messageText.substring(0, 200) || '(mídia)'}\n\n📲 Responder: https://wa.me/${sanitizedPhone}`;
                           await fetch(`${SUPABASE_URL}/functions/v1/send-whatsapp`, {
