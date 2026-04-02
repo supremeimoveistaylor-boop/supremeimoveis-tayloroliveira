@@ -401,7 +401,7 @@ export const OmnichatInboxPanel = () => {
                     <button
                       key={conv.id}
                       onClick={() => setSelectedConv(conv)}
-                      className={`w-full text-left px-3 py-2.5 flex items-center gap-3 transition-all hover:bg-muted/50 ${isActive ? "bg-primary/5 border-l-2 border-l-primary" : "border-l-2 border-l-transparent"}`}
+                      className={`w-full text-left px-3 py-2.5 flex items-center gap-3 transition-all hover:bg-slate-50 ${isActive ? "bg-amber-50/60 border-l-2 border-l-amber-500" : "border-l-2 border-l-transparent"}`}
                     >
                       {/* Avatar */}
                       <div className="relative shrink-0">
