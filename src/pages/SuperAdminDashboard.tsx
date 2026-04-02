@@ -477,20 +477,20 @@ const SuperAdminDashboard = () => {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="bg-slate-800/50 border border-slate-700 flex-wrap h-auto gap-1 p-1">
-            <TabsTrigger value="overview" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+          <TabsList className="bg-white border border-slate-200 shadow-sm flex-wrap h-auto gap-1 p-1.5 rounded-xl">
+            <TabsTrigger value="overview" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
               <Database className="w-4 h-4 mr-2" />
               Visão Geral
             </TabsTrigger>
-            <TabsTrigger value="admin-dashboard" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+            <TabsTrigger value="admin-dashboard" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
               <LayoutDashboard className="w-4 h-4 mr-2" />
               Dashboard
             </TabsTrigger>
-            <TabsTrigger value="crm" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+            <TabsTrigger value="crm" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
               <Kanban className="w-4 h-4 mr-2" />
               CRM Kanban
             </TabsTrigger>
-            <TabsTrigger value="leads" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+            <TabsTrigger value="leads" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
               <MessageSquare className="w-4 h-4 mr-2" />
               Leads
             </TabsTrigger>
