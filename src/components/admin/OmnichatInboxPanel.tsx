@@ -11,8 +11,9 @@ import { toast } from "@/hooks/use-toast";
 import {
   MessageSquare, Phone, Instagram, Send, Bot, User, Wifi, WifiOff,
   ArrowRight, X, Clock, RefreshCw, LayoutGrid, Search, PhoneCall,
-  Video, MoreVertical, Globe, Tag, Sparkles, Pencil, Check
+  Video, MoreVertical, Globe, Tag, Sparkles, Pencil, Check, ArrowLeft
 } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Conversation {
   id: string;
