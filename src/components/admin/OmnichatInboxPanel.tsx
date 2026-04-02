@@ -529,7 +529,7 @@ export const OmnichatInboxPanel = () => {
               </ScrollArea>
 
               {/* Input area */}
-              <div className="p-3 border-t border-border bg-card">
+              <div className="p-3 border-t border-slate-100 bg-white">
                 <div className="flex gap-2 items-center">
                   <Input
                     value={newMessage}
