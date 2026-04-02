@@ -448,7 +448,7 @@ export const OmnichatInboxPanel = () => {
         </div>
 
         {/* ━━━ COLUMN 2: Active Chat ━━━ */}
-        <div className={`${isMobile ? (selectedConv ? 'flex-1' : 'hidden') : 'col-span-5 xl:col-span-6'} bg-card border border-border rounded-2xl flex flex-col overflow-hidden shadow-sm`}>
+        <div className={`${isMobile ? (selectedConv ? 'flex-1' : 'hidden') : 'col-span-5 xl:col-span-6'} bg-white border border-slate-100 rounded-2xl flex flex-col overflow-hidden shadow-sm`}>
           {selectedConv ? (
             <>
               {/* Chat header */}
