@@ -343,19 +343,19 @@ export const OmnichatInboxPanel = () => {
       </div>
 
       {/* ═══ 3-Column Layout ═══ */}
-      <div className={`flex-1 ${isMobile ? 'flex flex-col' : 'grid grid-cols-12 gap-3'} min-h-0`}>
+      <div className={`flex-1 ${isMobile ? 'flex flex-col' : 'grid grid-cols-12 gap-4'} min-h-0`}>
 
         {/* ━━━ COLUMN 1: Conversation List ━━━ */}
-        <div className={`${isMobile ? (selectedConv ? 'hidden' : 'flex-1') : 'col-span-4 xl:col-span-3'} bg-card border border-border rounded-2xl overflow-hidden flex flex-col shadow-sm`}>
+        <div className={`${isMobile ? (selectedConv ? 'hidden' : 'flex-1') : 'col-span-4 xl:col-span-3'} bg-white border border-slate-100 rounded-2xl overflow-hidden flex flex-col shadow-sm`}>
           {/* Search */}
-          <div className="p-3 border-b border-border">
+          <div className="p-3 border-b border-slate-100">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <Input
                 placeholder="Buscar conversa..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="pl-9 bg-muted/50 border-0 rounded-xl h-9 text-sm focus-visible:ring-1 focus-visible:ring-primary/50"
+                className="pl-9 bg-slate-50 border-slate-200 rounded-xl h-9 text-sm focus-visible:ring-1 focus-visible:ring-amber-400/50"
               />
             </div>
           </div>
@@ -363,17 +363,17 @@ export const OmnichatInboxPanel = () => {
           {/* Channel filter tabs */}
           <div className="px-3 pt-2 pb-1">
             <Tabs value={channelFilter} onValueChange={(v) => setChannelFilter(v as any)}>
-              <TabsList className="w-full bg-muted/50 h-8 rounded-lg p-0.5">
-                <TabsTrigger value="all" className="flex-1 text-xs h-7 rounded-md data-[state=active]:bg-card data-[state=active]:shadow-sm">
+              <TabsList className="w-full bg-slate-50 h-8 rounded-lg p-0.5 border border-slate-100">
+                <TabsTrigger value="all" className="flex-1 text-xs h-7 rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-slate-800">
                   Todos ({conversations.length})
                 </TabsTrigger>
-                <TabsTrigger value="whatsapp" className="flex-1 text-xs h-7 rounded-md data-[state=active]:bg-green-500/10 data-[state=active]:text-green-500">
+                <TabsTrigger value="whatsapp" className="flex-1 text-xs h-7 rounded-md data-[state=active]:bg-green-50 data-[state=active]:text-green-600">
                   <Phone className="w-3 h-3 mr-1" /> {conversations.filter(c => c.channel === "whatsapp").length}
                 </TabsTrigger>
-                <TabsTrigger value="instagram" className="flex-1 text-xs h-7 rounded-md data-[state=active]:bg-pink-500/10 data-[state=active]:text-pink-500">
+                <TabsTrigger value="instagram" className="flex-1 text-xs h-7 rounded-md data-[state=active]:bg-pink-50 data-[state=active]:text-pink-600">
                   <Instagram className="w-3 h-3 mr-1" /> {conversations.filter(c => c.channel === "instagram").length}
                 </TabsTrigger>
-                <TabsTrigger value="webchat" className="flex-1 text-xs h-7 rounded-md data-[state=active]:bg-blue-500/10 data-[state=active]:text-blue-500">
+                <TabsTrigger value="webchat" className="flex-1 text-xs h-7 rounded-md data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">
                   <Globe className="w-3 h-3 mr-1" /> {conversations.filter(c => c.channel === "webchat").length}
                 </TabsTrigger>
               </TabsList>
