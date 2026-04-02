@@ -339,10 +339,10 @@ export const OmnichatInboxPanel = () => {
       </div>
 
       {/* ═══ 3-Column Layout ═══ */}
-      <div className="flex-1 grid grid-cols-12 gap-3 min-h-0">
+      <div className={`flex-1 ${isMobile ? 'flex flex-col' : 'grid grid-cols-12 gap-3'} min-h-0`}>
 
         {/* ━━━ COLUMN 1: Conversation List ━━━ */}
-        <div className="col-span-4 xl:col-span-3 bg-card border border-border rounded-2xl overflow-hidden flex flex-col shadow-sm">
+        <div className={`${isMobile ? (selectedConv ? 'hidden' : 'flex-1') : 'col-span-4 xl:col-span-3'} bg-card border border-border rounded-2xl overflow-hidden flex flex-col shadow-sm`}>
           {/* Search */}
           <div className="p-3 border-b border-border">
             <div className="relative">
