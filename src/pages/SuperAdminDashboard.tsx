@@ -554,34 +554,34 @@ const SuperAdminDashboard = () => {
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-4">
-            <Card className="bg-slate-800/50 border-slate-700">
+            <Card className="bg-white border-slate-200 shadow-sm">
               <CardHeader>
-                <CardTitle className="text-white">Últimas Atividades</CardTitle>
-                <CardDescription className="text-slate-400">
+                <CardTitle className="text-slate-800">Últimas Atividades</CardTitle>
+                <CardDescription className="text-slate-500">
                   Ações recentes dos super administradores
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
-                    <TableRow className="border-slate-700">
-                      <TableHead className="text-slate-300">Ação</TableHead>
-                      <TableHead className="text-slate-300">Data</TableHead>
-                      <TableHead className="text-slate-300">Detalhes</TableHead>
+                    <TableRow className="border-slate-200">
+                      <TableHead className="text-slate-600">Ação</TableHead>
+                      <TableHead className="text-slate-600">Data</TableHead>
+                      <TableHead className="text-slate-600">Detalhes</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {auditLogs.slice(0, 10).map((log) => (
-                      <TableRow key={log.id} className="border-slate-700">
+                      <TableRow key={log.id} className="border-slate-100">
                         <TableCell>
-                          <Badge variant="outline" className="border-amber-500/50 text-amber-400">
+                          <Badge variant="outline" className="border-amber-400 text-amber-600">
                             {log.action}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-slate-300">
+                        <TableCell className="text-slate-600">
                           {new Date(log.created_at).toLocaleString("pt-BR")}
                         </TableCell>
-                        <TableCell className="text-slate-400 text-sm">
+                        <TableCell className="text-slate-500 text-sm">
                           {log.target_table && `Tabela: ${log.target_table}`}
                           {log.metadata?.email && ` | ${log.metadata.email}`}
                         </TableCell>
