@@ -309,13 +309,16 @@ export const OmnichatInboxPanel = () => {
   const chCfg = selectedConv ? channelConfig[selectedConv.channel] : null;
 
   return (
-    <div className="h-[calc(100vh-280px)] min-h-[600px] flex flex-col gap-3 flex-1">
+    <div className="h-[calc(100vh-280px)] min-h-[600px] flex flex-col gap-4 flex-1">
       {/* ═══ Top Bar ═══ */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
+      <div className="flex items-center justify-between flex-wrap gap-2 bg-white rounded-2xl px-5 py-3 shadow-sm border border-slate-100">
         <div className="flex items-center gap-3">
-          <h2 className="text-xl font-bold text-foreground">Omnichat</h2>
+          <div className="w-9 h-9 bg-amber-50 rounded-xl flex items-center justify-center">
+            <MessageSquare className="w-5 h-5 text-amber-600" />
+          </div>
+          <h2 className="text-lg font-bold text-slate-800">Omnichat</h2>
           {totalUnread > 0 && (
-            <span className="bg-destructive text-destructive-foreground text-xs font-bold px-2.5 py-1 rounded-full animate-pulse">
+            <span className="bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full animate-pulse shadow-sm shadow-red-500/30">
               {totalUnread} nova{totalUnread > 1 ? "s" : ""}
             </span>
           )}
@@ -325,15 +328,15 @@ export const OmnichatInboxPanel = () => {
             size="sm"
             variant={isOnline ? "default" : "outline"}
             onClick={toggleOnline}
-            className={`rounded-full transition-all ${isOnline
-              ? "bg-green-500 hover:bg-green-600 text-white shadow-lg shadow-green-500/25"
-              : "border-muted-foreground/30 text-muted-foreground"
+            className={`rounded-full transition-all text-xs font-medium ${isOnline
+              ? "bg-emerald-500 hover:bg-emerald-600 text-white shadow-md shadow-emerald-500/20"
+              : "border-slate-300 text-slate-500 hover:bg-slate-50"
             }`}
           >
-            {isOnline ? <Wifi className="w-4 h-4 mr-1.5" /> : <WifiOff className="w-4 h-4 mr-1.5" />}
+            {isOnline ? <Wifi className="w-3.5 h-3.5 mr-1.5" /> : <WifiOff className="w-3.5 h-3.5 mr-1.5" />}
             {isOnline ? "Online" : "Offline"}
           </Button>
-          <Button size="icon" variant="ghost" onClick={loadConversations} className="text-muted-foreground hover:text-foreground rounded-full">
+          <Button size="icon" variant="ghost" onClick={loadConversations} className="text-slate-400 hover:text-slate-600 rounded-full h-8 w-8">
             <RefreshCw className="w-4 h-4" />
           </Button>
         </div>
