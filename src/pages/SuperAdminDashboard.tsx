@@ -494,59 +494,59 @@ const SuperAdminDashboard = () => {
               <MessageSquare className="w-4 h-4 mr-2" />
               Leads
             </TabsTrigger>
-            <TabsTrigger value="attendants" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+            <TabsTrigger value="attendants" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
               <Headphones className="w-4 h-4 mr-2" />
               Atendentes
             </TabsTrigger>
-            <TabsTrigger value="sessions" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+            <TabsTrigger value="sessions" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
               <MessageCircle className="w-4 h-4 mr-2" />
               Sessões
             </TabsTrigger>
-            <TabsTrigger value="metrics" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+            <TabsTrigger value="metrics" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
               <BarChart3 className="w-4 h-4 mr-2" />
               Métricas
             </TabsTrigger>
-            <TabsTrigger value="conversions" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+            <TabsTrigger value="conversions" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
               <TrendingUp className="w-4 h-4 mr-2" />
               Conversões
             </TabsTrigger>
-            <TabsTrigger value="visits" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+            <TabsTrigger value="visits" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
               <CalendarCheck className="w-4 h-4 mr-2" />
               Agendamentos
             </TabsTrigger>
-            <TabsTrigger value="financial" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+            <TabsTrigger value="financial" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
               <Wallet className="w-4 h-4 mr-2" />
               Financeiro
             </TabsTrigger>
-            <TabsTrigger value="omnichat" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+            <TabsTrigger value="omnichat" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
               <MessageSquare className="w-4 h-4 mr-2" />
               💬 Omnichat
             </TabsTrigger>
-            <TabsTrigger value="followup-alerts" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+            <TabsTrigger value="followup-alerts" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
               <BellRing className="w-4 h-4 mr-2" />
               Follow-ups
             </TabsTrigger>
-            <TabsTrigger value="chat-performance" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+            <TabsTrigger value="chat-performance" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
               <Zap className="w-4 h-4 mr-2" />
               💰 Performance Chat
             </TabsTrigger>
-            <TabsTrigger value="users" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+            <TabsTrigger value="users" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
               <UserCog className="w-4 h-4 mr-2" />
               Usuários
             </TabsTrigger>
-            <TabsTrigger value="seo" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+            <TabsTrigger value="seo" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
               <Search className="w-4 h-4 mr-2" />
               🔎 SEO Inteligente
             </TabsTrigger>
-            <TabsTrigger value="connections" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+            <TabsTrigger value="connections" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
               <MessageSquare className="w-4 h-4 mr-2" />
               Conexões Meta
             </TabsTrigger>
-            <TabsTrigger value="audit" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+            <TabsTrigger value="audit" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
               <FileText className="w-4 h-4 mr-2" />
               Auditoria
             </TabsTrigger>
-            <TabsTrigger value="captacao" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+            <TabsTrigger value="captacao" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
               <Home className="w-4 h-4 mr-2" />
               🏠 Captação
             </TabsTrigger>
