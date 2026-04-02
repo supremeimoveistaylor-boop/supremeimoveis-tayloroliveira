@@ -449,7 +449,12 @@ export const OmnichatInboxPanel = () => {
             <>
               {/* Chat header */}
               <div className="px-4 py-3 border-b border-border flex items-center justify-between">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  {isMobile && (
+                    <Button size="icon" variant="ghost" className="rounded-full h-8 w-8 text-muted-foreground" onClick={() => setSelectedConv(null)}>
+                      <ArrowLeft className="w-4 h-4" />
+                    </Button>
+                  )}
                   <Avatar className="w-9 h-9">
                     <AvatarFallback className={`text-xs font-semibold ${chCfg?.bgLight} ${chCfg?.textColor}`}>
                       {getInitials(selectedName)}
