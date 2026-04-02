@@ -568,7 +568,77 @@ Acesse o painel para mais detalhes.`;
     }
 
     // =====================================================
-    // SALVAR MENSAGEM E EXTRAIR DADOS - SINCRONIZAR leads_imobiliarios
+    // INTEGRAÇÃO OMNICHAT - WEBCHAT
+    // =====================================================
+    let omnichatConvId: string | null = null;
+    if (currentLeadId) {
+      try {
+        // Find tenant user (first admin/super_admin)
+        const { data: tenantRole } = await supabase
+          .from("user_roles")
+          .select("user_id")
+          .in("role", ["super_admin", "admin"])
+          .limit(1)
+          .single();
+        
+        const tenantUserId = tenantRole?.user_id;
+        
+        if (tenantUserId) {
+          const externalId = `webchat_${currentLeadId}`;
+          
+          // Check existing conversation
+          const { data: existingConv } = await supabase
+            .from("omnichat_conversations")
+            .select("id, unread_count")
+            .eq("channel", "webchat")
+            .eq("external_contact_id", externalId)
+            .maybeSingle();
+          
+          if (existingConv) {
+            omnichatConvId = existingConv.id;
+            // Get last user message for preview
+            const lastMsg = messages.length > 0 ? messages[messages.length - 1] : null;
+            let preview = "...";
+            if (lastMsg?.role === "user") {
+              preview = typeof lastMsg.content === "string" ? lastMsg.content.substring(0, 100) : "...";
+            }
+            await supabase.from("omnichat_conversations").update({
+              last_message_at: new Date().toISOString(),
+              last_message_preview: preview,
+              unread_count: (existingConv.unread_count || 0) + 1,
+              status: "open",
+              contact_name: clientName && clientName !== "Visitante do Chat" ? clientName : undefined,
+              contact_phone: clientPhone && clientPhone !== "A definir" ? clientPhone : undefined,
+            }).eq("id", existingConv.id);
+          } else {
+            const { data: newConv } = await supabase
+              .from("omnichat_conversations")
+              .insert({
+                user_id: tenantUserId,
+                channel: "webchat",
+                external_contact_id: externalId,
+                contact_name: clientName && clientName !== "Visitante do Chat" ? clientName : null,
+                contact_phone: clientPhone && clientPhone !== "A definir" ? clientPhone : null,
+                lead_id: currentLeadId,
+                bot_active: true,
+                last_message_at: new Date().toISOString(),
+                last_message_preview: "Nova conversa via chat do site",
+                unread_count: 1,
+              })
+              .select("id")
+              .single();
+            
+            if (newConv) {
+              omnichatConvId = newConv.id;
+              console.log("✅ Omnichat webchat conversation created:", omnichatConvId);
+            }
+          }
+        }
+      } catch (omniErr) {
+        console.error("Error creating omnichat conversation:", omniErr);
+      }
+    }
+
     // =====================================================
     if (currentLeadId && messages.length > 0) {
       const lastUserMessage = messages[messages.length - 1];
@@ -586,6 +656,21 @@ Acesse o painel para mais detalhes.`;
           role: "user",
           content: textContent.substring(0, MAX_MESSAGE_LENGTH)
         });
+
+        // Save to omnichat_messages for unified inbox
+        if (omnichatConvId) {
+          try {
+            await supabase.from("omnichat_messages").insert({
+              conversation_id: omnichatConvId,
+              sender_type: "client",
+              channel: "webchat",
+              content: textContent.substring(0, MAX_MESSAGE_LENGTH),
+              status: "received",
+            });
+          } catch (omniMsgErr) {
+            console.error("Error saving omnichat message:", omniMsgErr);
+          }
+        }
 
         // Extrair informações do usuário
         const content = textContent.toLowerCase();

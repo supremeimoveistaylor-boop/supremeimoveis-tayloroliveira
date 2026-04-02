@@ -11,14 +11,15 @@ import { toast } from "@/hooks/use-toast";
 import {
   MessageSquare, Phone, Instagram, Send, Bot, User, Wifi, WifiOff,
   ArrowRight, X, Clock, RefreshCw, LayoutGrid, Search, PhoneCall,
-  Video, MoreVertical, Globe, Tag, Sparkles, Pencil, Check
+  Video, MoreVertical, Globe, Tag, Sparkles, Pencil, Check, ArrowLeft
 } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Conversation {
   id: string;
   user_id: string;
   lead_id: string | null;
-  channel: "whatsapp" | "instagram";
+  channel: "whatsapp" | "instagram" | "webchat";
   external_contact_id: string;
   contact_name: string | null;
   contact_phone: string | null;
@@ -84,18 +85,20 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(hours / 24)}d`;
 }
 
-const channelConfig = {
+const channelConfig: Record<string, { icon: any; color: string; textColor: string; bgLight: string; label: string }> = {
   whatsapp: { icon: Phone, color: "bg-green-500", textColor: "text-green-400", bgLight: "bg-green-500/10", label: "WhatsApp" },
   instagram: { icon: Instagram, color: "bg-gradient-to-br from-purple-500 to-pink-500", textColor: "text-pink-400", bgLight: "bg-pink-500/10", label: "Instagram" },
+  webchat: { icon: Globe, color: "bg-blue-500", textColor: "text-blue-400", bgLight: "bg-blue-500/10", label: "Chat" },
 };
 
 export const OmnichatInboxPanel = () => {
+  const isMobile = useIsMobile();
   const { user, session } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConv, setSelectedConv] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
-  const [channelFilter, setChannelFilter] = useState<"all" | "whatsapp" | "instagram">("all");
+  const [channelFilter, setChannelFilter] = useState<"all" | "whatsapp" | "instagram" | "webchat">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [isOnline, setIsOnline] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -195,12 +198,13 @@ export const OmnichatInboxPanel = () => {
           body: JSON.stringify({ to: selectedConv.external_contact_id, message: newMessage.trim() }),
         });
         if (!res.ok) throw new Error("Falha ao enviar WhatsApp");
-      } else {
+      } else if (selectedConv.channel === "instagram") {
         const res = await supabase.functions.invoke("send-instagram-message", {
           body: { recipient_id: selectedConv.external_contact_id, message: newMessage.trim(), connection_id: selectedConv.connection_id },
         });
         if (res.error) throw res.error;
       }
+      // webchat: no external API needed, just save the message below
       await supabase.from("omnichat_messages" as any).insert({
         conversation_id: selectedConv.id, sender_type: "agent", channel: selectedConv.channel, content: newMessage.trim(), status: "sent",
       } as any);
@@ -336,10 +340,10 @@ export const OmnichatInboxPanel = () => {
       </div>
 
       {/* ═══ 3-Column Layout ═══ */}
-      <div className="flex-1 grid grid-cols-12 gap-3 min-h-0">
+      <div className={`flex-1 ${isMobile ? 'flex flex-col' : 'grid grid-cols-12 gap-3'} min-h-0`}>
 
         {/* ━━━ COLUMN 1: Conversation List ━━━ */}
-        <div className="col-span-4 xl:col-span-3 bg-card border border-border rounded-2xl overflow-hidden flex flex-col shadow-sm">
+        <div className={`${isMobile ? (selectedConv ? 'hidden' : 'flex-1') : 'col-span-4 xl:col-span-3'} bg-card border border-border rounded-2xl overflow-hidden flex flex-col shadow-sm`}>
           {/* Search */}
           <div className="p-3 border-b border-border">
             <div className="relative">
@@ -365,6 +369,9 @@ export const OmnichatInboxPanel = () => {
                 </TabsTrigger>
                 <TabsTrigger value="instagram" className="flex-1 text-xs h-7 rounded-md data-[state=active]:bg-pink-500/10 data-[state=active]:text-pink-500">
                   <Instagram className="w-3 h-3 mr-1" /> {conversations.filter(c => c.channel === "instagram").length}
+                </TabsTrigger>
+                <TabsTrigger value="webchat" className="flex-1 text-xs h-7 rounded-md data-[state=active]:bg-blue-500/10 data-[state=active]:text-blue-500">
+                  <Globe className="w-3 h-3 mr-1" /> {conversations.filter(c => c.channel === "webchat").length}
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -438,12 +445,17 @@ export const OmnichatInboxPanel = () => {
         </div>
 
         {/* ━━━ COLUMN 2: Active Chat ━━━ */}
-        <div className="col-span-5 xl:col-span-6 bg-card border border-border rounded-2xl flex flex-col overflow-hidden shadow-sm">
+        <div className={`${isMobile ? (selectedConv ? 'flex-1' : 'hidden') : 'col-span-5 xl:col-span-6'} bg-card border border-border rounded-2xl flex flex-col overflow-hidden shadow-sm`}>
           {selectedConv ? (
             <>
               {/* Chat header */}
               <div className="px-4 py-3 border-b border-border flex items-center justify-between">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  {isMobile && (
+                    <Button size="icon" variant="ghost" className="rounded-full h-8 w-8 text-muted-foreground" onClick={() => setSelectedConv(null)}>
+                      <ArrowLeft className="w-4 h-4" />
+                    </Button>
+                  )}
                   <Avatar className="w-9 h-9">
                     <AvatarFallback className={`text-xs font-semibold ${chCfg?.bgLight} ${chCfg?.textColor}`}>
                       {getInitials(selectedName)}
@@ -551,7 +563,7 @@ export const OmnichatInboxPanel = () => {
         </div>
 
         {/* ━━━ COLUMN 3: Contact Details ━━━ */}
-        <div className="col-span-3 bg-card border border-border rounded-2xl overflow-auto shadow-sm">
+        <div className={`${isMobile ? 'hidden' : 'col-span-3'} bg-card border border-border rounded-2xl overflow-auto shadow-sm`}>
           {selectedConv ? (
             <div className="p-4 space-y-5">
               {/* Profile */}
