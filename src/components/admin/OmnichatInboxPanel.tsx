@@ -612,7 +612,7 @@ export const OmnichatInboxPanel = () => {
               </div>
 
               {/* Info grid */}
-              <div className="space-y-3 bg-muted/30 rounded-xl p-3">
+              <div className="space-y-3 bg-slate-50 rounded-xl p-3 border border-slate-100">
                 <DetailRow label="Canal" value={
                   <Badge className={`${chCfg?.bgLight} ${chCfg?.textColor} border-0 text-[10px]`}>{selectedConv.channel}</Badge>
                 } />
