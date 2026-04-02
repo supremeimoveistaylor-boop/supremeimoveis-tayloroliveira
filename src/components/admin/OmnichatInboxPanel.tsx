@@ -535,7 +535,7 @@ export const OmnichatInboxPanel = () => {
                     value={newMessage}
                     onChange={e => setNewMessage(e.target.value)}
                     placeholder="Digite sua mensagem..."
-                    className="flex-1 rounded-xl bg-muted/50 border-0 h-10 focus-visible:ring-1 focus-visible:ring-primary/50"
+                    className="flex-1 rounded-xl bg-slate-50 border-slate-200 h-10 focus-visible:ring-1 focus-visible:ring-amber-400/50"
                     onKeyDown={e => e.key === "Enter" && !e.shiftKey && handleSend()}
                     disabled={selectedConv.status === "closed"}
                   />
