@@ -452,7 +452,7 @@ export const OmnichatInboxPanel = () => {
           {selectedConv ? (
             <>
               {/* Chat header */}
-              <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+              <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-white">
                 <div className="flex items-center gap-2">
                   {isMobile && (
                     <Button size="icon" variant="ghost" className="rounded-full h-8 w-8 text-muted-foreground" onClick={() => setSelectedConv(null)}>
