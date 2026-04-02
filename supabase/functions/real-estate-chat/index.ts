@@ -657,6 +657,21 @@ Acesse o painel para mais detalhes.`;
           content: textContent.substring(0, MAX_MESSAGE_LENGTH)
         });
 
+        // Save to omnichat_messages for unified inbox
+        if (omnichatConvId) {
+          try {
+            await supabase.from("omnichat_messages").insert({
+              conversation_id: omnichatConvId,
+              sender_type: "client",
+              channel: "webchat",
+              content: textContent.substring(0, MAX_MESSAGE_LENGTH),
+              status: "received",
+            });
+          } catch (omniMsgErr) {
+            console.error("Error saving omnichat message:", omniMsgErr);
+          }
+        }
+
         // Extrair informações do usuário
         const content = textContent.toLowerCase();
         const updates: Record<string, unknown> = {};
