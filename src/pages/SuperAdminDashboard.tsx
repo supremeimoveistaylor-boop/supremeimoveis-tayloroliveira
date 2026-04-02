@@ -345,10 +345,10 @@ const SuperAdminDashboard = () => {
   // Block rendering until server-side validation completes
   if (loading || !serverValidated || validationFailed) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <div className="text-center">
           <RefreshCw className="w-8 h-8 text-amber-500 animate-spin mx-auto mb-4" />
-          <p className="text-slate-400 text-sm">
+          <p className="text-slate-500 text-sm">
             {validationFailed ? "Acesso negado..." : "Validando permissões..."}
           </p>
         </div>
@@ -357,17 +357,17 @@ const SuperAdminDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
       {/* Header */}
-      <header className="border-b border-slate-700 bg-slate-800/50 backdrop-blur-sm sticky top-0 z-50">
+      <header className="border-b border-slate-200 bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-amber-500/20 rounded-full flex items-center justify-center">
-              <Shield className="w-5 h-5 text-amber-500" />
+            <div className="w-10 h-10 bg-amber-500/15 rounded-xl flex items-center justify-center">
+              <Shield className="w-5 h-5 text-amber-600" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white">Super Admin Dashboard</h1>
-              <p className="text-xs text-slate-400">{user?.email}</p>
+              <h1 className="text-xl font-bold text-slate-800">Super Admin Dashboard</h1>
+              <p className="text-xs text-slate-500">{user?.email}</p>
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -379,14 +379,14 @@ const SuperAdminDashboard = () => {
                   const ok = await install();
                   if (ok) toast({ title: "✅ App instalado!", description: "Acesse pelo ícone na tela inicial." });
                 }}
-                className="border-amber-500/50 text-amber-400 hover:bg-amber-500/20"
+                className="border-amber-400 text-amber-600 hover:bg-amber-50"
               >
                 <Download className="w-4 h-4 mr-2" />
                 Instalar App
               </Button>
             )}
             {isInstalled && (
-              <Badge variant="outline" className="border-green-500/50 text-green-400 text-xs">
+              <Badge variant="outline" className="border-green-400 text-green-600 text-xs">
                 <Smartphone className="w-3 h-3 mr-1" />
                 App Instalado
               </Badge>
@@ -395,7 +395,7 @@ const SuperAdminDashboard = () => {
               variant="outline"
               size="sm"
               onClick={fetchDashboardData}
-              className="border-slate-600 text-slate-300 hover:bg-slate-700"
+              className="border-slate-300 text-slate-600 hover:bg-slate-50"
             >
               <RefreshCw className="w-4 h-4 mr-2" />
               Atualizar
@@ -416,59 +416,59 @@ const SuperAdminDashboard = () => {
       <main className="container mx-auto px-4 py-8">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                  <Users className="w-6 h-6 text-blue-500" />
+                <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
+                  <Users className="w-6 h-6 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-white">{userRoles.length}</p>
-                  <p className="text-sm text-slate-400">Usuários com Roles</p>
+                  <p className="text-2xl font-bold text-slate-800">{userRoles.length}</p>
+                  <p className="text-sm text-slate-500">Usuários com Roles</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-amber-500/20 rounded-lg flex items-center justify-center">
-                  <Shield className="w-6 h-6 text-amber-500" />
+                <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center">
+                  <Shield className="w-6 h-6 text-amber-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-white">
+                  <p className="text-2xl font-bold text-slate-800">
                     {userRoles.filter(r => r.role === "super_admin").length}
                   </p>
-                  <p className="text-sm text-slate-400">Super Admins</p>
+                  <p className="text-sm text-slate-500">Super Admins</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
-                  <MessageSquare className="w-6 h-6 text-green-500" />
+                <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center">
+                  <MessageSquare className="w-6 h-6 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-white">{connections.length}</p>
-                  <p className="text-sm text-slate-400">Conexões Meta</p>
+                  <p className="text-2xl font-bold text-slate-800">{connections.length}</p>
+                  <p className="text-sm text-slate-500">Conexões Meta</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center">
-                  <Activity className="w-6 h-6 text-purple-500" />
+                <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center">
+                  <Activity className="w-6 h-6 text-purple-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-white">{auditLogs.length}</p>
-                  <p className="text-sm text-slate-400">Logs de Auditoria</p>
+                  <p className="text-2xl font-bold text-slate-800">{auditLogs.length}</p>
+                  <p className="text-sm text-slate-500">Logs de Auditoria</p>
                 </div>
               </div>
             </CardContent>
@@ -477,76 +477,76 @@ const SuperAdminDashboard = () => {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="bg-slate-800/50 border border-slate-700 flex-wrap h-auto gap-1 p-1">
-            <TabsTrigger value="overview" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+          <TabsList className="bg-white border border-slate-200 shadow-sm flex-wrap h-auto gap-1 p-1.5 rounded-xl">
+            <TabsTrigger value="overview" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
               <Database className="w-4 h-4 mr-2" />
               Visão Geral
             </TabsTrigger>
-            <TabsTrigger value="admin-dashboard" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+            <TabsTrigger value="admin-dashboard" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
               <LayoutDashboard className="w-4 h-4 mr-2" />
               Dashboard
             </TabsTrigger>
-            <TabsTrigger value="crm" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+            <TabsTrigger value="crm" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
               <Kanban className="w-4 h-4 mr-2" />
               CRM Kanban
             </TabsTrigger>
-            <TabsTrigger value="leads" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+            <TabsTrigger value="leads" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
               <MessageSquare className="w-4 h-4 mr-2" />
               Leads
             </TabsTrigger>
-            <TabsTrigger value="attendants" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+            <TabsTrigger value="attendants" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
               <Headphones className="w-4 h-4 mr-2" />
               Atendentes
             </TabsTrigger>
-            <TabsTrigger value="sessions" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+            <TabsTrigger value="sessions" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
               <MessageCircle className="w-4 h-4 mr-2" />
               Sessões
             </TabsTrigger>
-            <TabsTrigger value="metrics" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+            <TabsTrigger value="metrics" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
               <BarChart3 className="w-4 h-4 mr-2" />
               Métricas
             </TabsTrigger>
-            <TabsTrigger value="conversions" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+            <TabsTrigger value="conversions" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
               <TrendingUp className="w-4 h-4 mr-2" />
               Conversões
             </TabsTrigger>
-            <TabsTrigger value="visits" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+            <TabsTrigger value="visits" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
               <CalendarCheck className="w-4 h-4 mr-2" />
               Agendamentos
             </TabsTrigger>
-            <TabsTrigger value="financial" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+            <TabsTrigger value="financial" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
               <Wallet className="w-4 h-4 mr-2" />
               Financeiro
             </TabsTrigger>
-            <TabsTrigger value="omnichat" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+            <TabsTrigger value="omnichat" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
               <MessageSquare className="w-4 h-4 mr-2" />
               💬 Omnichat
             </TabsTrigger>
-            <TabsTrigger value="followup-alerts" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+            <TabsTrigger value="followup-alerts" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
               <BellRing className="w-4 h-4 mr-2" />
               Follow-ups
             </TabsTrigger>
-            <TabsTrigger value="chat-performance" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+            <TabsTrigger value="chat-performance" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
               <Zap className="w-4 h-4 mr-2" />
               💰 Performance Chat
             </TabsTrigger>
-            <TabsTrigger value="users" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+            <TabsTrigger value="users" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
               <UserCog className="w-4 h-4 mr-2" />
               Usuários
             </TabsTrigger>
-            <TabsTrigger value="seo" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+            <TabsTrigger value="seo" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
               <Search className="w-4 h-4 mr-2" />
               🔎 SEO Inteligente
             </TabsTrigger>
-            <TabsTrigger value="connections" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+            <TabsTrigger value="connections" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
               <MessageSquare className="w-4 h-4 mr-2" />
               Conexões Meta
             </TabsTrigger>
-            <TabsTrigger value="audit" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+            <TabsTrigger value="audit" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
               <FileText className="w-4 h-4 mr-2" />
               Auditoria
             </TabsTrigger>
-            <TabsTrigger value="captacao" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">
+            <TabsTrigger value="captacao" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
               <Home className="w-4 h-4 mr-2" />
               🏠 Captação
             </TabsTrigger>
@@ -554,34 +554,34 @@ const SuperAdminDashboard = () => {
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-4">
-            <Card className="bg-slate-800/50 border-slate-700">
+            <Card className="bg-white border-slate-200 shadow-sm">
               <CardHeader>
-                <CardTitle className="text-white">Últimas Atividades</CardTitle>
-                <CardDescription className="text-slate-400">
+                <CardTitle className="text-slate-800">Últimas Atividades</CardTitle>
+                <CardDescription className="text-slate-500">
                   Ações recentes dos super administradores
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
-                    <TableRow className="border-slate-700">
-                      <TableHead className="text-slate-300">Ação</TableHead>
-                      <TableHead className="text-slate-300">Data</TableHead>
-                      <TableHead className="text-slate-300">Detalhes</TableHead>
+                    <TableRow className="border-slate-200">
+                      <TableHead className="text-slate-600">Ação</TableHead>
+                      <TableHead className="text-slate-600">Data</TableHead>
+                      <TableHead className="text-slate-600">Detalhes</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {auditLogs.slice(0, 10).map((log) => (
-                      <TableRow key={log.id} className="border-slate-700">
+                      <TableRow key={log.id} className="border-slate-100">
                         <TableCell>
-                          <Badge variant="outline" className="border-amber-500/50 text-amber-400">
+                          <Badge variant="outline" className="border-amber-400 text-amber-600">
                             {log.action}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-slate-300">
+                        <TableCell className="text-slate-600">
                           {new Date(log.created_at).toLocaleString("pt-BR")}
                         </TableCell>
-                        <TableCell className="text-slate-400 text-sm">
+                        <TableCell className="text-slate-500 text-sm">
                           {log.target_table && `Tabela: ${log.target_table}`}
                           {log.metadata?.email && ` | ${log.metadata.email}`}
                         </TableCell>
@@ -673,51 +673,51 @@ const SuperAdminDashboard = () => {
 
           {/* Connections Tab */}
           <TabsContent value="connections" className="space-y-4">
-            <Card className="bg-slate-800/50 border-slate-700">
+            <Card className="bg-white border-slate-200 shadow-sm">
               <CardHeader>
-                <CardTitle className="text-white">Conexões Meta (BYO)</CardTitle>
-                <CardDescription className="text-slate-400">
+                <CardTitle className="text-slate-800">Conexões Meta (BYO)</CardTitle>
+                <CardDescription className="text-slate-500">
                   WhatsApp e Instagram Business conectados
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {connections.length === 0 ? (
-                  <p className="text-slate-400 text-center py-8">
+                  <p className="text-slate-500 text-center py-8">
                     Nenhuma conexão Meta configurada ainda.
                   </p>
                 ) : (
                   <Table>
                     <TableHeader>
-                      <TableRow className="border-slate-700">
-                        <TableHead className="text-slate-300">Canal</TableHead>
-                        <TableHead className="text-slate-300">Conta</TableHead>
-                        <TableHead className="text-slate-300">Status</TableHead>
-                        <TableHead className="text-slate-300">Última Atividade</TableHead>
+                      <TableRow className="border-slate-200">
+                        <TableHead className="text-slate-600">Canal</TableHead>
+                        <TableHead className="text-slate-600">Conta</TableHead>
+                        <TableHead className="text-slate-600">Status</TableHead>
+                        <TableHead className="text-slate-600">Última Atividade</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {connections.map((conn) => (
-                        <TableRow key={conn.id} className="border-slate-700">
+                        <TableRow key={conn.id} className="border-slate-100">
                           <TableCell>
-                            <Badge variant="outline" className="border-green-500/50 text-green-400">
+                            <Badge variant="outline" className="border-green-400 text-green-600">
                               {conn.channel_type}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-slate-300">
+                          <TableCell className="text-slate-600">
                             {conn.account_name || "N/A"}
                           </TableCell>
                           <TableCell>
                             <Badge 
                               className={
                                 conn.status === "active" 
-                                  ? "bg-green-500/20 text-green-400" 
-                                  : "bg-red-500/20 text-red-400"
+                                  ? "bg-green-50 text-green-600 border border-green-200" 
+                                  : "bg-red-50 text-red-600 border border-red-200"
                               }
                             >
                               {conn.status}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-slate-400">
+                          <TableCell className="text-slate-500">
                             {conn.last_activity_at 
                               ? new Date(conn.last_activity_at).toLocaleString("pt-BR")
                               : "Nunca"
@@ -734,42 +734,42 @@ const SuperAdminDashboard = () => {
 
           {/* Audit Tab */}
           <TabsContent value="audit" className="space-y-4">
-            <Card className="bg-slate-800/50 border-slate-700">
+            <Card className="bg-white border-slate-200 shadow-sm">
               <CardHeader>
-                <CardTitle className="text-white">Logs de Auditoria Completos</CardTitle>
-                <CardDescription className="text-slate-400">
+                <CardTitle className="text-slate-800">Logs de Auditoria Completos</CardTitle>
+                <CardDescription className="text-slate-500">
                   Histórico completo de ações do Super Admin
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
-                    <TableRow className="border-slate-700">
-                      <TableHead className="text-slate-300">Ação</TableHead>
-                      <TableHead className="text-slate-300">Admin ID</TableHead>
-                      <TableHead className="text-slate-300">Tabela Alvo</TableHead>
-                      <TableHead className="text-slate-300">Data/Hora</TableHead>
-                      <TableHead className="text-slate-300">Metadata</TableHead>
+                    <TableRow className="border-slate-200">
+                      <TableHead className="text-slate-600">Ação</TableHead>
+                      <TableHead className="text-slate-600">Admin ID</TableHead>
+                      <TableHead className="text-slate-600">Tabela Alvo</TableHead>
+                      <TableHead className="text-slate-600">Data/Hora</TableHead>
+                      <TableHead className="text-slate-600">Metadata</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {auditLogs.map((log) => (
-                      <TableRow key={log.id} className="border-slate-700">
+                      <TableRow key={log.id} className="border-slate-100">
                         <TableCell>
-                          <Badge variant="outline" className="border-amber-500/50 text-amber-400">
+                          <Badge variant="outline" className="border-amber-400 text-amber-600">
                             {log.action}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-slate-300 font-mono text-xs">
+                        <TableCell className="text-slate-600 font-mono text-xs">
                           {log.admin_user_id.slice(0, 8)}...
                         </TableCell>
-                        <TableCell className="text-slate-400">
+                        <TableCell className="text-slate-500">
                           {log.target_table || "-"}
                         </TableCell>
-                        <TableCell className="text-slate-300">
+                        <TableCell className="text-slate-600">
                           {new Date(log.created_at).toLocaleString("pt-BR")}
                         </TableCell>
-                        <TableCell className="text-slate-400 text-xs max-w-xs truncate">
+                        <TableCell className="text-slate-500 text-xs max-w-xs truncate">
                           {log.metadata ? JSON.stringify(log.metadata) : "-"}
                         </TableCell>
                       </TableRow>

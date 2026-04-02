@@ -309,13 +309,16 @@ export const OmnichatInboxPanel = () => {
   const chCfg = selectedConv ? channelConfig[selectedConv.channel] : null;
 
   return (
-    <div className="h-[calc(100vh-280px)] min-h-[600px] flex flex-col gap-3 flex-1">
+    <div className="h-[calc(100vh-280px)] min-h-[600px] flex flex-col gap-4 flex-1">
       {/* ═══ Top Bar ═══ */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
+      <div className="flex items-center justify-between flex-wrap gap-2 bg-white rounded-2xl px-5 py-3 shadow-sm border border-slate-100">
         <div className="flex items-center gap-3">
-          <h2 className="text-xl font-bold text-foreground">Omnichat</h2>
+          <div className="w-9 h-9 bg-amber-50 rounded-xl flex items-center justify-center">
+            <MessageSquare className="w-5 h-5 text-amber-600" />
+          </div>
+          <h2 className="text-lg font-bold text-slate-800">Omnichat</h2>
           {totalUnread > 0 && (
-            <span className="bg-destructive text-destructive-foreground text-xs font-bold px-2.5 py-1 rounded-full animate-pulse">
+            <span className="bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full animate-pulse shadow-sm shadow-red-500/30">
               {totalUnread} nova{totalUnread > 1 ? "s" : ""}
             </span>
           )}
@@ -325,34 +328,34 @@ export const OmnichatInboxPanel = () => {
             size="sm"
             variant={isOnline ? "default" : "outline"}
             onClick={toggleOnline}
-            className={`rounded-full transition-all ${isOnline
-              ? "bg-green-500 hover:bg-green-600 text-white shadow-lg shadow-green-500/25"
-              : "border-muted-foreground/30 text-muted-foreground"
+            className={`rounded-full transition-all text-xs font-medium ${isOnline
+              ? "bg-emerald-500 hover:bg-emerald-600 text-white shadow-md shadow-emerald-500/20"
+              : "border-slate-300 text-slate-500 hover:bg-slate-50"
             }`}
           >
-            {isOnline ? <Wifi className="w-4 h-4 mr-1.5" /> : <WifiOff className="w-4 h-4 mr-1.5" />}
+            {isOnline ? <Wifi className="w-3.5 h-3.5 mr-1.5" /> : <WifiOff className="w-3.5 h-3.5 mr-1.5" />}
             {isOnline ? "Online" : "Offline"}
           </Button>
-          <Button size="icon" variant="ghost" onClick={loadConversations} className="text-muted-foreground hover:text-foreground rounded-full">
+          <Button size="icon" variant="ghost" onClick={loadConversations} className="text-slate-400 hover:text-slate-600 rounded-full h-8 w-8">
             <RefreshCw className="w-4 h-4" />
           </Button>
         </div>
       </div>
 
       {/* ═══ 3-Column Layout ═══ */}
-      <div className={`flex-1 ${isMobile ? 'flex flex-col' : 'grid grid-cols-12 gap-3'} min-h-0`}>
+      <div className={`flex-1 ${isMobile ? 'flex flex-col' : 'grid grid-cols-12 gap-4'} min-h-0`}>
 
         {/* ━━━ COLUMN 1: Conversation List ━━━ */}
-        <div className={`${isMobile ? (selectedConv ? 'hidden' : 'flex-1') : 'col-span-4 xl:col-span-3'} bg-card border border-border rounded-2xl overflow-hidden flex flex-col shadow-sm`}>
+        <div className={`${isMobile ? (selectedConv ? 'hidden' : 'flex-1') : 'col-span-4 xl:col-span-3'} bg-white border border-slate-100 rounded-2xl overflow-hidden flex flex-col shadow-sm`}>
           {/* Search */}
-          <div className="p-3 border-b border-border">
+          <div className="p-3 border-b border-slate-100">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <Input
                 placeholder="Buscar conversa..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="pl-9 bg-muted/50 border-0 rounded-xl h-9 text-sm focus-visible:ring-1 focus-visible:ring-primary/50"
+                className="pl-9 bg-slate-50 border-slate-200 rounded-xl h-9 text-sm focus-visible:ring-1 focus-visible:ring-amber-400/50"
               />
             </div>
           </div>
@@ -360,17 +363,17 @@ export const OmnichatInboxPanel = () => {
           {/* Channel filter tabs */}
           <div className="px-3 pt-2 pb-1">
             <Tabs value={channelFilter} onValueChange={(v) => setChannelFilter(v as any)}>
-              <TabsList className="w-full bg-muted/50 h-8 rounded-lg p-0.5">
-                <TabsTrigger value="all" className="flex-1 text-xs h-7 rounded-md data-[state=active]:bg-card data-[state=active]:shadow-sm">
+              <TabsList className="w-full bg-slate-50 h-8 rounded-lg p-0.5 border border-slate-100">
+                <TabsTrigger value="all" className="flex-1 text-xs h-7 rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-slate-800">
                   Todos ({conversations.length})
                 </TabsTrigger>
-                <TabsTrigger value="whatsapp" className="flex-1 text-xs h-7 rounded-md data-[state=active]:bg-green-500/10 data-[state=active]:text-green-500">
+                <TabsTrigger value="whatsapp" className="flex-1 text-xs h-7 rounded-md data-[state=active]:bg-green-50 data-[state=active]:text-green-600">
                   <Phone className="w-3 h-3 mr-1" /> {conversations.filter(c => c.channel === "whatsapp").length}
                 </TabsTrigger>
-                <TabsTrigger value="instagram" className="flex-1 text-xs h-7 rounded-md data-[state=active]:bg-pink-500/10 data-[state=active]:text-pink-500">
+                <TabsTrigger value="instagram" className="flex-1 text-xs h-7 rounded-md data-[state=active]:bg-pink-50 data-[state=active]:text-pink-600">
                   <Instagram className="w-3 h-3 mr-1" /> {conversations.filter(c => c.channel === "instagram").length}
                 </TabsTrigger>
-                <TabsTrigger value="webchat" className="flex-1 text-xs h-7 rounded-md data-[state=active]:bg-blue-500/10 data-[state=active]:text-blue-500">
+                <TabsTrigger value="webchat" className="flex-1 text-xs h-7 rounded-md data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">
                   <Globe className="w-3 h-3 mr-1" /> {conversations.filter(c => c.channel === "webchat").length}
                 </TabsTrigger>
               </TabsList>
@@ -398,7 +401,7 @@ export const OmnichatInboxPanel = () => {
                     <button
                       key={conv.id}
                       onClick={() => setSelectedConv(conv)}
-                      className={`w-full text-left px-3 py-2.5 flex items-center gap-3 transition-all hover:bg-muted/50 ${isActive ? "bg-primary/5 border-l-2 border-l-primary" : "border-l-2 border-l-transparent"}`}
+                      className={`w-full text-left px-3 py-2.5 flex items-center gap-3 transition-all hover:bg-slate-50 ${isActive ? "bg-amber-50/60 border-l-2 border-l-amber-500" : "border-l-2 border-l-transparent"}`}
                     >
                       {/* Avatar */}
                       <div className="relative shrink-0">
@@ -445,11 +448,11 @@ export const OmnichatInboxPanel = () => {
         </div>
 
         {/* ━━━ COLUMN 2: Active Chat ━━━ */}
-        <div className={`${isMobile ? (selectedConv ? 'flex-1' : 'hidden') : 'col-span-5 xl:col-span-6'} bg-card border border-border rounded-2xl flex flex-col overflow-hidden shadow-sm`}>
+        <div className={`${isMobile ? (selectedConv ? 'flex-1' : 'hidden') : 'col-span-5 xl:col-span-6'} bg-white border border-slate-100 rounded-2xl flex flex-col overflow-hidden shadow-sm`}>
           {selectedConv ? (
             <>
               {/* Chat header */}
-              <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+              <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-white">
                 <div className="flex items-center gap-2">
                   {isMobile && (
                     <Button size="icon" variant="ghost" className="rounded-full h-8 w-8 text-muted-foreground" onClick={() => setSelectedConv(null)}>
@@ -486,7 +489,7 @@ export const OmnichatInboxPanel = () => {
               </div>
 
               {/* Messages */}
-              <ScrollArea className="flex-1 bg-muted/20">
+              <ScrollArea className="flex-1 bg-slate-50/50">
                 <div className="p-4 space-y-3">
                   {messages.map(msg => {
                     const isClient = msg.sender_type === "client";
@@ -495,10 +498,10 @@ export const OmnichatInboxPanel = () => {
                       <div key={msg.id} className={`flex ${isClient ? "justify-start" : "justify-end"}`}>
                         <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 shadow-sm ${
                           isClient
-                            ? "bg-card border border-border text-foreground rounded-bl-md"
+                            ? "bg-white border border-slate-200 text-slate-800 rounded-bl-md"
                             : isBot
-                            ? "bg-blue-500/10 text-foreground border border-blue-500/20 rounded-br-md"
-                            : "bg-green-600 text-white rounded-br-md"
+                            ? "bg-blue-50 text-slate-800 border border-blue-100 rounded-br-md"
+                            : "bg-emerald-500 text-white rounded-br-md shadow-md shadow-emerald-500/15"
                         }`}>
                           {isClient && (
                             <span className="text-[10px] font-medium text-muted-foreground flex items-center gap-1 mb-1">
@@ -526,13 +529,13 @@ export const OmnichatInboxPanel = () => {
               </ScrollArea>
 
               {/* Input area */}
-              <div className="p-3 border-t border-border bg-card">
+              <div className="p-3 border-t border-slate-100 bg-white">
                 <div className="flex gap-2 items-center">
                   <Input
                     value={newMessage}
                     onChange={e => setNewMessage(e.target.value)}
                     placeholder="Digite sua mensagem..."
-                    className="flex-1 rounded-xl bg-muted/50 border-0 h-10 focus-visible:ring-1 focus-visible:ring-primary/50"
+                    className="flex-1 rounded-xl bg-slate-50 border-slate-200 h-10 focus-visible:ring-1 focus-visible:ring-amber-400/50"
                     onKeyDown={e => e.key === "Enter" && !e.shiftKey && handleSend()}
                     disabled={selectedConv.status === "closed"}
                   />
@@ -540,7 +543,7 @@ export const OmnichatInboxPanel = () => {
                     size="icon"
                     onClick={handleSend}
                     disabled={!newMessage.trim() || isSending || selectedConv.status === "closed"}
-                    className="rounded-full h-10 w-10 bg-green-500 hover:bg-green-600 text-white shadow-md shadow-green-500/20"
+                    className="rounded-full h-10 w-10 bg-emerald-500 hover:bg-emerald-600 text-white shadow-md shadow-emerald-500/20"
                   >
                     <Send className="w-4 h-4" />
                   </Button>
@@ -563,7 +566,7 @@ export const OmnichatInboxPanel = () => {
         </div>
 
         {/* ━━━ COLUMN 3: Contact Details ━━━ */}
-        <div className={`${isMobile ? 'hidden' : 'col-span-3'} bg-card border border-border rounded-2xl overflow-auto shadow-sm`}>
+        <div className={`${isMobile ? 'hidden' : 'col-span-3'} bg-white border border-slate-100 rounded-2xl overflow-auto shadow-sm`}>
           {selectedConv ? (
             <div className="p-4 space-y-5">
               {/* Profile */}
@@ -609,7 +612,7 @@ export const OmnichatInboxPanel = () => {
               </div>
 
               {/* Info grid */}
-              <div className="space-y-3 bg-muted/30 rounded-xl p-3">
+              <div className="space-y-3 bg-slate-50 rounded-xl p-3 border border-slate-100">
                 <DetailRow label="Canal" value={
                   <Badge className={`${chCfg?.bgLight} ${chCfg?.textColor} border-0 text-[10px]`}>{selectedConv.channel}</Badge>
                 } />
