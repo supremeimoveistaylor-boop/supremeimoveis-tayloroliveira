@@ -345,10 +345,10 @@ const SuperAdminDashboard = () => {
   // Block rendering until server-side validation completes
   if (loading || !serverValidated || validationFailed) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <div className="text-center">
           <RefreshCw className="w-8 h-8 text-amber-500 animate-spin mx-auto mb-4" />
-          <p className="text-slate-400 text-sm">
+          <p className="text-slate-500 text-sm">
             {validationFailed ? "Acesso negado..." : "Validando permissões..."}
           </p>
         </div>
