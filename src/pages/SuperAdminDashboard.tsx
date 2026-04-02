@@ -673,51 +673,51 @@ const SuperAdminDashboard = () => {
 
           {/* Connections Tab */}
           <TabsContent value="connections" className="space-y-4">
-            <Card className="bg-slate-800/50 border-slate-700">
+            <Card className="bg-white border-slate-200 shadow-sm">
               <CardHeader>
-                <CardTitle className="text-white">Conexões Meta (BYO)</CardTitle>
-                <CardDescription className="text-slate-400">
+                <CardTitle className="text-slate-800">Conexões Meta (BYO)</CardTitle>
+                <CardDescription className="text-slate-500">
                   WhatsApp e Instagram Business conectados
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {connections.length === 0 ? (
-                  <p className="text-slate-400 text-center py-8">
+                  <p className="text-slate-500 text-center py-8">
                     Nenhuma conexão Meta configurada ainda.
                   </p>
                 ) : (
                   <Table>
                     <TableHeader>
-                      <TableRow className="border-slate-700">
-                        <TableHead className="text-slate-300">Canal</TableHead>
-                        <TableHead className="text-slate-300">Conta</TableHead>
-                        <TableHead className="text-slate-300">Status</TableHead>
-                        <TableHead className="text-slate-300">Última Atividade</TableHead>
+                      <TableRow className="border-slate-200">
+                        <TableHead className="text-slate-600">Canal</TableHead>
+                        <TableHead className="text-slate-600">Conta</TableHead>
+                        <TableHead className="text-slate-600">Status</TableHead>
+                        <TableHead className="text-slate-600">Última Atividade</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {connections.map((conn) => (
-                        <TableRow key={conn.id} className="border-slate-700">
+                        <TableRow key={conn.id} className="border-slate-100">
                           <TableCell>
-                            <Badge variant="outline" className="border-green-500/50 text-green-400">
+                            <Badge variant="outline" className="border-green-400 text-green-600">
                               {conn.channel_type}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-slate-300">
+                          <TableCell className="text-slate-600">
                             {conn.account_name || "N/A"}
                           </TableCell>
                           <TableCell>
                             <Badge 
                               className={
                                 conn.status === "active" 
-                                  ? "bg-green-500/20 text-green-400" 
-                                  : "bg-red-500/20 text-red-400"
+                                  ? "bg-green-50 text-green-600 border border-green-200" 
+                                  : "bg-red-50 text-red-600 border border-red-200"
                               }
                             >
                               {conn.status}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-slate-400">
+                          <TableCell className="text-slate-500">
                             {conn.last_activity_at 
                               ? new Date(conn.last_activity_at).toLocaleString("pt-BR")
                               : "Nunca"
