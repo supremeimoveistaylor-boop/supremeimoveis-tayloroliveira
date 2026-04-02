@@ -369,6 +369,9 @@ export const OmnichatInboxPanel = () => {
                 <TabsTrigger value="instagram" className="flex-1 text-xs h-7 rounded-md data-[state=active]:bg-pink-500/10 data-[state=active]:text-pink-500">
                   <Instagram className="w-3 h-3 mr-1" /> {conversations.filter(c => c.channel === "instagram").length}
                 </TabsTrigger>
+                <TabsTrigger value="webchat" className="flex-1 text-xs h-7 rounded-md data-[state=active]:bg-blue-500/10 data-[state=active]:text-blue-500">
+                  <Globe className="w-3 h-3 mr-1" /> {conversations.filter(c => c.channel === "webchat").length}
+                </TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
