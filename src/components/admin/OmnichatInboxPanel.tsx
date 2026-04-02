@@ -98,7 +98,7 @@ export const OmnichatInboxPanel = () => {
   const [selectedConv, setSelectedConv] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
-  const [channelFilter, setChannelFilter] = useState<"all" | "whatsapp" | "instagram">("all");
+  const [channelFilter, setChannelFilter] = useState<"all" | "whatsapp" | "instagram" | "webchat">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [isOnline, setIsOnline] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
