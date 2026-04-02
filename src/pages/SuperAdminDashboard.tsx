@@ -416,59 +416,59 @@ const SuperAdminDashboard = () => {
       <main className="container mx-auto px-4 py-8">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                  <Users className="w-6 h-6 text-blue-500" />
+                <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
+                  <Users className="w-6 h-6 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-white">{userRoles.length}</p>
-                  <p className="text-sm text-slate-400">Usuários com Roles</p>
+                  <p className="text-2xl font-bold text-slate-800">{userRoles.length}</p>
+                  <p className="text-sm text-slate-500">Usuários com Roles</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-amber-500/20 rounded-lg flex items-center justify-center">
-                  <Shield className="w-6 h-6 text-amber-500" />
+                <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center">
+                  <Shield className="w-6 h-6 text-amber-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-white">
+                  <p className="text-2xl font-bold text-slate-800">
                     {userRoles.filter(r => r.role === "super_admin").length}
                   </p>
-                  <p className="text-sm text-slate-400">Super Admins</p>
+                  <p className="text-sm text-slate-500">Super Admins</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
-                  <MessageSquare className="w-6 h-6 text-green-500" />
+                <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center">
+                  <MessageSquare className="w-6 h-6 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-white">{connections.length}</p>
-                  <p className="text-sm text-slate-400">Conexões Meta</p>
+                  <p className="text-2xl font-bold text-slate-800">{connections.length}</p>
+                  <p className="text-sm text-slate-500">Conexões Meta</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center">
-                  <Activity className="w-6 h-6 text-purple-500" />
+                <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center">
+                  <Activity className="w-6 h-6 text-purple-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-white">{auditLogs.length}</p>
-                  <p className="text-sm text-slate-400">Logs de Auditoria</p>
+                  <p className="text-2xl font-bold text-slate-800">{auditLogs.length}</p>
+                  <p className="text-sm text-slate-500">Logs de Auditoria</p>
                 </div>
               </div>
             </CardContent>
