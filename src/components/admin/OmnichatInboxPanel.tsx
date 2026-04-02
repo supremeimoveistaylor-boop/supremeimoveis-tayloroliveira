@@ -19,7 +19,7 @@ interface Conversation {
   id: string;
   user_id: string;
   lead_id: string | null;
-  channel: "whatsapp" | "instagram";
+  channel: "whatsapp" | "instagram" | "webchat";
   external_contact_id: string;
   contact_name: string | null;
   contact_phone: string | null;
