@@ -489,7 +489,7 @@ export const OmnichatInboxPanel = () => {
               </div>
 
               {/* Messages */}
-              <ScrollArea className="flex-1 bg-muted/20">
+              <ScrollArea className="flex-1 bg-slate-50/50">
                 <div className="p-4 space-y-3">
                   {messages.map(msg => {
                     const isClient = msg.sender_type === "client";
