@@ -85,9 +85,10 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(hours / 24)}d`;
 }
 
-const channelConfig = {
+const channelConfig: Record<string, { icon: any; color: string; textColor: string; bgLight: string; label: string }> = {
   whatsapp: { icon: Phone, color: "bg-green-500", textColor: "text-green-400", bgLight: "bg-green-500/10", label: "WhatsApp" },
   instagram: { icon: Instagram, color: "bg-gradient-to-br from-purple-500 to-pink-500", textColor: "text-pink-400", bgLight: "bg-pink-500/10", label: "Instagram" },
+  webchat: { icon: Globe, color: "bg-blue-500", textColor: "text-blue-400", bgLight: "bg-blue-500/10", label: "Chat" },
 };
 
 export const OmnichatInboxPanel = () => {
