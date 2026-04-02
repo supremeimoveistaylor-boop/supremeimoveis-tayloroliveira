@@ -198,12 +198,13 @@ export const OmnichatInboxPanel = () => {
           body: JSON.stringify({ to: selectedConv.external_contact_id, message: newMessage.trim() }),
         });
         if (!res.ok) throw new Error("Falha ao enviar WhatsApp");
-      } else {
+      } else if (selectedConv.channel === "instagram") {
         const res = await supabase.functions.invoke("send-instagram-message", {
           body: { recipient_id: selectedConv.external_contact_id, message: newMessage.trim(), connection_id: selectedConv.connection_id },
         });
         if (res.error) throw res.error;
       }
+      // webchat: no external API needed, just save the message below
       await supabase.from("omnichat_messages" as any).insert({
         conversation_id: selectedConv.id, sender_type: "agent", channel: selectedConv.channel, content: newMessage.trim(), status: "sent",
       } as any);
