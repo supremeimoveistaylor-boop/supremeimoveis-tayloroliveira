@@ -92,6 +92,7 @@ const channelConfig: Record<string, { icon: any; color: string; textColor: strin
 };
 
 export const OmnichatInboxPanel = () => {
+  const isMobile = useIsMobile();
   const { user, session } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConv, setSelectedConv] = useState<Conversation | null>(null);
