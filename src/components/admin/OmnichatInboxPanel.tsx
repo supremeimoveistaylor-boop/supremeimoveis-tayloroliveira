@@ -566,7 +566,7 @@ export const OmnichatInboxPanel = () => {
         </div>
 
         {/* ━━━ COLUMN 3: Contact Details ━━━ */}
-        <div className={`${isMobile ? 'hidden' : 'col-span-3'} bg-card border border-border rounded-2xl overflow-auto shadow-sm`}>
+        <div className={`${isMobile ? 'hidden' : 'col-span-3'} bg-white border border-slate-100 rounded-2xl overflow-auto shadow-sm`}>
           {selectedConv ? (
             <div className="p-4 space-y-5">
               {/* Profile */}
