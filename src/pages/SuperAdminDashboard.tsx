@@ -734,42 +734,42 @@ const SuperAdminDashboard = () => {
 
           {/* Audit Tab */}
           <TabsContent value="audit" className="space-y-4">
-            <Card className="bg-slate-800/50 border-slate-700">
+            <Card className="bg-white border-slate-200 shadow-sm">
               <CardHeader>
-                <CardTitle className="text-white">Logs de Auditoria Completos</CardTitle>
-                <CardDescription className="text-slate-400">
+                <CardTitle className="text-slate-800">Logs de Auditoria Completos</CardTitle>
+                <CardDescription className="text-slate-500">
                   Histórico completo de ações do Super Admin
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
-                    <TableRow className="border-slate-700">
-                      <TableHead className="text-slate-300">Ação</TableHead>
-                      <TableHead className="text-slate-300">Admin ID</TableHead>
-                      <TableHead className="text-slate-300">Tabela Alvo</TableHead>
-                      <TableHead className="text-slate-300">Data/Hora</TableHead>
-                      <TableHead className="text-slate-300">Metadata</TableHead>
+                    <TableRow className="border-slate-200">
+                      <TableHead className="text-slate-600">Ação</TableHead>
+                      <TableHead className="text-slate-600">Admin ID</TableHead>
+                      <TableHead className="text-slate-600">Tabela Alvo</TableHead>
+                      <TableHead className="text-slate-600">Data/Hora</TableHead>
+                      <TableHead className="text-slate-600">Metadata</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {auditLogs.map((log) => (
-                      <TableRow key={log.id} className="border-slate-700">
+                      <TableRow key={log.id} className="border-slate-100">
                         <TableCell>
-                          <Badge variant="outline" className="border-amber-500/50 text-amber-400">
+                          <Badge variant="outline" className="border-amber-400 text-amber-600">
                             {log.action}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-slate-300 font-mono text-xs">
+                        <TableCell className="text-slate-600 font-mono text-xs">
                           {log.admin_user_id.slice(0, 8)}...
                         </TableCell>
-                        <TableCell className="text-slate-400">
+                        <TableCell className="text-slate-500">
                           {log.target_table || "-"}
                         </TableCell>
-                        <TableCell className="text-slate-300">
+                        <TableCell className="text-slate-600">
                           {new Date(log.created_at).toLocaleString("pt-BR")}
                         </TableCell>
-                        <TableCell className="text-slate-400 text-xs max-w-xs truncate">
+                        <TableCell className="text-slate-500 text-xs max-w-xs truncate">
                           {log.metadata ? JSON.stringify(log.metadata) : "-"}
                         </TableCell>
                       </TableRow>
