@@ -543,7 +543,7 @@ export const OmnichatInboxPanel = () => {
                     size="icon"
                     onClick={handleSend}
                     disabled={!newMessage.trim() || isSending || selectedConv.status === "closed"}
-                    className="rounded-full h-10 w-10 bg-green-500 hover:bg-green-600 text-white shadow-md shadow-green-500/20"
+                    className="rounded-full h-10 w-10 bg-emerald-500 hover:bg-emerald-600 text-white shadow-md shadow-emerald-500/20"
                   >
                     <Send className="w-4 h-4" />
                   </Button>
