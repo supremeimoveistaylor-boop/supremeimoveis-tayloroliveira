@@ -60,12 +60,12 @@ serve(async (req) => {
       console.log('[Meta OAuth] Client origin:', clientOrigin);
 
       if (error) {
-        const redirectUrl = `${clientOrigin}/#/super-admin?tab=omnichat&error=auth_denied`;
+        const redirectUrl = `${clientOrigin}/super-admin?tab=omnichat&error=auth_denied`;
         return new Response(null, { status: 302, headers: { 'Location': redirectUrl } });
       }
 
       if (!code || !user_id) {
-        const redirectUrl = `${clientOrigin}/#/super-admin?tab=omnichat&error=missing_params`;
+        const redirectUrl = `${clientOrigin}/super-admin?tab=omnichat&error=missing_params`;
         return new Response(null, { status: 302, headers: { 'Location': redirectUrl } });
       }
     } else {
@@ -100,7 +100,7 @@ serve(async (req) => {
     if (tokenData.error) {
       console.error('[Meta OAuth] Token exchange error:', tokenData.error);
       if (isGetRequest) {
-        const redirectUrl = `${clientOrigin}/#/super-admin?tab=omnichat&error=token_exchange`;
+        const redirectUrl = `${clientOrigin}/super-admin?tab=omnichat&error=token_exchange`;
         return new Response(null, { status: 302, headers: { 'Location': redirectUrl } });
       }
       return new Response(JSON.stringify({ error: 'Token exchange failed', details: tokenData.error }), {
@@ -347,7 +347,7 @@ serve(async (req) => {
         : 'Nenhuma conta business encontrada. Certifique-se de ter uma conta WhatsApp Business ou Instagram Business vinculada.';
       
       if (isGetRequest) {
-        const redirectUrl = `${clientOrigin}/#/super-admin?tab=omnichat&error=no_accounts`;
+        const redirectUrl = `${clientOrigin}/super-admin?tab=omnichat&error=no_accounts`;
         return new Response(null, { status: 302, headers: { 'Location': redirectUrl } });
       }
       return new Response(JSON.stringify({ error: 'No accounts found', message: errorMsg }), {
@@ -359,7 +359,7 @@ serve(async (req) => {
 
     if (isGetRequest) {
       const channelNames = connections.map((c: any) => c.channel_type).join(',');
-      const redirectUrl = `${clientOrigin}/#/super-admin?tab=omnichat&success=true&channels=${channelNames}`;
+      const redirectUrl = `${clientOrigin}/super-admin?tab=omnichat&success=true&channels=${channelNames}`;
       return new Response(null, { status: 302, headers: { 'Location': redirectUrl } });
     }
 
@@ -382,7 +382,7 @@ serve(async (req) => {
       }
     } catch (_) {}
     if (req.method === 'GET') {
-      const redirectUrl = `${errorOrigin}/#/super-admin?tab=omnichat&error=internal`;
+      const redirectUrl = `${errorOrigin}/super-admin?tab=omnichat&error=internal`;
       return new Response(null, { status: 302, headers: { 'Location': redirectUrl } });
     }
     return new Response(JSON.stringify({ error: 'Internal server error', message: error.message }), {
