@@ -203,7 +203,7 @@ export const ChatPerformancePanel = () => {
         <Card className="bg-white border-slate-200">
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                 <MessageSquare className="w-6 h-6 text-blue-500" />
               </div>
               <div>
@@ -217,7 +217,7 @@ export const ChatPerformancePanel = () => {
         <Card className="bg-white border-slate-200">
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                 <UserCheck className="w-6 h-6 text-green-500" />
               </div>
               <div>
@@ -231,7 +231,7 @@ export const ChatPerformancePanel = () => {
         <Card className="bg-white border-slate-200">
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-amber-500/20 rounded-lg flex items-center justify-center">
+              <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
                 <TrendingUp className="w-6 h-6 text-amber-500" />
               </div>
               <div>
@@ -245,7 +245,7 @@ export const ChatPerformancePanel = () => {
         <Card className="bg-white border-slate-200">
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-red-500/20 rounded-lg flex items-center justify-center">
+              <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
                 <Users className="w-6 h-6 text-red-500" />
               </div>
               <div>
@@ -337,15 +337,15 @@ export const ChatPerformancePanel = () => {
               <p className="text-sm text-slate-500">Msgs/Lead (média)</p>
             </div>
             <div>
-              <p className="text-3xl font-bold text-green-400">{stats.categoryCounts['alto_padrao'] || 0}</p>
+              <p className="text-3xl font-bold text-green-600">{stats.categoryCounts['alto_padrao'] || 0}</p>
               <p className="text-sm text-slate-500">Leads Alto Padrão</p>
             </div>
             <div>
-              <p className="text-3xl font-bold text-blue-400">{stats.categoryCounts['medio_padrao'] || 0}</p>
+              <p className="text-3xl font-bold text-blue-600">{stats.categoryCounts['medio_padrao'] || 0}</p>
               <p className="text-sm text-slate-500">Leads Médio Padrão</p>
             </div>
             <div>
-              <p className="text-3xl font-bold text-yellow-400">{stats.categoryCounts['economico'] || 0}</p>
+              <p className="text-3xl font-bold text-yellow-600">{stats.categoryCounts['economico'] || 0}</p>
               <p className="text-sm text-slate-500">Leads Econômico</p>
             </div>
           </div>

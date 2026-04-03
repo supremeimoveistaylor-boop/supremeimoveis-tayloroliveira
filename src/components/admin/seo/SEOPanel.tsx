@@ -107,7 +107,7 @@ export function SEOPanel() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin text-emerald-400" />
+        <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
         <span className="ml-3 text-slate-500">Carregando configurações SEO...</span>
       </div>
     );
@@ -242,7 +242,7 @@ export function SEOPanel() {
                 />
                 <div className="flex flex-wrap gap-1 mt-1">
                   {globalConfig.keywords.map((kw, i) => (
-                    <Badge key={i} variant="outline" className="border-emerald-500/50 text-emerald-400 text-xs">{kw}</Badge>
+                    <Badge key={i} variant="outline" className="border-emerald-300 text-emerald-600 text-xs">{kw}</Badge>
                   ))}
                 </div>
               </div>
@@ -254,7 +254,7 @@ export function SEOPanel() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-1">
-                    <p className="text-blue-400 text-lg hover:underline cursor-pointer truncate">
+                    <p className="text-blue-600 text-lg hover:underline cursor-pointer truncate">
                       {globalConfig.defaultTitle}
                     </p>
                     <p className="text-emerald-500 text-sm">{globalConfig.canonicalBase}</p>
@@ -384,7 +384,7 @@ export function SEOPanel() {
                 <CardHeader>
                   <CardTitle className="text-slate-800 flex items-center gap-2">
                     ❓ FAQ Estruturado
-                    <Badge variant="outline" className="border-emerald-500/50 text-emerald-400">
+                    <Badge variant="outline" className="border-emerald-300 text-emerald-600">
                       {(selectedPage?.faqItems || []).length} perguntas
                     </Badge>
                   </CardTitle>
@@ -411,7 +411,7 @@ export function SEOPanel() {
                             rows={2}
                           />
                         </div>
-                        <Button variant="ghost" size="icon" onClick={() => removeFaq(i)} className="text-red-400 hover:text-red-300 shrink-0">
+                        <Button variant="ghost" size="icon" onClick={() => removeFaq(i)} className="text-red-600 hover:text-red-300 shrink-0">
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
@@ -442,7 +442,7 @@ export function SEOPanel() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-1">
-                    <p className="text-blue-400 text-base hover:underline cursor-pointer truncate">
+                    <p className="text-blue-600 text-base hover:underline cursor-pointer truncate">
                       {selectedPage?.metaTitle || generateDynamicTitle(globalConfig, selectedPage)}
                     </p>
                     <p className="text-emerald-500 text-xs">
@@ -518,7 +518,7 @@ export function SEOPanel() {
                   <CardTitle className="text-sm text-slate-500">✨ Title Gerado Automaticamente</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-blue-400">
+                  <p className="text-blue-600">
                     {selectedPage?.propertyType
                       ? `${selectedPage.propertyType}${selectedPage.neighborhood ? ` no ${selectedPage.neighborhood}` : ""} em ${globalConfig.city} | ${globalConfig.companyName}`
                       : "Preencha o tipo de imóvel para gerar"
@@ -548,7 +548,7 @@ export function SEOPanel() {
                     <Badge
                       key={i}
                       variant="outline"
-                      className="border-emerald-500/30 text-emerald-400 text-xs cursor-pointer hover:bg-emerald-500/10"
+                      className="border-emerald-500/30 text-emerald-600 text-xs cursor-pointer hover:bg-emerald-500/10"
                       onClick={() => {
                         updatePage("focusKeyword", kw);
                         toast({ title: "Keyword definida", description: `"${kw}" definida como palavra-chave foco.` });
@@ -579,7 +579,7 @@ export function SEOPanel() {
                 </div>
               </CardHeader>
               <CardContent>
-                <pre className="bg-slate-900 rounded-lg p-4 text-xs text-emerald-400 overflow-auto max-h-60">
+                <pre className="bg-slate-900 rounded-lg p-4 text-xs text-emerald-600 overflow-auto max-h-60">
                   {schemaLocalBusiness}
                 </pre>
               </CardContent>
@@ -598,7 +598,7 @@ export function SEOPanel() {
                 </div>
               </CardHeader>
               <CardContent>
-                <pre className="bg-slate-900 rounded-lg p-4 text-xs text-emerald-400 overflow-auto max-h-60">
+                <pre className="bg-slate-900 rounded-lg p-4 text-xs text-emerald-600 overflow-auto max-h-60">
                   {schemaFAQ}
                 </pre>
               </CardContent>
@@ -647,7 +647,7 @@ export function SEOPanel() {
                 </div>
               </CardHeader>
               <CardContent>
-                <pre className="bg-slate-900 rounded-lg p-4 text-xs text-blue-400 overflow-auto max-h-60 whitespace-pre-wrap">
+                <pre className="bg-slate-900 rounded-lg p-4 text-xs text-blue-600 overflow-auto max-h-60 whitespace-pre-wrap">
 {`<title>${selectedPage?.metaTitle || globalConfig.defaultTitle}</title>
 <meta name="description" content="${selectedPage?.metaDescription || globalConfig.defaultDescription}">
 <link rel="canonical" href="${globalConfig.canonicalBase}${selectedPage?.slug}">

@@ -106,17 +106,17 @@ export function FollowupAlertsPanel() {
   const getStageBadgeClass = (alert: FollowupAlert) => {
     if (alert.alert_type === 'lead_followup') {
       const classes: Record<number, string> = {
-        1: 'bg-blue-500/20 text-blue-400',
-        2: 'bg-purple-500/20 text-purple-400',
-        3: 'bg-orange-500/20 text-orange-400',
-        4: 'bg-red-500/20 text-red-400',
+        1: 'bg-blue-100 text-blue-600',
+        2: 'bg-purple-100 text-purple-600',
+        3: 'bg-orange-100 text-orange-600',
+        4: 'bg-red-100 text-red-600',
       };
       return classes[alert.stage] || '';
     }
     const classes: Record<number, string> = {
-      0: 'bg-yellow-500/20 text-yellow-400',
-      1: 'bg-orange-500/20 text-orange-400',
-      2: 'bg-red-500/20 text-red-400',
+      0: 'bg-yellow-100 text-yellow-600',
+      1: 'bg-orange-100 text-orange-600',
+      2: 'bg-red-100 text-red-600',
     };
     return classes[alert.stage] || '';
   };
@@ -128,7 +128,7 @@ export function FollowupAlertsPanel() {
         <Card className="bg-white border-slate-200">
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center gap-3">
-              <Bell className="w-5 h-5 text-blue-400" />
+              <Bell className="w-5 h-5 text-blue-600" />
               <div>
                 <p className="text-xl font-bold text-slate-800">{alerts.length}</p>
                 <p className="text-xs text-slate-500">Total Alertas</p>
@@ -139,7 +139,7 @@ export function FollowupAlertsPanel() {
         <Card className="bg-white border-slate-200">
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center gap-3">
-              <MessageSquare className="w-5 h-5 text-purple-400" />
+              <MessageSquare className="w-5 h-5 text-purple-600" />
               <div>
                 <p className="text-xl font-bold text-slate-800">{leadFollowups.length}</p>
                 <p className="text-xs text-slate-500">Follow-ups Lead</p>
@@ -161,7 +161,7 @@ export function FollowupAlertsPanel() {
         <Card className="bg-white border-slate-200">
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center gap-3">
-              <Clock className="w-5 h-5 text-green-400" />
+              <Clock className="w-5 h-5 text-green-600" />
               <div>
                 <p className="text-xl font-bold text-slate-800">{nurturingAlerts.length}</p>
                 <p className="text-xs text-slate-500">Nutrição Frios</p>
@@ -172,7 +172,7 @@ export function FollowupAlertsPanel() {
         <Card className="bg-white border-slate-200">
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center gap-3">
-              {failedCount > 0 ? <XCircle className="w-5 h-5 text-red-400" /> : <CheckCircle className="w-5 h-5 text-green-400" />}
+              {failedCount > 0 ? <XCircle className="w-5 h-5 text-red-600" /> : <CheckCircle className="w-5 h-5 text-green-600" />}
               <div>
                 <p className="text-xl font-bold text-slate-800">{sentCount}/{sentCount + failedCount}</p>
                 <p className="text-xs text-slate-500">Enviados/Total</p>
@@ -237,7 +237,7 @@ export function FollowupAlertsPanel() {
                         {campaigns.map((camp) => (
                           <TableRow key={camp.id} className="border-slate-200">
                             <TableCell>
-                              <Badge variant="outline" className={camp.campaign_type === 'novo_imovel' ? 'border-blue-500/50 text-blue-400' : 'border-orange-500/50 text-orange-400'}>
+                              <Badge variant="outline" className={camp.campaign_type === 'novo_imovel' ? 'border-blue-300 text-blue-600' : 'border-orange-300 text-orange-600'}>
                                 {camp.campaign_type === 'novo_imovel' ? '🏠 Novo' : '📉 Queda'}
                               </Badge>
                             </TableCell>
@@ -256,8 +256,8 @@ export function FollowupAlertsPanel() {
                                 <div>
                                   <span className="line-through text-slate-500">R$ {Number(camp.old_price).toLocaleString('pt-BR')}</span>
                                   <br />
-                                  <span className="text-green-400 font-medium">R$ {Number(camp.new_price).toLocaleString('pt-BR')}</span>
-                                  {camp.metadata?.discount_percent && <span className="text-orange-400 ml-1">-{camp.metadata.discount_percent}%</span>}
+                                  <span className="text-green-600 font-medium">R$ {Number(camp.new_price).toLocaleString('pt-BR')}</span>
+                                  {camp.metadata?.discount_percent && <span className="text-orange-600 ml-1">-{camp.metadata.discount_percent}%</span>}
                                 </div>
                               ) : camp.new_price ? (
                                 <span>R$ {Number(camp.new_price).toLocaleString('pt-BR')}</span>
@@ -265,9 +265,9 @@ export function FollowupAlertsPanel() {
                             </TableCell>
                             <TableCell>
                               {camp.status === 'sent' ? (
-                                <Badge className="bg-green-500/20 text-green-400"><CheckCircle className="w-3 h-3 mr-1" />Enviado</Badge>
+                                <Badge className="bg-green-100 text-green-600"><CheckCircle className="w-3 h-3 mr-1" />Enviado</Badge>
                               ) : (
-                                <Badge className="bg-red-500/20 text-red-400"><XCircle className="w-3 h-3 mr-1" />Falhou</Badge>
+                                <Badge className="bg-red-100 text-red-600"><XCircle className="w-3 h-3 mr-1" />Falhou</Badge>
                               )}
                             </TableCell>
                             <TableCell className="text-slate-600 text-xs whitespace-nowrap">
@@ -310,9 +310,9 @@ export function FollowupAlertsPanel() {
                           <TableRow key={alert.id} className="border-slate-200">
                             <TableCell>
                               <Badge variant="outline" className={
-                                alert.alert_type === 'lead_followup' ? 'border-purple-500/50 text-purple-400' 
-                                : alert.alert_type === 'nurturing' ? 'border-green-500/50 text-green-400'
-                                : 'border-amber-500/50 text-amber-600'
+                                alert.alert_type === 'lead_followup' ? 'border-purple-500/50 text-purple-600' 
+                                : alert.alert_type === 'nurturing' ? 'border-green-300 text-green-600'
+                                : 'border-amber-300 text-amber-600'
                               }>
                                 {alert.alert_type === 'lead_followup' ? 'Lead' : alert.alert_type === 'nurturing' ? 'Nutrição' : 'Corretor'}
                                </Badge>
@@ -331,9 +331,9 @@ export function FollowupAlertsPanel() {
                             </TableCell>
                             <TableCell>
                               {alert.status === 'sent' ? (
-                                <Badge className="bg-green-500/20 text-green-400"><CheckCircle className="w-3 h-3 mr-1" />Enviado</Badge>
+                                <Badge className="bg-green-100 text-green-600"><CheckCircle className="w-3 h-3 mr-1" />Enviado</Badge>
                               ) : (
-                                <Badge className="bg-red-500/20 text-red-400"><XCircle className="w-3 h-3 mr-1" />Falhou</Badge>
+                                <Badge className="bg-red-100 text-red-600"><XCircle className="w-3 h-3 mr-1" />Falhou</Badge>
                               )}
                             </TableCell>
                             <TableCell className="text-slate-500 text-xs max-w-[250px]">

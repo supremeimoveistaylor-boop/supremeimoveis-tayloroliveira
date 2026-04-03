@@ -61,17 +61,17 @@ const ROLE_LABELS: Record<string, { label: string; icon: React.ReactNode; classN
   super_admin: {
     label: "Super Admin",
     icon: <ShieldCheck className="w-3 h-3" />,
-    className: "bg-amber-500/20 text-amber-600 border-amber-500/50",
+    className: "bg-amber-100 text-amber-600 border-amber-300",
   },
   admin: {
     label: "Admin",
     icon: <Shield className="w-3 h-3" />,
-    className: "bg-blue-500/20 text-blue-400 border-blue-500/50",
+    className: "bg-blue-100 text-blue-600 border-blue-300",
   },
   user: {
     label: "Usuário",
     icon: <User className="w-3 h-3" />,
-    className: "bg-slate-500/20 text-slate-500 border-slate-500/50",
+    className: "bg-slate-100 text-slate-500 border-slate-300",
   },
 };
 
@@ -354,7 +354,7 @@ export const SuperAdminUsersPanel = ({ currentUserId }: SuperAdminUsersPanelProp
                 placeholder="Buscar por ID, nome ou role..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-slate-50 border-slate-200 text-slate-800 placeholder:text-slate-500"
+                className="pl-10 bg-slate-50 border-slate-200 text-slate-800 placeholder:text-slate-400"
               />
             </div>
             
@@ -376,7 +376,7 @@ export const SuperAdminUsersPanel = ({ currentUserId }: SuperAdminUsersPanelProp
                 </SelectItem>
                 <SelectItem value="admin" className="text-slate-800 focus:bg-slate-100">
                   <span className="flex items-center gap-2">
-                    <Shield className="w-3 h-3 text-blue-400" />
+                    <Shield className="w-3 h-3 text-blue-600" />
                     Admin
                   </span>
                 </SelectItem>
@@ -426,7 +426,7 @@ export const SuperAdminUsersPanel = ({ currentUserId }: SuperAdminUsersPanelProp
               <p className="text-xs text-slate-500">Super Admins</p>
             </div>
             <div className="bg-slate-50 rounded-lg p-3 text-center">
-              <p className="text-2xl font-bold text-blue-400">
+              <p className="text-2xl font-bold text-blue-600">
                 {users.filter((u) => u.roles.includes("admin")).length}
               </p>
               <p className="text-xs text-slate-500">Admins</p>
@@ -462,7 +462,7 @@ export const SuperAdminUsersPanel = ({ currentUserId }: SuperAdminUsersPanelProp
                           <p className="text-xs text-slate-500 font-mono">
                             {user.user_id.slice(0, 8)}...
                             {user.user_id === currentUserId && (
-                              <Badge className="ml-2 bg-green-500/20 text-green-400 text-xs">
+                              <Badge className="ml-2 bg-green-100 text-green-600 text-xs">
                                 Você
                               </Badge>
                             )}
@@ -501,7 +501,7 @@ export const SuperAdminUsersPanel = ({ currentUserId }: SuperAdminUsersPanelProp
                             size="sm"
                             variant="outline"
                             onClick={() => openAddRoleDialog(user)}
-                            className="border-green-500/50 text-green-400 hover:bg-green-500/20"
+                            className="border-green-300 text-green-600 hover:bg-green-100"
                           >
                             <Plus className="w-4 h-4 mr-1" />
                             Role
@@ -582,7 +582,7 @@ export const SuperAdminUsersPanel = ({ currentUserId }: SuperAdminUsersPanelProp
               </Badge>{" "}
               deste usuário?
               {roleToRemove?.userId === currentUserId && (
-                <span className="block mt-2 text-red-400 font-medium">
+                <span className="block mt-2 text-red-600 font-medium">
                   ⚠️ Atenção: Este é seu próprio usuário!
                 </span>
               )}
