@@ -61,7 +61,7 @@ const ROLE_LABELS: Record<string, { label: string; icon: React.ReactNode; classN
   super_admin: {
     label: "Super Admin",
     icon: <ShieldCheck className="w-3 h-3" />,
-    className: "bg-amber-500/20 text-amber-400 border-amber-500/50",
+    className: "bg-amber-500/20 text-amber-600 border-amber-500/50",
   },
   admin: {
     label: "Admin",
@@ -71,7 +71,7 @@ const ROLE_LABELS: Record<string, { label: string; icon: React.ReactNode; classN
   user: {
     label: "Usuário",
     icon: <User className="w-3 h-3" />,
-    className: "bg-slate-500/20 text-slate-400 border-slate-500/50",
+    className: "bg-slate-500/20 text-slate-500 border-slate-500/50",
   },
 };
 
@@ -322,15 +322,15 @@ export const SuperAdminUsersPanel = ({ currentUserId }: SuperAdminUsersPanelProp
 
   return (
     <>
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card className="bg-white border-slate-200">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-white flex items-center gap-2">
+              <CardTitle className="text-slate-800 flex items-center gap-2">
                 <UserCog className="w-5 h-5" />
                 Gestão de Usuários e Roles
               </CardTitle>
-              <CardDescription className="text-slate-400">
+              <CardDescription className="text-slate-500">
                 Atribua e remova roles de usuários do sistema
               </CardDescription>
             </div>
@@ -338,7 +338,7 @@ export const SuperAdminUsersPanel = ({ currentUserId }: SuperAdminUsersPanelProp
               variant="outline"
               size="sm"
               onClick={fetchUsersAndRoles}
-              className="border-slate-600 text-slate-300 hover:bg-slate-700"
+              className="border-slate-200 text-slate-600 hover:bg-slate-100"
             >
               <RefreshCw className="w-4 h-4 mr-2" />
               Atualizar
@@ -349,45 +349,45 @@ export const SuperAdminUsersPanel = ({ currentUserId }: SuperAdminUsersPanelProp
           {/* Search and Filters */}
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
               <Input
                 placeholder="Buscar por ID, nome ou role..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400"
+                className="pl-10 bg-slate-50 border-slate-200 text-slate-800 placeholder:text-slate-500"
               />
             </div>
             
             {/* Role Filter */}
             <Select value={roleFilter} onValueChange={(val) => setRoleFilter(val as typeof roleFilter)}>
-              <SelectTrigger className="w-full sm:w-[180px] bg-slate-700/50 border-slate-600 text-white">
-                <Filter className="w-4 h-4 mr-2 text-slate-400" />
+              <SelectTrigger className="w-full sm:w-[180px] bg-slate-50 border-slate-200 text-slate-800">
+                <Filter className="w-4 h-4 mr-2 text-slate-500" />
                 <SelectValue placeholder="Filtrar por role" />
               </SelectTrigger>
-              <SelectContent className="bg-slate-700 border-slate-600">
-                <SelectItem value="all" className="text-white focus:bg-slate-600">
+              <SelectContent className="bg-slate-100 border-slate-200">
+                <SelectItem value="all" className="text-slate-800 focus:bg-slate-100">
                   <span className="flex items-center gap-2">Todas as roles</span>
                 </SelectItem>
-                <SelectItem value="super_admin" className="text-white focus:bg-slate-600">
+                <SelectItem value="super_admin" className="text-slate-800 focus:bg-slate-100">
                   <span className="flex items-center gap-2">
-                    <ShieldCheck className="w-3 h-3 text-amber-400" />
+                    <ShieldCheck className="w-3 h-3 text-amber-600" />
                     Super Admin
                   </span>
                 </SelectItem>
-                <SelectItem value="admin" className="text-white focus:bg-slate-600">
+                <SelectItem value="admin" className="text-slate-800 focus:bg-slate-100">
                   <span className="flex items-center gap-2">
                     <Shield className="w-3 h-3 text-blue-400" />
                     Admin
                   </span>
                 </SelectItem>
-                <SelectItem value="user" className="text-white focus:bg-slate-600">
+                <SelectItem value="user" className="text-slate-800 focus:bg-slate-100">
                   <span className="flex items-center gap-2">
-                    <User className="w-3 h-3 text-slate-400" />
+                    <User className="w-3 h-3 text-slate-500" />
                     Usuário
                   </span>
                 </SelectItem>
-                <SelectItem value="no_roles" className="text-white focus:bg-slate-600">
-                  <span className="text-slate-400">Sem roles</span>
+                <SelectItem value="no_roles" className="text-slate-800 focus:bg-slate-100">
+                  <span className="text-slate-500">Sem roles</span>
                 </SelectItem>
               </SelectContent>
             </Select>
@@ -397,7 +397,7 @@ export const SuperAdminUsersPanel = ({ currentUserId }: SuperAdminUsersPanelProp
               variant="outline"
               size="default"
               onClick={() => setSortOrder(sortOrder === "newest" ? "oldest" : "newest")}
-              className="border-slate-600 text-slate-300 hover:bg-slate-700 w-full sm:w-auto"
+              className="border-slate-200 text-slate-600 hover:bg-slate-100 w-full sm:w-auto"
             >
               {sortOrder === "newest" ? (
                 <>
@@ -415,51 +415,51 @@ export const SuperAdminUsersPanel = ({ currentUserId }: SuperAdminUsersPanelProp
 
           {/* Stats */}
           <div className="grid grid-cols-3 gap-4">
-            <div className="bg-slate-700/30 rounded-lg p-3 text-center">
-              <p className="text-2xl font-bold text-white">{users.length}</p>
-              <p className="text-xs text-slate-400">Total Usuários</p>
+            <div className="bg-slate-50 rounded-lg p-3 text-center">
+              <p className="text-2xl font-bold text-slate-800">{users.length}</p>
+              <p className="text-xs text-slate-500">Total Usuários</p>
             </div>
-            <div className="bg-slate-700/30 rounded-lg p-3 text-center">
-              <p className="text-2xl font-bold text-amber-400">
+            <div className="bg-slate-50 rounded-lg p-3 text-center">
+              <p className="text-2xl font-bold text-amber-600">
                 {users.filter((u) => u.roles.includes("super_admin")).length}
               </p>
-              <p className="text-xs text-slate-400">Super Admins</p>
+              <p className="text-xs text-slate-500">Super Admins</p>
             </div>
-            <div className="bg-slate-700/30 rounded-lg p-3 text-center">
+            <div className="bg-slate-50 rounded-lg p-3 text-center">
               <p className="text-2xl font-bold text-blue-400">
                 {users.filter((u) => u.roles.includes("admin")).length}
               </p>
-              <p className="text-xs text-slate-400">Admins</p>
+              <p className="text-xs text-slate-500">Admins</p>
             </div>
           </div>
 
           {/* Users Table */}
-          <div className="rounded-lg border border-slate-700 overflow-hidden">
+          <div className="rounded-lg border border-slate-200 overflow-hidden">
             <Table>
               <TableHeader>
-                <TableRow className="border-slate-700 bg-slate-800/50">
-                  <TableHead className="text-slate-300">Usuário</TableHead>
-                  <TableHead className="text-slate-300">Roles</TableHead>
-                  <TableHead className="text-slate-300">Criado em</TableHead>
-                  <TableHead className="text-slate-300 text-right">Ações</TableHead>
+                <TableRow className="border-slate-200 bg-white">
+                  <TableHead className="text-slate-600">Usuário</TableHead>
+                  <TableHead className="text-slate-600">Roles</TableHead>
+                  <TableHead className="text-slate-600">Criado em</TableHead>
+                  <TableHead className="text-slate-600 text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredUsers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center text-slate-400 py-8">
+                    <TableCell colSpan={4} className="text-center text-slate-500 py-8">
                       Nenhum usuário encontrado
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredUsers.map((user) => (
-                    <TableRow key={user.user_id} className="border-slate-700">
+                    <TableRow key={user.user_id} className="border-slate-200">
                       <TableCell>
                         <div>
-                          <p className="text-white font-medium">
+                          <p className="text-slate-800 font-medium">
                             {user.full_name || "Sem nome"}
                           </p>
-                          <p className="text-xs text-slate-400 font-mono">
+                          <p className="text-xs text-slate-500 font-mono">
                             {user.user_id.slice(0, 8)}...
                             {user.user_id === currentUserId && (
                               <Badge className="ml-2 bg-green-500/20 text-green-400 text-xs">
@@ -492,7 +492,7 @@ export const SuperAdminUsersPanel = ({ currentUserId }: SuperAdminUsersPanelProp
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="text-slate-400 text-sm">
+                      <TableCell className="text-slate-500 text-sm">
                         {new Date(user.created_at).toLocaleDateString("pt-BR")}
                       </TableCell>
                       <TableCell className="text-right">
@@ -519,28 +519,28 @@ export const SuperAdminUsersPanel = ({ currentUserId }: SuperAdminUsersPanelProp
 
       {/* Add Role Dialog */}
       <AlertDialog open={showAddRoleDialog} onOpenChange={setShowAddRoleDialog}>
-        <AlertDialogContent className="bg-slate-800 border-slate-700">
+        <AlertDialogContent className="bg-slate-100 border-slate-200">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">Atribuir Role</AlertDialogTitle>
-            <AlertDialogDescription className="text-slate-400">
+            <AlertDialogTitle className="text-slate-800">Atribuir Role</AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-500">
               Selecione a role para atribuir ao usuário{" "}
-              <span className="text-white font-medium">
+              <span className="text-slate-800 font-medium">
                 {selectedUser?.full_name || selectedUser?.user_id.slice(0, 8)}
               </span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-4">
             <Select value={selectedRole} onValueChange={(val) => setSelectedRole(val as "" | "user" | "admin" | "super_admin")}>
-              <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+              <SelectTrigger className="bg-slate-100 border-slate-200 text-slate-800">
                 <SelectValue placeholder="Selecione uma role" />
               </SelectTrigger>
-              <SelectContent className="bg-slate-700 border-slate-600">
+              <SelectContent className="bg-slate-100 border-slate-200">
                 {selectedUser &&
                   getAvailableRoles(selectedUser).map((role) => (
                     <SelectItem
                       key={role}
                       value={role}
-                      className="text-white focus:bg-slate-600"
+                      className="text-slate-800 focus:bg-slate-100"
                     >
                       <div className="flex items-center gap-2">
                         {ROLE_LABELS[role]?.icon}
@@ -552,7 +552,7 @@ export const SuperAdminUsersPanel = ({ currentUserId }: SuperAdminUsersPanelProp
             </Select>
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600">
+            <AlertDialogCancel className="bg-slate-100 border-slate-200 text-slate-800 hover:bg-slate-100">
               Cancelar
             </AlertDialogCancel>
             <AlertDialogAction
@@ -572,10 +572,10 @@ export const SuperAdminUsersPanel = ({ currentUserId }: SuperAdminUsersPanelProp
 
       {/* Remove Role Dialog */}
       <AlertDialog open={showRemoveRoleDialog} onOpenChange={setShowRemoveRoleDialog}>
-        <AlertDialogContent className="bg-slate-800 border-slate-700">
+        <AlertDialogContent className="bg-slate-100 border-slate-200">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">Remover Role</AlertDialogTitle>
-            <AlertDialogDescription className="text-slate-400">
+            <AlertDialogTitle className="text-slate-800">Remover Role</AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-500">
               Tem certeza que deseja remover a role{" "}
               <Badge className={ROLE_LABELS[roleToRemove?.role || ""]?.className}>
                 {ROLE_LABELS[roleToRemove?.role || ""]?.label}
@@ -589,7 +589,7 @@ export const SuperAdminUsersPanel = ({ currentUserId }: SuperAdminUsersPanelProp
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600">
+            <AlertDialogCancel className="bg-slate-100 border-slate-200 text-slate-800 hover:bg-slate-100">
               Cancelar
             </AlertDialogCancel>
             <AlertDialogAction
