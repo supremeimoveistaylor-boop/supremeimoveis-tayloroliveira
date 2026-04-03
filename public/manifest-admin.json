@@ -2,7 +2,7 @@
   "name": "Supreme Admin Panel",
   "short_name": "Supreme Admin",
   "description": "Painel Administrativo Supreme Empreendimentos",
-  "start_url": "/#/super-admin",
+  "start_url": "/super-admin",
   "scope": "/",
   "display": "standalone",
   "background_color": "#000000",

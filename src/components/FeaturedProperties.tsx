@@ -153,7 +153,7 @@ export const FeaturedProperties = ({ filterPurpose }: { filterPurpose?: 'sale' |
   };
 
   const handleShare = async (propertyId: string, propertyTitle: string) => {
-    const url = `${window.location.origin}/#/property/${propertyId}`;
+    const url = `${window.location.origin}/property/${propertyId}`;
     
     try {
       // Copiar para área de transferência primeiro
@@ -325,7 +325,7 @@ export const FeaturedProperties = ({ filterPurpose }: { filterPurpose?: 'sale' |
                         variant="outline" 
                         className="rounded-full p-2 bg-blue-500 hover:bg-blue-600 text-white border-none"
                         onClick={() => {
-                          const url = `${window.location.origin}/#/property/${property.id}`;
+                          const url = `${window.location.origin}/property/${property.id}`;
                           window.open(url, '_blank', 'noopener,noreferrer');
                           navigator.clipboard.writeText(url).then(() => {
                             toast({
@@ -348,7 +348,7 @@ export const FeaturedProperties = ({ filterPurpose }: { filterPurpose?: 'sale' |
                         variant="outline" 
                         className="rounded-full p-2 bg-[#25D366] hover:bg-[#128C7E] text-white border-none"
                         onClick={() => {
-                          const url = `${window.location.origin}/#/property/${property.id}`;
+                          const url = `${window.location.origin}/property/${property.id}`;
                           const text = `Olá! Confira este imóvel: ${property.title} - ${formatPrice(property.price, property.purpose)}\n\n${url}`;
                           const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
                           window.open(whatsappUrl, '_blank', 'noopener,noreferrer');

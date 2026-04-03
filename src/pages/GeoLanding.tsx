@@ -73,7 +73,7 @@ const GeoLanding = () => {
     "@context": "https://schema.org",
     "@type": "RealEstateAgent",
     "name": "Supreme Negócios Imobiliários",
-    "url": `${CANONICAL_BASE}/#/imoveis/${type}/${slug}`,
+    "url": `${CANONICAL_BASE}/imoveis/${type}/${slug}`,
     "areaServed": {
       "@type": "Place",
       "name": `${locationName}, ${CITY}, GO`,

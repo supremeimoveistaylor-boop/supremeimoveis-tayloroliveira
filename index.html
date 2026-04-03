@@ -14,18 +14,15 @@
     <meta name="theme-color" content="#d4af37">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- HashRouter fallback: convert direct deep links (/buscar) into hash routes (/#/buscar) to avoid 404 on hosts without SPA rewrites -->
+    <!-- Meta OAuth callback handler -->
     <script>
       (function () {
         try {
           var path = window.location.pathname || "/";
-
-          // Meta OAuth callback handler — intercept before HashRouter redirect
           if (path === "/api/meta/oauth/callback" || path === "/api/meta/webhook") {
             var params = new URLSearchParams(window.location.search);
             var code = params.get("code");
             if (code) {
-              // For popup: post message back to opener and close
               if (window.opener) {
                 try {
                   window.opener.postMessage({ type: "META_OAUTH_CALLBACK", code: code }, "*");
@@ -35,25 +32,13 @@
                   return;
                 } catch(e) { /* fall through */ }
               }
-              // Not a popup - redirect to admin panel with code as hash param
-              window.location.replace(window.location.origin + "/#/admin-master-login?oauth_code=" + encodeURIComponent(code));
+              window.location.replace(window.location.origin + "/admin-master-login?oauth_code=" + encodeURIComponent(code));
               return;
             }
-            // No code param — just redirect to home
             window.location.replace(window.location.origin + "/");
             return;
           }
-
-          // HashRouter fallback: convert direct deep links (/buscar) into hash routes (/#/buscar)
-          // Also handle /share from PWA share_target
-          var hasHash = window.location.hash && window.location.hash.length > 1;
-          if (!hasHash && path !== "/") {
-            var newUrl = window.location.origin + "/#" + path + (window.location.search || "");
-            window.location.replace(newUrl);
-          }
-        } catch (e) {
-          // ignore
-        }
+        } catch (e) {}
       })();
     </script>
 

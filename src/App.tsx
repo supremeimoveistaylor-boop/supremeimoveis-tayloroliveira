@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { captureUTMParams } from "@/lib/utm-capture";
 
@@ -54,8 +54,7 @@ const App = () => (
         <Sonner />
         {/* Error boundary to avoid blank screens */}
           <ErrorBoundary>
-            <HashRouter>
-              
+            <BrowserRouter>
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/comprar" element={<Comprar />} />
@@ -97,9 +96,8 @@ const App = () => (
                 <Route path="/parcerias/imovel/:id" element={<ParceriasImovel />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
-                <Route path="*" element={<NotFound />} />
               </Routes>
-            </HashRouter>
+            </BrowserRouter>
           </ErrorBoundary>
       </TooltipProvider>
     </AuthProvider>
