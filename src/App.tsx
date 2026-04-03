@@ -96,7 +96,6 @@ const App = () => (
                 <Route path="/parcerias/imovel/:id" element={<ParceriasImovel />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
-                <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
           </ErrorBoundary>
