@@ -192,7 +192,7 @@ const PropertyDetails = () => {
       
       // Atualizar URL visível sem recarregar (para PWA/WebView)
       if (window.history && window.history.replaceState) {
-        const visibleUrl = `${window.location.origin}/#/imovel/${id}`;
+        const visibleUrl = `${window.location.origin}/imovel/${id}`;
         window.history.replaceState({ propertyId: id }, property.title, visibleUrl);
       }
     }
