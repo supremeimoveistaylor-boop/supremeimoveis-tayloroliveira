@@ -325,7 +325,7 @@ export const FeaturedProperties = ({ filterPurpose }: { filterPurpose?: 'sale' |
                         variant="outline" 
                         className="rounded-full p-2 bg-blue-500 hover:bg-blue-600 text-white border-none"
                         onClick={() => {
-                          const url = `${window.location.origin}/#/property/${property.id}`;
+                          const url = `${window.location.origin}/property/${property.id}`;
                           window.open(url, '_blank', 'noopener,noreferrer');
                           navigator.clipboard.writeText(url).then(() => {
                             toast({
