@@ -348,7 +348,7 @@ export const FeaturedProperties = ({ filterPurpose }: { filterPurpose?: 'sale' |
                         variant="outline" 
                         className="rounded-full p-2 bg-[#25D366] hover:bg-[#128C7E] text-white border-none"
                         onClick={() => {
-                          const url = `${window.location.origin}/#/property/${property.id}`;
+                          const url = `${window.location.origin}/property/${property.id}`;
                           const text = `Olá! Confira este imóvel: ${property.title} - ${formatPrice(property.price, property.purpose)}\n\n${url}`;
                           const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
                           window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
