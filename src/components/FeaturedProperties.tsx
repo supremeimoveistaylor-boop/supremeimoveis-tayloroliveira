@@ -153,7 +153,7 @@ export const FeaturedProperties = ({ filterPurpose }: { filterPurpose?: 'sale' |
   };
 
   const handleShare = async (propertyId: string, propertyTitle: string) => {
-    const url = `${window.location.origin}/#/property/${propertyId}`;
+    const url = `${window.location.origin}/property/${propertyId}`;
     
     try {
       // Copiar para área de transferência primeiro
