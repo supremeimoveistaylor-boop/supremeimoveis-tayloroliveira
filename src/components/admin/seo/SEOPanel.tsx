@@ -117,7 +117,7 @@ export function SEOPanel() {
     <Button 
       onClick={onClick} 
       disabled={isSaving}
-      className="bg-emerald-600 hover:bg-emerald-700 text-slate-800"
+      className="bg-emerald-600 hover:bg-emerald-700 text-white"
     >
       {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
       {label}
@@ -128,19 +128,19 @@ export function SEOPanel() {
     <div className="space-y-6">
       <Tabs value={activeSubTab} onValueChange={setActiveSubTab}>
         <TabsList className="bg-slate-50 border border-slate-200">
-          <TabsTrigger value="global" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-slate-800">
+          <TabsTrigger value="global" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
             <Globe className="w-4 h-4 mr-2" />
             Configurações Globais
           </TabsTrigger>
-          <TabsTrigger value="pages" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-slate-800">
+          <TabsTrigger value="pages" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
             <FileText className="w-4 h-4 mr-2" />
             SEO por Página
           </TabsTrigger>
-          <TabsTrigger value="local" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-slate-800">
+          <TabsTrigger value="local" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
             <MapPin className="w-4 h-4 mr-2" />
             SEO Local
           </TabsTrigger>
-          <TabsTrigger value="preview" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-slate-800">
+          <TabsTrigger value="preview" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
             <Eye className="w-4 h-4 mr-2" />
             Preview & Schema
           </TabsTrigger>
@@ -276,7 +276,7 @@ export function SEOPanel() {
                 size="sm"
                 onClick={() => setSelectedPageIdx(i)}
                 className={i === selectedPageIdx
-                  ? "bg-emerald-600 text-slate-800"
+                  ? "bg-emerald-600 text-white"
                   : "border-slate-200 text-slate-600 hover:bg-slate-100"
                 }
               >

@@ -204,11 +204,11 @@ export function FollowupAlertsPanel() {
         <CardContent>
           <Tabs value={filter} onValueChange={(v) => setFilter(v as any)} className="space-y-4">
             <TabsList className="bg-slate-50">
-              <TabsTrigger value="all" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">Todos</TabsTrigger>
-              <TabsTrigger value="lead_followup" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">Follow-ups Lead</TabsTrigger>
-              <TabsTrigger value="broker_reminder" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">Cobranças Corretor</TabsTrigger>
-              <TabsTrigger value="nurturing" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">Nutrição</TabsTrigger>
-              <TabsTrigger value="campaigns" className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900">Campanhas</TabsTrigger>
+              <TabsTrigger value="all" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white">Todos</TabsTrigger>
+              <TabsTrigger value="lead_followup" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white">Follow-ups Lead</TabsTrigger>
+              <TabsTrigger value="broker_reminder" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white">Cobranças Corretor</TabsTrigger>
+              <TabsTrigger value="nurturing" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white">Nutrição</TabsTrigger>
+              <TabsTrigger value="campaigns" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white">Campanhas</TabsTrigger>
             </TabsList>
 
             {/* Campaigns Tab */}
