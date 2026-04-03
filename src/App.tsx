@@ -54,8 +54,7 @@ const App = () => (
         <Sonner />
         {/* Error boundary to avoid blank screens */}
           <ErrorBoundary>
-            <HashRouter>
-              
+            <BrowserRouter>
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/comprar" element={<Comprar />} />
