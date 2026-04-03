@@ -157,7 +157,7 @@ export const ChatPerformancePanel = () => {
       <div className="flex items-center justify-center py-20">
         <div className="text-center">
           <BarChart3 className="w-8 h-8 text-amber-500 animate-pulse mx-auto mb-2" />
-          <p className="text-slate-400 text-sm">Carregando métricas do chat...</p>
+          <p className="text-slate-500 text-sm">Carregando métricas do chat...</p>
         </div>
       </div>
     );
@@ -167,9 +167,9 @@ export const ChatPerformancePanel = () => {
     <div className="space-y-6">
       {/* Gold Alerts */}
       {stats.goldAlerts.length > 0 && (
-        <Card className="bg-amber-900/30 border-amber-600/50">
+        <Card className="bg-amber-50 border-amber-200">
           <CardHeader>
-            <CardTitle className="text-amber-400 flex items-center gap-2">
+            <CardTitle className="text-amber-600 flex items-center gap-2">
               <AlertTriangle className="w-5 h-5" />
               🚨 Alertas de Ouro — {stats.goldAlerts.length} Lead(s) em Risco
             </CardTitle>
@@ -177,17 +177,17 @@ export const ChatPerformancePanel = () => {
           <CardContent>
             <div className="space-y-3">
               {stats.goldAlerts.map((alert, i) => (
-                <div key={i} className="flex items-center justify-between bg-amber-950/50 rounded-lg p-3 border border-amber-700/30">
+                <div key={i} className="flex items-center justify-between bg-amber-50 rounded-lg p-3 border border-amber-200">
                   <div>
-                    <p className="text-white font-medium">{alert.name || 'Sem nome'}</p>
-                    <p className="text-amber-300 text-sm">{alert.alertType} • {alert.phone || 'Sem telefone'}</p>
+                    <p className="text-slate-800 font-medium">{alert.name || 'Sem nome'}</p>
+                    <p className="text-amber-600 text-sm">{alert.alertType} • {alert.phone || 'Sem telefone'}</p>
                   </div>
                   <div className="text-right">
                     <Badge variant="destructive" className="bg-red-600">
                       <Clock className="w-3 h-3 mr-1" />
                       {alert.hoursInactive}h inativo
                     </Badge>
-                    <p className="text-xs text-slate-400 mt-1">
+                    <p className="text-xs text-slate-500 mt-1">
                       Score: {alert.lead_score || 0}
                     </p>
                   </div>
@@ -200,57 +200,57 @@ export const ChatPerformancePanel = () => {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className="bg-white border-slate-200">
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                 <MessageSquare className="w-6 h-6 text-blue-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-white">{stats.totalSessions}</p>
-                <p className="text-sm text-slate-400">Chats Iniciados</p>
+                <p className="text-2xl font-bold text-slate-800">{stats.totalSessions}</p>
+                <p className="text-sm text-slate-500">Chats Iniciados</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className="bg-white border-slate-200">
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                 <UserCheck className="w-6 h-6 text-green-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-white">{stats.sessionsWithLead}</p>
-                <p className="text-sm text-slate-400">Viraram Lead</p>
+                <p className="text-2xl font-bold text-slate-800">{stats.sessionsWithLead}</p>
+                <p className="text-sm text-slate-500">Viraram Lead</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className="bg-white border-slate-200">
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-amber-500/20 rounded-lg flex items-center justify-center">
+              <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
                 <TrendingUp className="w-6 h-6 text-amber-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-white">{stats.conversionRate.toFixed(1)}%</p>
-                <p className="text-sm text-slate-400">Conversão Chat</p>
+                <p className="text-2xl font-bold text-slate-800">{stats.conversionRate.toFixed(1)}%</p>
+                <p className="text-sm text-slate-500">Conversão Chat</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className="bg-white border-slate-200">
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-red-500/20 rounded-lg flex items-center justify-center">
+              <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
                 <Users className="w-6 h-6 text-red-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-white">{stats.abandonRate.toFixed(1)}%</p>
-                <p className="text-sm text-slate-400">Taxa Abandono</p>
+                <p className="text-2xl font-bold text-slate-800">{stats.abandonRate.toFixed(1)}%</p>
+                <p className="text-sm text-slate-500">Taxa Abandono</p>
               </div>
             </div>
           </CardContent>
@@ -260,9 +260,9 @@ export const ChatPerformancePanel = () => {
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Category Distribution */}
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className="bg-white border-slate-200">
           <CardHeader>
-            <CardTitle className="text-white text-lg">Leads por Categoria</CardTitle>
+            <CardTitle className="text-slate-800 text-lg">Leads por Categoria</CardTitle>
           </CardHeader>
           <CardContent>
             {categoryData.length > 0 ? (
@@ -292,17 +292,17 @@ export const ChatPerformancePanel = () => {
         </Card>
 
         {/* Recent Leads with Category */}
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className="bg-white border-slate-200">
           <CardHeader>
-            <CardTitle className="text-white text-lg">Últimos Leads do Chat</CardTitle>
+            <CardTitle className="text-slate-800 text-lg">Últimos Leads do Chat</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2 max-h-[300px] overflow-auto">
               {stats.recentLeads.slice(0, 15).map((lead, i) => (
-                <div key={i} className="flex items-center justify-between bg-slate-900/50 rounded p-2">
+                <div key={i} className="flex items-center justify-between bg-slate-50 rounded p-2">
                   <div className="flex-1 min-w-0">
-                    <p className="text-white text-sm font-medium truncate">{lead.name || 'Anônimo'}</p>
-                    <p className="text-slate-400 text-xs">{lead.phone || 'Sem telefone'}</p>
+                    <p className="text-slate-800 text-sm font-medium truncate">{lead.name || 'Anônimo'}</p>
+                    <p className="text-slate-500 text-xs">{lead.phone || 'Sem telefone'}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     {lead.lead_category && (
@@ -314,7 +314,7 @@ export const ChatPerformancePanel = () => {
                         {CATEGORY_LABELS[lead.lead_category]?.split(' ').slice(1).join(' ') || lead.lead_category}
                       </Badge>
                     )}
-                    <Badge variant="outline" className="text-xs border-slate-600 text-slate-400">
+                    <Badge variant="outline" className="text-xs border-slate-200 text-slate-500">
                       Score: {lead.lead_score || 0}
                     </Badge>
                   </div>
@@ -329,24 +329,24 @@ export const ChatPerformancePanel = () => {
       </div>
 
       {/* Avg Messages Stat */}
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card className="bg-white border-slate-200">
         <CardContent className="pt-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
             <div>
-              <p className="text-3xl font-bold text-amber-400">{stats.avgMessages}</p>
-              <p className="text-sm text-slate-400">Msgs/Lead (média)</p>
+              <p className="text-3xl font-bold text-amber-600">{stats.avgMessages}</p>
+              <p className="text-sm text-slate-500">Msgs/Lead (média)</p>
             </div>
             <div>
-              <p className="text-3xl font-bold text-green-400">{stats.categoryCounts['alto_padrao'] || 0}</p>
-              <p className="text-sm text-slate-400">Leads Alto Padrão</p>
+              <p className="text-3xl font-bold text-green-600">{stats.categoryCounts['alto_padrao'] || 0}</p>
+              <p className="text-sm text-slate-500">Leads Alto Padrão</p>
             </div>
             <div>
-              <p className="text-3xl font-bold text-blue-400">{stats.categoryCounts['medio_padrao'] || 0}</p>
-              <p className="text-sm text-slate-400">Leads Médio Padrão</p>
+              <p className="text-3xl font-bold text-blue-600">{stats.categoryCounts['medio_padrao'] || 0}</p>
+              <p className="text-sm text-slate-500">Leads Médio Padrão</p>
             </div>
             <div>
-              <p className="text-3xl font-bold text-yellow-400">{stats.categoryCounts['economico'] || 0}</p>
-              <p className="text-sm text-slate-400">Leads Econômico</p>
+              <p className="text-3xl font-bold text-yellow-600">{stats.categoryCounts['economico'] || 0}</p>
+              <p className="text-sm text-slate-500">Leads Econômico</p>
             </div>
           </div>
         </CardContent>
