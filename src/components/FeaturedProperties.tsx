@@ -302,15 +302,6 @@ export const FeaturedProperties = ({ filterPurpose }: { filterPurpose?: 'sale' |
                       </Badge>
                     </div>
                     <div className="absolute top-3 right-3 flex gap-2">
-                      {property.whatsapp_link && (
-                        <Button
-                          size="sm"
-                          className="rounded-full p-2 bg-green-500 hover:bg-green-600 text-white border-none"
-                          onClick={() => { trackWhatsAppClick('property_card', property.id, property.title); window.open(property.whatsapp_link, '_blank'); }}
-                        >
-                          <MessageCircle className="h-4 w-4" />
-                        </Button>
-                      )}
                       {property.youtube_link && (
                         <Button
                           size="sm"
