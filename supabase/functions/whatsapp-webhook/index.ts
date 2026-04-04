@@ -448,21 +448,22 @@ serve(async (req) => {
 
                         // Create CRM card
                         await supabase.from('crm_cards').insert({
-                          titulo: `Lead WhatsApp - ${leadName}`,
+                          titulo: isFromMetaAds ? `Lead Meta Ads - ${leadName || sanitizedPhone}` : `Lead WhatsApp - ${leadName}`,
                           cliente: leadName,
                           telefone: sanitizedPhone,
-                          coluna: 'leads',
-                          origem_lead: 'whatsapp',
+                          coluna: isFromMetaAds ? 'qualificacao' : 'leads',
+                          origem_lead: adSource,
                           source: adSource,
                           source_detail: isFromMetaAds ? 'click_to_whatsapp' : 'direct',
                           campaign: adCampaign || null,
                           medium: isFromMetaAds ? 'paid' : 'messaging',
-                          classificacao: 'frio',
-                          prioridade: 'normal',
+                          classificacao: isFromMetaAds ? 'quente' : 'frio',
+                          prioridade: isFromMetaAds ? 'alta' : 'normal',
                           lead_id: newLead.id,
-                          lead_score: 10,
-                          probabilidade_fechamento: 5,
+                          lead_score: isFromMetaAds ? 50 : 10,
+                          probabilidade_fechamento: isFromMetaAds ? 25 : 5,
                           valor_estimado: 0,
+                          notas: isFromMetaAds ? `Lead de anúncio Meta Ads\nCampanha: ${adCampaign || 'N/A'}\nHeadline: ${referral?.headline || 'N/A'}` : null,
                         });
                         
                         // Notify broker for EVERY new lead
