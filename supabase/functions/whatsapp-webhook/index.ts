@@ -431,6 +431,9 @@ serve(async (req) => {
                           medium: isFromMetaAds ? 'paid' : 'messaging',
                           campaign: adCampaign || null,
                           status: 'novo',
+                          lead_temperature: isFromMetaAds ? 'quente' : 'frio',
+                          qualification: isFromMetaAds ? 'quente' : 'frio',
+                          lead_score: isFromMetaAds ? 50 : 0,
                           page_url: adCampaign ? `meta_ads: ${adCampaign}` : undefined,
                         })
                         .select('id')
