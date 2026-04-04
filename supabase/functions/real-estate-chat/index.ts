@@ -227,6 +227,15 @@ interface PageProperty {
   property_type?: string;
 }
 
+interface AdContext {
+  source?: string;
+  campaign?: string;
+  headline?: string;
+  body?: string;
+  sourceUrl?: string;
+  sourceType?: string;
+}
+
 interface ChatRequest {
   messages: ChatMessage[];
   leadId?: string;
@@ -240,6 +249,10 @@ interface ChatRequest {
   clientName?: string;
   clientPhone?: string;
   skipLeadCreation?: boolean;
+  adContext?: AdContext;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
 }
 
 function validateMessages(messages: unknown): { valid: boolean; error?: string } {
