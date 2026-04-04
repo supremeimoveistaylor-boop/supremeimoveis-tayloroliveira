@@ -519,6 +519,9 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
           clientName: clientName || undefined,
           clientPhone: clientPhone || undefined,
           skipLeadCreation: !!effectiveLeadId,
+          utmSource: new URLSearchParams(window.location.search).get('utm_source') || undefined,
+          utmMedium: new URLSearchParams(window.location.search).get('utm_medium') || undefined,
+          utmCampaign: new URLSearchParams(window.location.search).get('utm_campaign') || undefined,
         }),
       });
 
