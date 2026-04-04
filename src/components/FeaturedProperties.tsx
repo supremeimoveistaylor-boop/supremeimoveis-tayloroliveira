@@ -302,15 +302,6 @@ export const FeaturedProperties = ({ filterPurpose }: { filterPurpose?: 'sale' |
                       </Badge>
                     </div>
                     <div className="absolute top-3 right-3 flex gap-2">
-                      {property.whatsapp_link && (
-                        <Button
-                          size="sm"
-                          className="rounded-full p-2 bg-green-500 hover:bg-green-600 text-white border-none"
-                          onClick={() => { trackWhatsAppClick('property_card', property.id, property.title); window.open(property.whatsapp_link, '_blank'); }}
-                        >
-                          <MessageCircle className="h-4 w-4" />
-                        </Button>
-                      )}
                       {property.youtube_link && (
                         <Button
                           size="sm"
@@ -342,20 +333,6 @@ export const FeaturedProperties = ({ filterPurpose }: { filterPurpose?: 'sale' |
                         aria-label={`Compartilhar ${property.title}`}
                       >
                         <Share2 className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        className="rounded-full p-2 bg-[#25D366] hover:bg-[#128C7E] text-white border-none"
-                        onClick={() => {
-                          const url = `${window.location.origin}/property/${property.id}`;
-                          const text = `Olá! Confira este imóvel: ${property.title} - ${formatPrice(property.price, property.purpose)}\n\n${url}`;
-                          const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
-                          window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
-                        }}
-                        aria-label={`Compartilhar ${property.title} no WhatsApp`}
-                      >
-                        <MessageCircle className="h-4 w-4" />
                       </Button>
                     </div>
                     <div className="absolute bottom-3 left-3">
