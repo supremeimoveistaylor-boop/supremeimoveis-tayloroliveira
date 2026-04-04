@@ -470,7 +470,8 @@ serve(async (req) => {
                         try {
                           const BROKER_WHATSAPP = '5562999918353';
                           const displayName = contactName || sanitizedPhone;
-                          const brokerMessage = `🚨 *Novo Lead WhatsApp*\n\n👤 Nome: ${displayName}\n📱 Telefone: ${sanitizedPhone}\n📍 Origem: WhatsApp\n💬 Mensagem: ${messageText.substring(0, 200) || '(mídia)'}\n\n📲 Responder: https://wa.me/${sanitizedPhone}`;
+                          const adTag = isFromMetaAds ? `\n📣 Campanha: ${adCampaign || 'Meta Ads'}\n🔥 Lead QUENTE de anúncio` : '';
+                          const brokerMessage = `🚨 *Novo Lead WhatsApp${isFromMetaAds ? ' (Meta Ads)' : ''}*\n\n👤 Nome: ${displayName}\n📱 Telefone: ${sanitizedPhone}\n📍 Origem: ${isFromMetaAds ? 'Meta Ads' : 'WhatsApp'}${adTag}\n💬 Mensagem: ${messageText.substring(0, 200) || '(mídia)'}\n\n📲 Responder: https://wa.me/${sanitizedPhone}`;
                           await fetch(`${SUPABASE_URL}/functions/v1/send-whatsapp`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
