@@ -197,7 +197,7 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { message, senderPhone, conversationId, contactName } = body;
+    const { message, senderPhone, conversationId, contactName, adContext } = body;
 
     if (!message || !conversationId) {
       return new Response(
