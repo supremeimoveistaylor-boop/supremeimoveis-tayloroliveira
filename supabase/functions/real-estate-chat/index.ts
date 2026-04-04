@@ -1633,7 +1633,7 @@ Me conta: você está procurando um imóvel para morar ou investir?"`;
         messages: [
           { 
             role: "system", 
-            content: SYSTEM_PROMPT + dynamicContext + openingInstruction
+            content: SYSTEM_PROMPT + dynamicContext + adContextInstruction + openingInstruction
           },
           ...messages,
         ],
