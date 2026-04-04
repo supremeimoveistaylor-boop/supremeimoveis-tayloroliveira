@@ -1492,7 +1492,8 @@ Entre em contato imediatamente.`;
     }
 
     // Contexto baseado na origem
-    const isFromAd = origin && (origin.toLowerCase().includes("meta") || origin.toLowerCase().includes("instagram") || origin.toLowerCase().includes("facebook") || origin.toLowerCase().includes("ads"));
+    const isFromAd = !!(adContext) || !!(utmSource && (utmSource.includes('meta') || utmSource.includes('facebook') || utmSource.includes('instagram') || utmMedium === 'paid' || utmMedium === 'cpc' || utmMedium === 'cpm')) || !!(origin && (origin.toLowerCase().includes("meta") || origin.toLowerCase().includes("instagram") || origin.toLowerCase().includes("facebook") || origin.toLowerCase().includes("ads")));
+    const adHeadline = adContext?.headline || adContext?.campaign || utmCampaign || null;
 
     if (hasSpecificProperty) {
       // FLUXO 1: Imóvel específico
