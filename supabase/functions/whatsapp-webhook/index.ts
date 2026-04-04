@@ -528,6 +528,14 @@ serve(async (req) => {
                           senderPhone,
                           conversationId: convId,
                           contactName,
+                          adContext: isFromMetaAds ? {
+                            source: adSource,
+                            campaign: adCampaign,
+                            headline: referral?.headline || null,
+                            body: referral?.body || null,
+                            sourceUrl: referral?.source_url || null,
+                            sourceType: referral?.source_type || null,
+                          } : null,
                         }),
                       });
                       const chatData = await chatRes.json();
