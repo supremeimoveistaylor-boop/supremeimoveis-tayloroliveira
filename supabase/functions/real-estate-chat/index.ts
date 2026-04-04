@@ -1560,19 +1560,34 @@ Posso anotar seu contato para que um consultor te ligue com as melhores opções
     // MENSAGEM DE ABERTURA
     // =====================================================
     let openingInstruction = "";
+    
+    // Meta Ads context injection (priority over other flows)
+    let adContextInstruction = "";
+    if (isFromAd && adHeadline) {
+      adContextInstruction = `\n\n═══ CONTEXTO META ADS (PRIORIDADE MÁXIMA) ═══
+Este visitante VEIO DE UM ANÚNCIO do Meta Ads. Ele está QUENTE.
+Campanha: "${adHeadline}"
+REGRAS:
+- CONTINUE exatamente o que o anúncio prometeu
+- Qualifique rápido: "Você está buscando pra morar ou investir?"
+- Lead de anúncio esfria rápido — seja objetivo e conduza para AGENDAMENTO
+═══════════════════════════════════════════════════`;
+    }
+
     if (messages.length === 0) {
-      if (hasSpecificProperty && propertyName) {
-        if (isFromAd) {
-          openingInstruction = `\n\nPRIMEIRA MENSAGEM (usar exatamente):
-"Olá 😊 Que bom te ver por aqui!
-Vi que você chegou pelo anúncio do ${propertyName}.
-Posso te ajudar com alguma informação?"`;
-        } else {
-          openingInstruction = `\n\nPRIMEIRA MENSAGEM (usar exatamente):
+      if (isFromAd) {
+        // Meta Ads specific opening — continuação do anúncio
+        const adProduct = adHeadline || propertyName || "um imóvel";
+        const nameGreeting = resolvedClientName ? `${resolvedClientName}` : "";
+        openingInstruction = `\n\nPRIMEIRA MENSAGEM (usar exatamente):
+"Oi${nameGreeting ? ` ${nameGreeting}` : ""} 😊 Vi que você se interessou por ${adProduct} 👀
+Vou te passar todos os detalhes.
+Você está buscando pra morar ou investir?"`;
+      } else if (hasSpecificProperty && propertyName) {
+        openingInstruction = `\n\nPRIMEIRA MENSAGEM (usar exatamente):
 "Olá 😊 Seja bem-vindo(a)!
 Vi que você está olhando o ${propertyName}.
 Posso te ajudar com alguma dúvida?"`;
-        }
       } else if (hasListingContext) {
         openingInstruction = `\n\nPRIMEIRA MENSAGEM (usar exatamente):
 "Olá 😊 Seja bem-vindo(a)!
