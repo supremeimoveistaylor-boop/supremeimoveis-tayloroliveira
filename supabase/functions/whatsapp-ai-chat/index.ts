@@ -197,7 +197,7 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { message, senderPhone, conversationId, contactName } = body;
+    const { message, senderPhone, conversationId, contactName, adContext } = body;
 
     if (!message || !conversationId) {
       return new Response(
@@ -275,17 +275,28 @@ serve(async (req) => {
       }
     }
 
-    let nameInstruction = '';
-    if (isNameMissing && nameAskCount === 0) {
-      nameInstruction = `\n\n🚨 INSTRUÇÃO PRIORITÁRIA: O nome do cliente ainda NÃO foi capturado. Na sua PRIMEIRA resposta, pergunte de forma natural: "Pra te atender melhor e te enviar as melhores opções, como posso te chamar?" — faça isso ANTES de qualquer outra coisa.`;
-    } else if (isNameMissing && nameAskCount === 1) {
-      nameInstruction = `\n\n🚨 INSTRUÇÃO: O nome do cliente ainda não foi identificado. Tente novamente de forma sutil: "Ah, e como posso te chamar pra te atender melhor?" — apenas mais uma tentativa.`;
+    // Build Meta Ads context instruction
+    let adInstruction = '';
+    if (adContext) {
+      const adHeadline = adContext.headline || adContext.campaign || 'um imóvel';
+      adInstruction = `\n\n═══ CONTEXTO META ADS (PRIORIDADE MÁXIMA) ═══
+Este lead VEIO DE UM ANÚNCIO do Meta Ads. Ele está QUENTE — responda em tom de CONTINUAÇÃO do anúncio.
+Campanha/Headline do anúncio: "${adHeadline}"
+
+REGRA OBRIGATÓRIA para leads de anúncio:
+- Na PRIMEIRA mensagem, NÃO use a abertura padrão. Use:
+  "Oi ${contactName && !isFallbackName(contactName) ? contactName : '[Nome]'}! Vi que você se interessou pelo ${adHeadline} 👀 Vou te passar todos os detalhes."
+- CONTINUE exatamente o que o anúncio prometeu (preço, região, tipo de imóvel)
+- Qualifique rápido: "Você está buscando pra morar ou investir?"
+- Este lead tem ALTA probabilidade de conversão — conduza direto para AGENDAMENTO
+- Urgência: Lead de anúncio esfria rápido. Seja objetivo e direto.
+═══════════════════════════════════════════════════`;
     }
 
     const aiMessages: Array<{ role: string; content: string }> = [];
     aiMessages.push({
       role: 'system',
-      content: SYSTEM_PROMPT + propertiesContext + nameInstruction + `\n\nNome do cliente: ${contactName || 'Não informado'}\nTelefone do cliente: ${senderPhone || 'Não informado'}`
+      content: SYSTEM_PROMPT + propertiesContext + adInstruction + nameInstruction + `\n\nNome do cliente: ${contactName || 'Não informado'}\nTelefone do cliente: ${senderPhone || 'Não informado'}`
     });
 
     if (history && history.length > 0) {

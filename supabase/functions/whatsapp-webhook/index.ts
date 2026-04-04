@@ -431,6 +431,9 @@ serve(async (req) => {
                           medium: isFromMetaAds ? 'paid' : 'messaging',
                           campaign: adCampaign || null,
                           status: 'novo',
+                          lead_temperature: isFromMetaAds ? 'quente' : 'frio',
+                          qualification: isFromMetaAds ? 'quente' : 'frio',
+                          lead_score: isFromMetaAds ? 50 : 0,
                           page_url: adCampaign ? `meta_ads: ${adCampaign}` : undefined,
                         })
                         .select('id')
@@ -445,28 +448,30 @@ serve(async (req) => {
 
                         // Create CRM card
                         await supabase.from('crm_cards').insert({
-                          titulo: `Lead WhatsApp - ${leadName}`,
+                          titulo: isFromMetaAds ? `Lead Meta Ads - ${leadName || sanitizedPhone}` : `Lead WhatsApp - ${leadName}`,
                           cliente: leadName,
                           telefone: sanitizedPhone,
-                          coluna: 'leads',
-                          origem_lead: 'whatsapp',
+                          coluna: isFromMetaAds ? 'qualificacao' : 'leads',
+                          origem_lead: adSource,
                           source: adSource,
                           source_detail: isFromMetaAds ? 'click_to_whatsapp' : 'direct',
                           campaign: adCampaign || null,
                           medium: isFromMetaAds ? 'paid' : 'messaging',
-                          classificacao: 'frio',
-                          prioridade: 'normal',
+                          classificacao: isFromMetaAds ? 'quente' : 'frio',
+                          prioridade: isFromMetaAds ? 'alta' : 'normal',
                           lead_id: newLead.id,
-                          lead_score: 10,
-                          probabilidade_fechamento: 5,
+                          lead_score: isFromMetaAds ? 50 : 10,
+                          probabilidade_fechamento: isFromMetaAds ? 25 : 5,
                           valor_estimado: 0,
+                          notas: isFromMetaAds ? `Lead de anúncio Meta Ads\nCampanha: ${adCampaign || 'N/A'}\nHeadline: ${referral?.headline || 'N/A'}` : null,
                         });
                         
                         // Notify broker for EVERY new lead
                         try {
                           const BROKER_WHATSAPP = '5562999918353';
                           const displayName = contactName || sanitizedPhone;
-                          const brokerMessage = `🚨 *Novo Lead WhatsApp*\n\n👤 Nome: ${displayName}\n📱 Telefone: ${sanitizedPhone}\n📍 Origem: WhatsApp\n💬 Mensagem: ${messageText.substring(0, 200) || '(mídia)'}\n\n📲 Responder: https://wa.me/${sanitizedPhone}`;
+                          const adTag = isFromMetaAds ? `\n📣 Campanha: ${adCampaign || 'Meta Ads'}\n🔥 Lead QUENTE de anúncio` : '';
+                          const brokerMessage = `🚨 *Novo Lead WhatsApp${isFromMetaAds ? ' (Meta Ads)' : ''}*\n\n👤 Nome: ${displayName}\n📱 Telefone: ${sanitizedPhone}\n📍 Origem: ${isFromMetaAds ? 'Meta Ads' : 'WhatsApp'}${adTag}\n💬 Mensagem: ${messageText.substring(0, 200) || '(mídia)'}\n\n📲 Responder: https://wa.me/${sanitizedPhone}`;
                           await fetch(`${SUPABASE_URL}/functions/v1/send-whatsapp`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
@@ -528,6 +533,14 @@ serve(async (req) => {
                           senderPhone,
                           conversationId: convId,
                           contactName,
+                          adContext: isFromMetaAds ? {
+                            source: adSource,
+                            campaign: adCampaign,
+                            headline: referral?.headline || null,
+                            body: referral?.body || null,
+                            sourceUrl: referral?.source_url || null,
+                            sourceType: referral?.source_type || null,
+                          } : null,
                         }),
                       });
                       const chatData = await chatRes.json();

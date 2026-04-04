@@ -227,6 +227,15 @@ interface PageProperty {
   property_type?: string;
 }
 
+interface AdContext {
+  source?: string;
+  campaign?: string;
+  headline?: string;
+  body?: string;
+  sourceUrl?: string;
+  sourceType?: string;
+}
+
 interface ChatRequest {
   messages: ChatMessage[];
   leadId?: string;
@@ -240,6 +249,10 @@ interface ChatRequest {
   clientName?: string;
   clientPhone?: string;
   skipLeadCreation?: boolean;
+  adContext?: AdContext;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
 }
 
 function validateMessages(messages: unknown): { valid: boolean; error?: string } {
@@ -297,7 +310,7 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { messages, leadId, leadImobId, propertyId, propertyName, pageUrl, origin, pageProperties, pageContext, clientName, clientPhone, skipLeadCreation } = body as ChatRequest;
+    const { messages, leadId, leadImobId, propertyId, propertyName, pageUrl, origin, pageProperties, pageContext, clientName, clientPhone, skipLeadCreation, adContext, utmSource, utmMedium, utmCampaign } = body as ChatRequest;
     
     const validation = validateMessages(messages);
     if (!validation.valid) {
@@ -1479,7 +1492,8 @@ Entre em contato imediatamente.`;
     }
 
     // Contexto baseado na origem
-    const isFromAd = origin && (origin.toLowerCase().includes("meta") || origin.toLowerCase().includes("instagram") || origin.toLowerCase().includes("facebook") || origin.toLowerCase().includes("ads"));
+    const isFromAd = !!(adContext) || !!(utmSource && (utmSource.includes('meta') || utmSource.includes('facebook') || utmSource.includes('instagram') || utmMedium === 'paid' || utmMedium === 'cpc' || utmMedium === 'cpm')) || !!(origin && (origin.toLowerCase().includes("meta") || origin.toLowerCase().includes("instagram") || origin.toLowerCase().includes("facebook") || origin.toLowerCase().includes("ads")));
+    const adHeadline = adContext?.headline || adContext?.campaign || utmCampaign || null;
 
     if (hasSpecificProperty) {
       // FLUXO 1: Imóvel específico
@@ -1546,19 +1560,34 @@ Posso anotar seu contato para que um consultor te ligue com as melhores opções
     // MENSAGEM DE ABERTURA
     // =====================================================
     let openingInstruction = "";
+    
+    // Meta Ads context injection (priority over other flows)
+    let adContextInstruction = "";
+    if (isFromAd && adHeadline) {
+      adContextInstruction = `\n\n═══ CONTEXTO META ADS (PRIORIDADE MÁXIMA) ═══
+Este visitante VEIO DE UM ANÚNCIO do Meta Ads. Ele está QUENTE.
+Campanha: "${adHeadline}"
+REGRAS:
+- CONTINUE exatamente o que o anúncio prometeu
+- Qualifique rápido: "Você está buscando pra morar ou investir?"
+- Lead de anúncio esfria rápido — seja objetivo e conduza para AGENDAMENTO
+═══════════════════════════════════════════════════`;
+    }
+
     if (messages.length === 0) {
-      if (hasSpecificProperty && propertyName) {
-        if (isFromAd) {
-          openingInstruction = `\n\nPRIMEIRA MENSAGEM (usar exatamente):
-"Olá 😊 Que bom te ver por aqui!
-Vi que você chegou pelo anúncio do ${propertyName}.
-Posso te ajudar com alguma informação?"`;
-        } else {
-          openingInstruction = `\n\nPRIMEIRA MENSAGEM (usar exatamente):
+      if (isFromAd) {
+        // Meta Ads specific opening — continuação do anúncio
+        const adProduct = adHeadline || propertyName || "um imóvel";
+        const nameGreeting = resolvedClientName ? `${resolvedClientName}` : "";
+        openingInstruction = `\n\nPRIMEIRA MENSAGEM (usar exatamente):
+"Oi${nameGreeting ? ` ${nameGreeting}` : ""} 😊 Vi que você se interessou por ${adProduct} 👀
+Vou te passar todos os detalhes.
+Você está buscando pra morar ou investir?"`;
+      } else if (hasSpecificProperty && propertyName) {
+        openingInstruction = `\n\nPRIMEIRA MENSAGEM (usar exatamente):
 "Olá 😊 Seja bem-vindo(a)!
 Vi que você está olhando o ${propertyName}.
 Posso te ajudar com alguma dúvida?"`;
-        }
       } else if (hasListingContext) {
         openingInstruction = `\n\nPRIMEIRA MENSAGEM (usar exatamente):
 "Olá 😊 Seja bem-vindo(a)!
@@ -1604,7 +1633,7 @@ Me conta: você está procurando um imóvel para morar ou investir?"`;
         messages: [
           { 
             role: "system", 
-            content: SYSTEM_PROMPT + dynamicContext + openingInstruction
+            content: SYSTEM_PROMPT + dynamicContext + adContextInstruction + openingInstruction
           },
           ...messages,
         ],
