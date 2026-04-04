@@ -310,7 +310,7 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { messages, leadId, leadImobId, propertyId, propertyName, pageUrl, origin, pageProperties, pageContext, clientName, clientPhone, skipLeadCreation } = body as ChatRequest;
+    const { messages, leadId, leadImobId, propertyId, propertyName, pageUrl, origin, pageProperties, pageContext, clientName, clientPhone, skipLeadCreation, adContext, utmSource, utmMedium, utmCampaign } = body as ChatRequest;
     
     const validation = validateMessages(messages);
     if (!validation.valid) {
