@@ -2252,6 +2252,7 @@ export type Database = {
         Args: { p_lead_id: string; p_property_id: string }
         Returns: string
       }
+      auto_cleanup_stale_crm_cards: { Args: never; Returns: Json }
       calculate_lead_score: { Args: { p_lead_id: string }; Returns: number }
       cascade_delete_lead: { Args: { p_lead_id: string }; Returns: Json }
       cleanup_old_chat_messages: { Args: never; Returns: number }
