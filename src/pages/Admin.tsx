@@ -24,6 +24,7 @@ import { CaptacaoImoveisPanel } from '@/components/admin/CaptacaoImoveisPanel';
 import { StorageCleanupPanel } from '@/components/admin/StorageCleanupPanel';
 import { BlogAdminPanel } from '@/components/admin/BlogAdminPanel';
 import { SourceAnalyticsPanel } from '@/components/admin/SourceAnalyticsPanel';
+import { OmnichatInboxPanel } from '@/components/admin/OmnichatInboxPanel';
 
 interface Property {
   id: string;
@@ -423,9 +424,12 @@ const Admin = () => {
           <FinancialControlPanel />
         )}
 
-        {/* Omnichat Connection Tab */}
+        {/* Omnichat Connection + Inbox Tab */}
         {activeTab === 'omnichat' && (
-          <WhatsAppConnectionPanel />
+          <div className="space-y-6">
+            <WhatsAppConnectionPanel />
+            <OmnichatInboxPanel />
+          </div>
         )}
 
         {/* Archive Tab */}
