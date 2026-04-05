@@ -423,9 +423,12 @@ const Admin = () => {
           <FinancialControlPanel />
         )}
 
-        {/* Omnichat Connection Tab */}
+        {/* Omnichat Connection + Inbox Tab */}
         {activeTab === 'omnichat' && (
-          <WhatsAppConnectionPanel />
+          <div className="space-y-6">
+            <WhatsAppConnectionPanel />
+            <OmnichatInboxPanel />
+          </div>
         )}
 
         {/* Archive Tab */}
