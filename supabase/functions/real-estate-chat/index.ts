@@ -699,6 +699,67 @@ Acesse o painel para mais detalhes.`;
     }
 
     // =====================================================
+    // DETECÇÃO DE INTENÇÃO UNIFICADA (mesmo fluxo WhatsApp/Instagram)
+    // =====================================================
+    let unifiedIntent: DetectedIntent | null = null;
+    let unifiedTemperature: string | null = null;
+    if (currentLeadId && messages.length > 0) {
+      try {
+        const lastMsg = messages[messages.length - 1];
+        const lastText = typeof lastMsg.content === 'string' ? lastMsg.content : '';
+        if (lastText && lastMsg.role === 'user') {
+          unifiedIntent = detectIntent(lastText, messages);
+          unifiedTemperature = calculateTemperatureFromIntent(messages.filter(m => m.role === 'user').length, unifiedIntent);
+
+          // Update lead with unified intent data
+          const intentUpdate: Record<string, unknown> = {
+            intent: unifiedIntent.type,
+            lead_temperature: unifiedTemperature,
+            last_interaction_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+          if (unifiedTemperature === 'quente') intentUpdate.qualification = 'quente';
+          else if (unifiedTemperature === 'morno') intentUpdate.qualification = 'morno';
+          if (unifiedIntent.isScheduling) intentUpdate.visit_requested = true;
+          
+          await supabase.from("leads").update(intentUpdate).eq("id", currentLeadId);
+
+          // Update CRM card with intent
+          const crmIntentUpdate: Record<string, unknown> = {
+            classificacao: unifiedTemperature,
+            updated_at: new Date().toISOString(),
+            last_interaction_at: new Date().toISOString(),
+          };
+          if (unifiedIntent.isScheduling) {
+            crmIntentUpdate.proxima_acao = 'Agendar visita - cliente solicitou';
+            crmIntentUpdate.coluna = 'negociacao';
+            crmIntentUpdate.prioridade = 'alta';
+            crmIntentUpdate.lead_score = 80;
+            crmIntentUpdate.probabilidade_fechamento = 40;
+          } else if (unifiedIntent.isHot) {
+            crmIntentUpdate.lead_score = 60;
+            crmIntentUpdate.probabilidade_fechamento = 25;
+          }
+          await supabase.from("crm_cards").update(crmIntentUpdate).eq("lead_id", currentLeadId);
+
+          // Create CRM event for intent tracking
+          if (unifiedIntent.type !== 'geral') {
+            await supabase.from("crm_events").insert({
+              lead_id: currentLeadId,
+              event_type: unifiedIntent.isScheduling ? 'agendamento_solicitado' : `intent_${unifiedIntent.type}`,
+              new_value: unifiedIntent.type,
+              metadata: { temperature: unifiedTemperature, messageCount: messages.length, source: 'webchat_ai' },
+            });
+          }
+
+          console.log(`[real-estate-chat] 🎯 Intent: ${unifiedIntent.type}, temp: ${unifiedTemperature}, scheduling: ${unifiedIntent.isScheduling}`);
+        }
+      } catch (intentErr) {
+        console.error("[real-estate-chat] Intent detection error (non-blocking):", intentErr);
+      }
+    }
+
+    // =====================================================
     if (currentLeadId && messages.length > 0) {
       const lastUserMessage = messages[messages.length - 1];
       if (lastUserMessage.role === "user") {
