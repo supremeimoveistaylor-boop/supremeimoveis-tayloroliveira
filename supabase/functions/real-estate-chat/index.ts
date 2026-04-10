@@ -1757,6 +1757,12 @@ Me conta: você está procurando um imóvel para morar ou investir?"`;
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+      if (response.status === 402) {
+        return new Response(JSON.stringify({ error: "Créditos de IA esgotados. Entre em contato com o suporte." }), {
+          status: 402,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
       const errorText = await response.text();
       console.error("AI gateway error:", response.status, errorText);
       return new Response(JSON.stringify({ error: "Erro no serviço de IA" }), {
@@ -1764,6 +1770,132 @@ Me conta: você está procurando um imóvel para morar ou investir?"`;
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // =====================================================
+    // STREAM PROCESSING: Intercept for escalation tags + save bot response to omnichat
+    // =====================================================
+    const originalStream = response.body;
+    let fullReply = "";
+    
+    const transformStream = new TransformStream({
+      transform(chunk, controller) {
+        controller.enqueue(chunk);
+        // Accumulate text for post-processing
+        const text = new TextDecoder().decode(chunk);
+        const lines = text.split('\n');
+        for (const line of lines) {
+          if (!line.startsWith('data: ') || line.includes('[DONE]')) continue;
+          try {
+            const parsed = JSON.parse(line.slice(6));
+            const content = parsed.choices?.[0]?.delta?.content;
+            if (content) fullReply += content;
+          } catch {}
+        }
+      },
+      async flush() {
+        // Post-processing after stream completes
+        if (fullReply && currentLeadId) {
+          try {
+            const SUPABASE_URL_INNER = Deno.env.get("SUPABASE_URL")!;
+            const SUPABASE_KEY_INNER = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+            const spb = createClient(SUPABASE_URL_INNER, SUPABASE_KEY_INNER);
+            
+            // Save bot response to omnichat
+            if (omnichatConvId) {
+              const cleanReply = fullReply.replace('[VISITA_AGENDADA]', '').replace('[ENCAMINHAR_CORRETOR]', '').trim();
+              await spb.from("omnichat_messages").insert({
+                conversation_id: omnichatConvId,
+                sender_type: "bot",
+                channel: "webchat",
+                content: cleanReply.substring(0, 5000),
+                status: "sent",
+              });
+              await spb.from("omnichat_conversations").update({
+                last_message_at: new Date().toISOString(),
+                last_message_preview: cleanReply.substring(0, 100),
+              }).eq("id", omnichatConvId);
+            }
+
+            // Save to chat_messages
+            await spb.from("chat_messages").insert({
+              lead_id: currentLeadId,
+              role: "assistant",
+              content: fullReply.replace('[VISITA_AGENDADA]', '').replace('[ENCAMINHAR_CORRETOR]', '').trim().substring(0, 5000),
+            });
+            
+            // Handle escalation tags (same as whatsapp-ai-chat)
+            const isVisitScheduled = fullReply.includes('[VISITA_AGENDADA]');
+            const shouldEscalate = fullReply.includes('[ENCAMINHAR_CORRETOR]') || isVisitScheduled;
+
+            if (shouldEscalate || (unifiedIntent && unifiedIntent.isScheduling)) {
+              console.log('[real-estate-chat] 🔄 Escalation triggered:', isVisitScheduled ? 'visit_scheduled' : 'manual');
+
+              if (isVisitScheduled) {
+                await spb.from("crm_cards").update({
+                  coluna: 'negociacao',
+                  proxima_acao: 'Visita agendada pelo chat - confirmar com cliente',
+                  prioridade: 'alta',
+                  lead_score: 90,
+                  probabilidade_fechamento: 50,
+                  updated_at: new Date().toISOString(),
+                }).eq("lead_id", currentLeadId);
+
+                await spb.from("leads").update({
+                  visit_requested: true,
+                  status: 'em_atendimento',
+                  updated_at: new Date().toISOString(),
+                }).eq("id", currentLeadId);
+
+                await spb.from("crm_events").insert({
+                  lead_id: currentLeadId,
+                  event_type: 'visita_agendada',
+                  new_value: 'agendada_via_chat',
+                  metadata: { source: 'webchat_ai', temperature: unifiedTemperature },
+                });
+              }
+
+              // Disable bot and notify broker
+              if (omnichatConvId) {
+                await spb.from("omnichat_conversations").update({
+                  bot_active: false,
+                  status: 'open',
+                }).eq("id", omnichatConvId);
+              }
+
+              // Notify broker for escalation
+              try {
+                const { data: brokers } = await spb.from('brokers').select('whatsapp, name').eq('active', true).limit(1);
+                if (brokers && brokers.length > 0) {
+                  const { data: leadData } = await spb.from('leads').select('name, phone').eq('id', currentLeadId).single();
+                  const reason = isVisitScheduled 
+                    ? '📅 VISITA AGENDADA pelo chat do site!'
+                    : '💬 Cliente precisa de atendimento humano';
+                  
+                  const brokerMsg = `🚨 Lead Encaminhado (Chat do Site)\n\n` +
+                    `👤 Nome: ${leadData?.name || 'Não informado'}\n` +
+                    `📱 Telefone: ${leadData?.phone || 'Não informado'}\n` +
+                    `🎯 ${reason}\n\n` +
+                    (leadData?.phone ? `📲 Responder: https://wa.me/${leadData.phone.replace(/\D/g, '')}` : '');
+
+                  await fetch(`${SUPABASE_URL_INNER}/functions/v1/send-whatsapp`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ to: brokers[0].whatsapp, message: brokerMsg }),
+                  });
+                  console.log('[real-estate-chat] ✅ Broker notified for escalation');
+                }
+              } catch (notifyErr) {
+                console.error('[real-estate-chat] Broker notification error:', notifyErr);
+              }
+            }
+          } catch (postErr) {
+            console.error("[real-estate-chat] Post-stream processing error:", postErr);
+          }
+        }
+      }
+    });
+
+    const processedStream = originalStream!.pipeThrough(transformStream);
 
     const headers = new Headers(corsHeaders);
     headers.set("Content-Type", "text/event-stream");
