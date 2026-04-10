@@ -1629,14 +1629,14 @@ Me conta: você está procurando um imóvel para morar ou investir?"`;
     // =====================================================
     // CHAMADA OPENAI
     // =====================================================
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetch(AI_URL, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
+        Authorization: `Bearer ${AI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o",
+        model: AI_MODEL,
         messages: [
           { 
             role: "system", 
