@@ -1903,7 +1903,7 @@ Me conta: você está procurando um imóvel para morar ou investir?"`;
     headers.set("X-Lead-Imob-Id", leadImobiliarioId || "");
     headers.set("Access-Control-Expose-Headers", "X-Lead-Id, X-Lead-Imob-Id");
 
-    return new Response(response.body, { headers });
+    return new Response(processedStream, { headers });
   } catch (e) {
     console.error("Chat error:", e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Erro desconhecido" }), {
