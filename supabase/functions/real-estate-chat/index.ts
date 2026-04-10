@@ -294,6 +294,45 @@ const formatPrice = (price: number): string => {
   return price.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0, maximumFractionDigits: 0 });
 };
 
+// =====================================================
+// DETECÇÃO DE INTENÇÃO UNIFICADA (mesmo que whatsapp-ai-chat)
+// =====================================================
+interface DetectedIntent {
+  type: 'compra' | 'aluguel' | 'agendamento' | 'avaliacao' | 'investimento' | 'duvida' | 'geral';
+  isScheduling: boolean;
+  isHot: boolean;
+}
+
+function detectIntent(message: string, previousMessages: ChatMessage[]): DetectedIntent {
+  const lower = message.toLowerCase();
+  const allText = previousMessages
+    .filter(m => m.role === 'user')
+    .map(m => typeof m.content === 'string' ? m.content.toLowerCase() : '')
+    .join(' ') + ' ' + lower;
+
+  const isScheduling = /\b(visitar|agendar|agenda|ver o im[oó]vel|conhecer|marcar|visita|quero ir|posso ir|quando posso|hor[aá]rio)\b/i.test(lower);
+
+  let type: DetectedIntent['type'] = 'geral';
+  if (/\b(comprar|compra|adquirir|quero um|procuro|procurando)\b/i.test(allText)) type = 'compra';
+  else if (/\b(alugar|aluguel|locar|loca[çc][aã]o)\b/i.test(allText)) type = 'aluguel';
+  else if (/\b(avaliar|avalia[çc][aã]o|quanto vale|valor do meu)\b/i.test(allText)) type = 'avaliacao';
+  else if (/\b(investir|investimento|rentabilidade|retorno)\b/i.test(allText)) type = 'investimento';
+  else if (/\b(d[uú]vida|pergunta|como funciona|pode me explicar)\b/i.test(allText)) type = 'duvida';
+
+  if (isScheduling) type = 'agendamento';
+
+  const isHot = isScheduling || type === 'compra' || type === 'investimento';
+
+  return { type, isScheduling, isHot };
+}
+
+function calculateTemperatureFromIntent(messageCount: number, intent: DetectedIntent): string {
+  if (intent.isHot || intent.isScheduling) return 'quente';
+  if (messageCount >= 5 || intent.type === 'compra' || intent.type === 'investimento') return 'quente';
+  if (messageCount >= 2) return 'morno';
+  return 'frio';
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -321,14 +360,21 @@ serve(async (req) => {
       );
     }
 
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     
-    if (!OPENAI_API_KEY) {
-      console.error("OPENAI_API_KEY não configurada");
-      throw new Error("OPENAI_API_KEY is not configured");
+    const AI_API_KEY = LOVABLE_API_KEY || OPENAI_API_KEY;
+    if (!AI_API_KEY) {
+      console.error("No AI API key configured (LOVABLE_API_KEY or OPENAI_API_KEY)");
+      throw new Error("No AI API key is configured");
     }
+    const AI_URL = LOVABLE_API_KEY 
+      ? "https://ai.gateway.lovable.dev/v1/chat/completions"
+      : "https://api.openai.com/v1/chat/completions";
+    const AI_MODEL = LOVABLE_API_KEY ? "google/gemini-2.5-flash" : "gpt-4o";
+    console.log(`[real-estate-chat] Using AI: ${LOVABLE_API_KEY ? 'Lovable Gateway' : 'OpenAI'} model: ${AI_MODEL}`);
 
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
@@ -649,6 +695,67 @@ Acesse o painel para mais detalhes.`;
         }
       } catch (omniErr) {
         console.error("Error creating omnichat conversation:", omniErr);
+      }
+    }
+
+    // =====================================================
+    // DETECÇÃO DE INTENÇÃO UNIFICADA (mesmo fluxo WhatsApp/Instagram)
+    // =====================================================
+    let unifiedIntent: DetectedIntent | null = null;
+    let unifiedTemperature: string | null = null;
+    if (currentLeadId && messages.length > 0) {
+      try {
+        const lastMsg = messages[messages.length - 1];
+        const lastText = typeof lastMsg.content === 'string' ? lastMsg.content : '';
+        if (lastText && lastMsg.role === 'user') {
+          unifiedIntent = detectIntent(lastText, messages);
+          unifiedTemperature = calculateTemperatureFromIntent(messages.filter(m => m.role === 'user').length, unifiedIntent);
+
+          // Update lead with unified intent data
+          const intentUpdate: Record<string, unknown> = {
+            intent: unifiedIntent.type,
+            lead_temperature: unifiedTemperature,
+            last_interaction_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+          if (unifiedTemperature === 'quente') intentUpdate.qualification = 'quente';
+          else if (unifiedTemperature === 'morno') intentUpdate.qualification = 'morno';
+          if (unifiedIntent.isScheduling) intentUpdate.visit_requested = true;
+          
+          await supabase.from("leads").update(intentUpdate).eq("id", currentLeadId);
+
+          // Update CRM card with intent
+          const crmIntentUpdate: Record<string, unknown> = {
+            classificacao: unifiedTemperature,
+            updated_at: new Date().toISOString(),
+            last_interaction_at: new Date().toISOString(),
+          };
+          if (unifiedIntent.isScheduling) {
+            crmIntentUpdate.proxima_acao = 'Agendar visita - cliente solicitou';
+            crmIntentUpdate.coluna = 'negociacao';
+            crmIntentUpdate.prioridade = 'alta';
+            crmIntentUpdate.lead_score = 80;
+            crmIntentUpdate.probabilidade_fechamento = 40;
+          } else if (unifiedIntent.isHot) {
+            crmIntentUpdate.lead_score = 60;
+            crmIntentUpdate.probabilidade_fechamento = 25;
+          }
+          await supabase.from("crm_cards").update(crmIntentUpdate).eq("lead_id", currentLeadId);
+
+          // Create CRM event for intent tracking
+          if (unifiedIntent.type !== 'geral') {
+            await supabase.from("crm_events").insert({
+              lead_id: currentLeadId,
+              event_type: unifiedIntent.isScheduling ? 'agendamento_solicitado' : `intent_${unifiedIntent.type}`,
+              new_value: unifiedIntent.type,
+              metadata: { temperature: unifiedTemperature, messageCount: messages.length, source: 'webchat_ai' },
+            });
+          }
+
+          console.log(`[real-estate-chat] 🎯 Intent: ${unifiedIntent.type}, temp: ${unifiedTemperature}, scheduling: ${unifiedIntent.isScheduling}`);
+        }
+      } catch (intentErr) {
+        console.error("[real-estate-chat] Intent detection error (non-blocking):", intentErr);
       }
     }
 
@@ -1622,14 +1729,14 @@ Me conta: você está procurando um imóvel para morar ou investir?"`;
     // =====================================================
     // CHAMADA OPENAI
     // =====================================================
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetch(AI_URL, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
+        Authorization: `Bearer ${AI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o",
+        model: AI_MODEL,
         messages: [
           { 
             role: "system", 
@@ -1650,6 +1757,12 @@ Me conta: você está procurando um imóvel para morar ou investir?"`;
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+      if (response.status === 402) {
+        return new Response(JSON.stringify({ error: "Créditos de IA esgotados. Entre em contato com o suporte." }), {
+          status: 402,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
       const errorText = await response.text();
       console.error("AI gateway error:", response.status, errorText);
       return new Response(JSON.stringify({ error: "Erro no serviço de IA" }), {
@@ -1658,13 +1771,139 @@ Me conta: você está procurando um imóvel para morar ou investir?"`;
       });
     }
 
+    // =====================================================
+    // STREAM PROCESSING: Intercept for escalation tags + save bot response to omnichat
+    // =====================================================
+    const originalStream = response.body;
+    let fullReply = "";
+    
+    const transformStream = new TransformStream({
+      transform(chunk, controller) {
+        controller.enqueue(chunk);
+        // Accumulate text for post-processing
+        const text = new TextDecoder().decode(chunk);
+        const lines = text.split('\n');
+        for (const line of lines) {
+          if (!line.startsWith('data: ') || line.includes('[DONE]')) continue;
+          try {
+            const parsed = JSON.parse(line.slice(6));
+            const content = parsed.choices?.[0]?.delta?.content;
+            if (content) fullReply += content;
+          } catch {}
+        }
+      },
+      async flush() {
+        // Post-processing after stream completes
+        if (fullReply && currentLeadId) {
+          try {
+            const SUPABASE_URL_INNER = Deno.env.get("SUPABASE_URL")!;
+            const SUPABASE_KEY_INNER = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+            const spb = createClient(SUPABASE_URL_INNER, SUPABASE_KEY_INNER);
+            
+            // Save bot response to omnichat
+            if (omnichatConvId) {
+              const cleanReply = fullReply.replace('[VISITA_AGENDADA]', '').replace('[ENCAMINHAR_CORRETOR]', '').trim();
+              await spb.from("omnichat_messages").insert({
+                conversation_id: omnichatConvId,
+                sender_type: "bot",
+                channel: "webchat",
+                content: cleanReply.substring(0, 5000),
+                status: "sent",
+              });
+              await spb.from("omnichat_conversations").update({
+                last_message_at: new Date().toISOString(),
+                last_message_preview: cleanReply.substring(0, 100),
+              }).eq("id", omnichatConvId);
+            }
+
+            // Save to chat_messages
+            await spb.from("chat_messages").insert({
+              lead_id: currentLeadId,
+              role: "assistant",
+              content: fullReply.replace('[VISITA_AGENDADA]', '').replace('[ENCAMINHAR_CORRETOR]', '').trim().substring(0, 5000),
+            });
+            
+            // Handle escalation tags (same as whatsapp-ai-chat)
+            const isVisitScheduled = fullReply.includes('[VISITA_AGENDADA]');
+            const shouldEscalate = fullReply.includes('[ENCAMINHAR_CORRETOR]') || isVisitScheduled;
+
+            if (shouldEscalate || (unifiedIntent && unifiedIntent.isScheduling)) {
+              console.log('[real-estate-chat] 🔄 Escalation triggered:', isVisitScheduled ? 'visit_scheduled' : 'manual');
+
+              if (isVisitScheduled) {
+                await spb.from("crm_cards").update({
+                  coluna: 'negociacao',
+                  proxima_acao: 'Visita agendada pelo chat - confirmar com cliente',
+                  prioridade: 'alta',
+                  lead_score: 90,
+                  probabilidade_fechamento: 50,
+                  updated_at: new Date().toISOString(),
+                }).eq("lead_id", currentLeadId);
+
+                await spb.from("leads").update({
+                  visit_requested: true,
+                  status: 'em_atendimento',
+                  updated_at: new Date().toISOString(),
+                }).eq("id", currentLeadId);
+
+                await spb.from("crm_events").insert({
+                  lead_id: currentLeadId,
+                  event_type: 'visita_agendada',
+                  new_value: 'agendada_via_chat',
+                  metadata: { source: 'webchat_ai', temperature: unifiedTemperature },
+                });
+              }
+
+              // Disable bot and notify broker
+              if (omnichatConvId) {
+                await spb.from("omnichat_conversations").update({
+                  bot_active: false,
+                  status: 'open',
+                }).eq("id", omnichatConvId);
+              }
+
+              // Notify broker for escalation
+              try {
+                const { data: brokers } = await spb.from('brokers').select('whatsapp, name').eq('active', true).limit(1);
+                if (brokers && brokers.length > 0) {
+                  const { data: leadData } = await spb.from('leads').select('name, phone').eq('id', currentLeadId).single();
+                  const reason = isVisitScheduled 
+                    ? '📅 VISITA AGENDADA pelo chat do site!'
+                    : '💬 Cliente precisa de atendimento humano';
+                  
+                  const brokerMsg = `🚨 Lead Encaminhado (Chat do Site)\n\n` +
+                    `👤 Nome: ${leadData?.name || 'Não informado'}\n` +
+                    `📱 Telefone: ${leadData?.phone || 'Não informado'}\n` +
+                    `🎯 ${reason}\n\n` +
+                    (leadData?.phone ? `📲 Responder: https://wa.me/${leadData.phone.replace(/\D/g, '')}` : '');
+
+                  await fetch(`${SUPABASE_URL_INNER}/functions/v1/send-whatsapp`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ to: brokers[0].whatsapp, message: brokerMsg }),
+                  });
+                  console.log('[real-estate-chat] ✅ Broker notified for escalation');
+                }
+              } catch (notifyErr) {
+                console.error('[real-estate-chat] Broker notification error:', notifyErr);
+              }
+            }
+          } catch (postErr) {
+            console.error("[real-estate-chat] Post-stream processing error:", postErr);
+          }
+        }
+      }
+    });
+
+    const processedStream = originalStream!.pipeThrough(transformStream);
+
     const headers = new Headers(corsHeaders);
     headers.set("Content-Type", "text/event-stream");
     headers.set("X-Lead-Id", currentLeadId || "");
     headers.set("X-Lead-Imob-Id", leadImobiliarioId || "");
     headers.set("Access-Control-Expose-Headers", "X-Lead-Id, X-Lead-Imob-Id");
 
-    return new Response(response.body, { headers });
+    return new Response(processedStream, { headers });
   } catch (e) {
     console.error("Chat error:", e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Erro desconhecido" }), {
