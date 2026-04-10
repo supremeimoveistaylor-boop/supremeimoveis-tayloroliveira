@@ -321,14 +321,21 @@ serve(async (req) => {
       );
     }
 
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     
-    if (!OPENAI_API_KEY) {
-      console.error("OPENAI_API_KEY não configurada");
-      throw new Error("OPENAI_API_KEY is not configured");
+    const AI_API_KEY = LOVABLE_API_KEY || OPENAI_API_KEY;
+    if (!AI_API_KEY) {
+      console.error("No AI API key configured (LOVABLE_API_KEY or OPENAI_API_KEY)");
+      throw new Error("No AI API key is configured");
     }
+    const AI_URL = LOVABLE_API_KEY 
+      ? "https://ai.gateway.lovable.dev/v1/chat/completions"
+      : "https://api.openai.com/v1/chat/completions";
+    const AI_MODEL = LOVABLE_API_KEY ? "google/gemini-2.5-flash" : "gpt-4o";
+    console.log(`[real-estate-chat] Using AI: ${LOVABLE_API_KEY ? 'Lovable Gateway' : 'OpenAI'} model: ${AI_MODEL}`);
 
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
