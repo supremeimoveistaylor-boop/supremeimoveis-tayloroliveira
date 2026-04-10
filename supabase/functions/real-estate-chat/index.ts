@@ -294,6 +294,45 @@ const formatPrice = (price: number): string => {
   return price.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0, maximumFractionDigits: 0 });
 };
 
+// =====================================================
+// DETECÇÃO DE INTENÇÃO UNIFICADA (mesmo que whatsapp-ai-chat)
+// =====================================================
+interface DetectedIntent {
+  type: 'compra' | 'aluguel' | 'agendamento' | 'avaliacao' | 'investimento' | 'duvida' | 'geral';
+  isScheduling: boolean;
+  isHot: boolean;
+}
+
+function detectIntent(message: string, previousMessages: ChatMessage[]): DetectedIntent {
+  const lower = message.toLowerCase();
+  const allText = previousMessages
+    .filter(m => m.role === 'user')
+    .map(m => typeof m.content === 'string' ? m.content.toLowerCase() : '')
+    .join(' ') + ' ' + lower;
+
+  const isScheduling = /\b(visitar|agendar|agenda|ver o im[oó]vel|conhecer|marcar|visita|quero ir|posso ir|quando posso|hor[aá]rio)\b/i.test(lower);
+
+  let type: DetectedIntent['type'] = 'geral';
+  if (/\b(comprar|compra|adquirir|quero um|procuro|procurando)\b/i.test(allText)) type = 'compra';
+  else if (/\b(alugar|aluguel|locar|loca[çc][aã]o)\b/i.test(allText)) type = 'aluguel';
+  else if (/\b(avaliar|avalia[çc][aã]o|quanto vale|valor do meu)\b/i.test(allText)) type = 'avaliacao';
+  else if (/\b(investir|investimento|rentabilidade|retorno)\b/i.test(allText)) type = 'investimento';
+  else if (/\b(d[uú]vida|pergunta|como funciona|pode me explicar)\b/i.test(allText)) type = 'duvida';
+
+  if (isScheduling) type = 'agendamento';
+
+  const isHot = isScheduling || type === 'compra' || type === 'investimento';
+
+  return { type, isScheduling, isHot };
+}
+
+function calculateTemperatureFromIntent(messageCount: number, intent: DetectedIntent): string {
+  if (intent.isHot || intent.isScheduling) return 'quente';
+  if (messageCount >= 5 || intent.type === 'compra' || intent.type === 'investimento') return 'quente';
+  if (messageCount >= 2) return 'morno';
+  return 'frio';
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
