@@ -52,8 +52,8 @@ serve(async (req) => {
     if (!authHeader) {
       console.error("No authorization header");
       return new Response(
-        JSON.stringify({ error: "Não autorizado" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ ok: false, error: "Não autorizado" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -69,8 +69,8 @@ serve(async (req) => {
     if (authError || !user) {
       console.error("Auth error:", authError);
       return new Response(
-        JSON.stringify({ error: "Token inválido" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ ok: false, error: "Token inválido" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -80,8 +80,8 @@ serve(async (req) => {
     if (isRateLimited(user.id)) {
       console.warn(`Rate limit exceeded for user: ${user.id}`);
       return new Response(
-        JSON.stringify({ error: "Muitas mensagens. Aguarde um momento." }),
-        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ ok: false, error: "Muitas mensagens. Aguarde um momento." }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -92,8 +92,8 @@ serve(async (req) => {
     const sanitizedMessage = sanitizeMessage(message);
     if (!sanitizedMessage) {
       return new Response(
-        JSON.stringify({ error: "Mensagem vazia ou inválida" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ ok: false, error: "Mensagem vazia ou inválida" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -119,23 +119,23 @@ serve(async (req) => {
     if (insertError) {
       console.error("Insert error:", insertError);
       return new Response(
-        JSON.stringify({ error: "Erro ao salvar mensagem" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ ok: false, error: "Erro ao salvar mensagem" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     console.log(`Message saved with ID: ${insertedMessage.id}`);
 
     return new Response(
-      JSON.stringify({ success: true, message: insertedMessage }),
+      JSON.stringify({ ok: true, success: true, message: insertedMessage }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
   } catch (error) {
     console.error("Unexpected error:", error);
     return new Response(
-      JSON.stringify({ error: "Erro interno do servidor" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ ok: false, error: "Erro interno do servidor" }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });

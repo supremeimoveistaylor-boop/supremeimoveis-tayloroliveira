@@ -22,9 +22,9 @@ serve(async (req) => {
   }
 
   if (req.method !== 'POST') {
-    return new Response('Method not allowed', {
-      status: 405,
-      headers: corsHeaders,
+    return new Response(JSON.stringify({ ok: false, error: 'Method not allowed' }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 
@@ -35,8 +35,8 @@ serve(async (req) => {
     if (!PHONE_NUMBER_ID || !ACCESS_TOKEN) {
       console.error('[Send WhatsApp] Missing configuration');
       return new Response(
-        JSON.stringify({ error: 'WhatsApp API not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ ok: false, error: 'WhatsApp API not configured' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -45,8 +45,8 @@ serve(async (req) => {
 
     if (!to) {
       return new Response(
-        JSON.stringify({ error: 'Recipient phone number is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ ok: false, error: 'Recipient phone number is required' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -84,8 +84,8 @@ serve(async (req) => {
       };
     } else {
       return new Response(
-        JSON.stringify({ error: 'Message or template is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ ok: false, error: 'Message or template is required' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -107,23 +107,23 @@ serve(async (req) => {
     if (!response.ok) {
       console.error('[Send WhatsApp] API Error:', result);
       return new Response(
-        JSON.stringify({ error: 'Failed to send message', details: result }),
-        { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ ok: false, error: 'Failed to send message', details: result }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     console.log('[Send WhatsApp] Message sent successfully:', result);
 
     return new Response(
-      JSON.stringify({ success: true, messageId: result.messages?.[0]?.id, result }),
+      JSON.stringify({ ok: true, success: true, messageId: result.messages?.[0]?.id, result }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
     console.error('[Send WhatsApp] Error:', error);
     return new Response(
-      JSON.stringify({ error: 'Internal server error', message: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ ok: false, error: 'Internal server error', message: error.message }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });

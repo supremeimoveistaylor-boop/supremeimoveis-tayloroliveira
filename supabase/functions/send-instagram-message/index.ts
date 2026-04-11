@@ -28,8 +28,8 @@ serve(async (req) => {
     // Authenticate the caller
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
+      return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), {
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -41,8 +41,8 @@ serve(async (req) => {
     const token = authHeader.replace('Bearer ', '');
     const { data: claimsData, error: claimsErr } = await authSupabase.auth.getClaims(token);
     if (claimsErr || !claimsData?.claims) {
-      return new Response(JSON.stringify({ error: 'Invalid token' }), {
-        status: 401,
+      return new Response(JSON.stringify({ ok: false, error: 'Invalid token' }), {
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -53,8 +53,8 @@ serve(async (req) => {
     const { recipient_id, message, connection_id } = await req.json();
 
     if (!recipient_id || !message) {
-      return new Response(JSON.stringify({ error: 'Missing recipient_id or message' }), {
-        status: 400,
+      return new Response(JSON.stringify({ ok: false, error: 'Missing recipient_id or message' }), {
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -78,16 +78,16 @@ serve(async (req) => {
 
     if (connErr || !connection) {
       console.error('[Send Instagram] Connection not found:', connErr);
-      return new Response(JSON.stringify({ error: 'No active Instagram connection found' }), {
-        status: 404,
+      return new Response(JSON.stringify({ ok: false, error: 'No active Instagram connection found' }), {
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     // Verify the user owns this connection
     if (connection.user_id !== userId) {
-      return new Response(JSON.stringify({ error: 'Forbidden' }), {
-        status: 403,
+      return new Response(JSON.stringify({ ok: false, error: 'Forbidden' }), {
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -96,8 +96,8 @@ serve(async (req) => {
     const accessToken = connection.access_token_encrypted;
 
     if (!igUserId || !accessToken) {
-      return new Response(JSON.stringify({ error: 'Instagram connection is incomplete (missing instagram_id or token)' }), {
-        status: 400,
+      return new Response(JSON.stringify({ ok: false, error: 'Instagram connection is incomplete (missing instagram_id or token)' }), {
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -138,10 +138,11 @@ serve(async (req) => {
       });
 
       return new Response(JSON.stringify({ 
+        ok: false,
         error: 'Instagram API error', 
         details: igResult.error 
       }), {
-        status: 400,
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -175,6 +176,7 @@ serve(async (req) => {
       .eq('id', connection.id);
 
     return new Response(JSON.stringify({
+      ok: true,
       success: true,
       message_id: igResult.message_id,
       recipient_id: igResult.recipient_id,
@@ -186,8 +188,8 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('[Send Instagram] Error:', error);
-    return new Response(JSON.stringify({ error: 'Internal server error', message: error.message }), {
-      status: 500,
+    return new Response(JSON.stringify({ ok: false, error: 'Internal server error', message: error.message }), {
+      status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
