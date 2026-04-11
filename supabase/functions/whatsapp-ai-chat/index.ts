@@ -201,8 +201,8 @@ serve(async (req) => {
 
     if (!message || !conversationId) {
       return new Response(
-        JSON.stringify({ error: 'message and conversationId are required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ ok: false, error: 'message and conversationId are required' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -291,6 +291,14 @@ REGRA OBRIGATÓRIA para leads de anúncio:
 - Este lead tem ALTA probabilidade de conversão — conduza direto para AGENDAMENTO
 - Urgência: Lead de anúncio esfria rápido. Seja objetivo e direto.
 ═══════════════════════════════════════════════════`;
+    }
+
+    // Build name instruction based on missing name state
+    let nameInstruction = '';
+    if (isNameMissing && nameAskCount < 2) {
+      nameInstruction = '\n\n⚠️ NOME DO CLIENTE AINDA NÃO FOI INFORMADO. Pergunte o nome de forma natural na conversa (máx 2 vezes).';
+    } else if (isNameMissing && nameAskCount >= 2) {
+      nameInstruction = '\n\n⚠️ Já perguntou o nome 2x. NÃO pergunte novamente. Continue o atendimento normalmente.';
     }
 
     const aiMessages: Array<{ role: string; content: string }> = [];
@@ -607,8 +615,8 @@ REGRA OBRIGATÓRIA para leads de anúncio:
   } catch (error) {
     console.error('[WhatsApp AI] Error:', error);
     return new Response(
-      JSON.stringify({ error: error.message || 'Internal error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ ok: false, error: error.message || 'Internal error', reply: null }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
