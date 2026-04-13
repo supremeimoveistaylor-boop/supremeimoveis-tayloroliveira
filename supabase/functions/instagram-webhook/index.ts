@@ -559,6 +559,22 @@ serve(async (req) => {
             } else {
               isNewConversation = true;
 
+              // Check if any agent is online with instagram channel enabled
+              const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+              const { data: onlineAgents } = await supabase
+                .from('agent_status')
+                .select('user_id, channel_status')
+                .eq('status', 'online')
+                .gte('last_seen', thirtyMinAgo)
+                .limit(10);
+
+              const igAgents = (onlineAgents || []).filter((a: any) => {
+                const cs = a.channel_status;
+                return !cs || cs.instagram !== false;
+              });
+              const botActiveForNew = igAgents.length === 0;
+              console.log('[Instagram Webhook] 🤖 Bot active:', botActiveForNew, '(ig agents online:', igAgents.length, ')');
+
               const { data: newConv } = await supabase
                 .from('omnichat_conversations')
                 .insert({
@@ -568,7 +584,7 @@ serve(async (req) => {
                   contact_name: extractedName || displayName || null,
                   contact_phone: extractedPhone,
                   connection_id: connection.id,
-                  bot_active: true,
+                  bot_active: botActiveForNew,
                   last_message_at: new Date().toISOString(),
                   last_message_preview: messageText.substring(0, 100),
                   unread_count: 1,
