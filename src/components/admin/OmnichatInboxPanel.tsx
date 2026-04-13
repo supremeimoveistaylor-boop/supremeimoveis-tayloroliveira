@@ -341,6 +341,46 @@ export const OmnichatInboxPanel = () => {
           )}
         </div>
         <div className="flex items-center gap-2">
+          {/* Channel toggles */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button size="sm" variant="outline" className="rounded-full text-xs font-medium border-slate-300 text-slate-500 hover:bg-slate-50 gap-1.5">
+                <Settings2 className="w-3.5 h-3.5" />
+                Canais
+                <span className="flex gap-0.5 ml-1">
+                  {channelStatus.whatsapp && <span className="w-1.5 h-1.5 rounded-full bg-green-500" />}
+                  {channelStatus.instagram && <span className="w-1.5 h-1.5 rounded-full bg-pink-500" />}
+                  {channelStatus.webchat && <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />}
+                </span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-3" align="end">
+              <p className="text-xs font-semibold text-slate-500 mb-3">Canais ativos</p>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Phone className="w-4 h-4 text-green-500" />
+                    <span className="text-sm font-medium">WhatsApp</span>
+                  </div>
+                  <Switch checked={channelStatus.whatsapp} onCheckedChange={() => toggleChannel("whatsapp")} />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Instagram className="w-4 h-4 text-pink-500" />
+                    <span className="text-sm font-medium">Instagram</span>
+                  </div>
+                  <Switch checked={channelStatus.instagram} onCheckedChange={() => toggleChannel("instagram")} />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-blue-500" />
+                    <span className="text-sm font-medium">Chat Site</span>
+                  </div>
+                  <Switch checked={channelStatus.webchat} onCheckedChange={() => toggleChannel("webchat")} />
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
           <Button
             size="sm"
             variant={isOnline ? "default" : "outline"}
