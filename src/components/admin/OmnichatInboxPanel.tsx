@@ -103,6 +103,7 @@ export const OmnichatInboxPanel = () => {
   const [channelFilter, setChannelFilter] = useState<"all" | "whatsapp" | "instagram" | "webchat">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [isOnline, setIsOnline] = useState(false);
+  const [channelStatus, setChannelStatus] = useState<Record<string, boolean>>({ whatsapp: true, instagram: true, webchat: true });
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
@@ -113,8 +114,11 @@ export const OmnichatInboxPanel = () => {
     if (!user) return;
     const loadStatus = async () => {
       const { data } = await supabase
-        .from("agent_status" as any).select("status").eq("user_id", user.id).maybeSingle();
+        .from("agent_status" as any).select("status, channel_status").eq("user_id", user.id).maybeSingle();
       setIsOnline((data as any)?.status === "online");
+      if ((data as any)?.channel_status) {
+        setChannelStatus((data as any).channel_status);
+      }
     };
     loadStatus();
   }, [user]);
@@ -124,11 +128,22 @@ export const OmnichatInboxPanel = () => {
     const newStatus = isOnline ? "offline" : "online";
     const { error } = await supabase
       .from("agent_status" as any)
-      .upsert({ user_id: user.id, status: newStatus, last_seen: new Date().toISOString() } as any, { onConflict: "user_id" });
+      .upsert({ user_id: user.id, status: newStatus, last_seen: new Date().toISOString(), channel_status: channelStatus } as any, { onConflict: "user_id" });
     if (!error) {
       setIsOnline(!isOnline);
       toast({ title: newStatus === "online" ? "🟢 Você está Online" : "🔴 Modo Offline ativado" });
     }
+  };
+
+  const toggleChannel = async (channel: string) => {
+    if (!user) return;
+    const newStatus = { ...channelStatus, [channel]: !channelStatus[channel] };
+    setChannelStatus(newStatus);
+    await supabase
+      .from("agent_status" as any)
+      .upsert({ user_id: user.id, status: isOnline ? "online" : "offline", last_seen: new Date().toISOString(), channel_status: newStatus } as any, { onConflict: "user_id" });
+    const label = channel === "whatsapp" ? "WhatsApp" : channel === "instagram" ? "Instagram" : "Chat";
+    toast({ title: `${newStatus[channel] ? "🟢" : "🔴"} ${label} ${newStatus[channel] ? "ativado" : "desativado"}` });
   };
 
   const loadConversations = useCallback(async () => {
