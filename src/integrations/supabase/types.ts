@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       agent_status: {
         Row: {
+          channel_status: Json
           created_at: string
           id: string
           last_seen: string | null
@@ -24,6 +25,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          channel_status?: Json
           created_at?: string
           id?: string
           last_seen?: string | null
@@ -32,6 +34,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          channel_status?: Json
           created_at?: string
           id?: string
           last_seen?: string | null

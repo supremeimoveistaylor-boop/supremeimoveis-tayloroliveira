@@ -7,11 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Switch } from "@/components/ui/switch";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "@/hooks/use-toast";
 import {
   MessageSquare, Phone, Instagram, Send, Bot, User, Wifi, WifiOff,
   ArrowRight, X, Clock, RefreshCw, LayoutGrid, Search, PhoneCall,
-  Video, MoreVertical, Globe, Tag, Sparkles, Pencil, Check, ArrowLeft
+  Video, MoreVertical, Globe, Tag, Sparkles, Pencil, Check, ArrowLeft, Settings2
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -101,6 +103,7 @@ export const OmnichatInboxPanel = () => {
   const [channelFilter, setChannelFilter] = useState<"all" | "whatsapp" | "instagram" | "webchat">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [isOnline, setIsOnline] = useState(false);
+  const [channelStatus, setChannelStatus] = useState<Record<string, boolean>>({ whatsapp: true, instagram: true, webchat: true });
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
@@ -111,8 +114,11 @@ export const OmnichatInboxPanel = () => {
     if (!user) return;
     const loadStatus = async () => {
       const { data } = await supabase
-        .from("agent_status" as any).select("status").eq("user_id", user.id).maybeSingle();
+        .from("agent_status" as any).select("status, channel_status").eq("user_id", user.id).maybeSingle();
       setIsOnline((data as any)?.status === "online");
+      if ((data as any)?.channel_status) {
+        setChannelStatus((data as any).channel_status);
+      }
     };
     loadStatus();
   }, [user]);
@@ -122,11 +128,22 @@ export const OmnichatInboxPanel = () => {
     const newStatus = isOnline ? "offline" : "online";
     const { error } = await supabase
       .from("agent_status" as any)
-      .upsert({ user_id: user.id, status: newStatus, last_seen: new Date().toISOString() } as any, { onConflict: "user_id" });
+      .upsert({ user_id: user.id, status: newStatus, last_seen: new Date().toISOString(), channel_status: channelStatus } as any, { onConflict: "user_id" });
     if (!error) {
       setIsOnline(!isOnline);
       toast({ title: newStatus === "online" ? "🟢 Você está Online" : "🔴 Modo Offline ativado" });
     }
+  };
+
+  const toggleChannel = async (channel: string) => {
+    if (!user) return;
+    const newStatus = { ...channelStatus, [channel]: !channelStatus[channel] };
+    setChannelStatus(newStatus);
+    await supabase
+      .from("agent_status" as any)
+      .upsert({ user_id: user.id, status: isOnline ? "online" : "offline", last_seen: new Date().toISOString(), channel_status: newStatus } as any, { onConflict: "user_id" });
+    const label = channel === "whatsapp" ? "WhatsApp" : channel === "instagram" ? "Instagram" : "Chat";
+    toast({ title: `${newStatus[channel] ? "🟢" : "🔴"} ${label} ${newStatus[channel] ? "ativado" : "desativado"}` });
   };
 
   const loadConversations = useCallback(async () => {
@@ -324,6 +341,46 @@ export const OmnichatInboxPanel = () => {
           )}
         </div>
         <div className="flex items-center gap-2">
+          {/* Channel toggles */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button size="sm" variant="outline" className="rounded-full text-xs font-medium border-slate-300 text-slate-500 hover:bg-slate-50 gap-1.5">
+                <Settings2 className="w-3.5 h-3.5" />
+                Canais
+                <span className="flex gap-0.5 ml-1">
+                  {channelStatus.whatsapp && <span className="w-1.5 h-1.5 rounded-full bg-green-500" />}
+                  {channelStatus.instagram && <span className="w-1.5 h-1.5 rounded-full bg-pink-500" />}
+                  {channelStatus.webchat && <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />}
+                </span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-3" align="end">
+              <p className="text-xs font-semibold text-slate-500 mb-3">Canais ativos</p>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Phone className="w-4 h-4 text-green-500" />
+                    <span className="text-sm font-medium">WhatsApp</span>
+                  </div>
+                  <Switch checked={channelStatus.whatsapp} onCheckedChange={() => toggleChannel("whatsapp")} />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Instagram className="w-4 h-4 text-pink-500" />
+                    <span className="text-sm font-medium">Instagram</span>
+                  </div>
+                  <Switch checked={channelStatus.instagram} onCheckedChange={() => toggleChannel("instagram")} />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-blue-500" />
+                    <span className="text-sm font-medium">Chat Site</span>
+                  </div>
+                  <Switch checked={channelStatus.webchat} onCheckedChange={() => toggleChannel("webchat")} />
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
           <Button
             size="sm"
             variant={isOnline ? "default" : "outline"}
