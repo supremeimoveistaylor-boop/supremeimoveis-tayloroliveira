@@ -606,6 +606,28 @@ serve(async (req) => {
             });
 
             // =====================================================
+            // CHECK IF INSTAGRAM CHANNEL IS ENABLED
+            // =====================================================
+            let instagramChannelEnabled = true;
+            try {
+              const { data: allAgentStatuses } = await supabase
+                .from('agent_status')
+                .select('channel_status')
+                .limit(10);
+              
+              if (allAgentStatuses && allAgentStatuses.length > 0) {
+                instagramChannelEnabled = allAgentStatuses.some((a: any) => {
+                  const cs = a.channel_status;
+                  return !cs || cs.instagram !== false;
+                });
+              }
+              console.log('[Instagram Webhook] 📡 Instagram channel enabled:', instagramChannelEnabled);
+            } catch (e) {
+              console.error('[Instagram Webhook] Channel status check error:', e);
+            }
+
+            if (instagramChannelEnabled) {
+            // =====================================================
             // STEP 5: Lead management — UNCONDITIONAL SAVE
             // =====================================================
             let currentLeadId: string | null = null;
@@ -940,6 +962,9 @@ serve(async (req) => {
               } catch (aiErr) {
                 console.error('[Instagram Webhook] ❌ AI error:', aiErr);
               }
+            }
+            } else {
+              console.log('[Instagram Webhook] ⏸️ Instagram channel DISABLED - skipping all automation, message saved to inbox only');
             }
 
             // Update last_activity_at on connection

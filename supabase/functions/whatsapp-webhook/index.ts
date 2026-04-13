@@ -357,6 +357,29 @@ serve(async (req) => {
                   });
 
                   // =====================================================
+                  // CHECK IF WHATSAPP CHANNEL IS ENABLED (any agent)
+                  // =====================================================
+                  let whatsappChannelEnabled = true;
+                  try {
+                    const { data: allAgentStatuses } = await supabase
+                      .from('agent_status')
+                      .select('channel_status')
+                      .limit(10);
+                    
+                    if (allAgentStatuses && allAgentStatuses.length > 0) {
+                      // Channel is enabled if ANY agent has it enabled (or no channel_status set = default enabled)
+                      whatsappChannelEnabled = allAgentStatuses.some((a: any) => {
+                        const cs = a.channel_status;
+                        return !cs || cs.whatsapp !== false;
+                      });
+                    }
+                    console.log('[WhatsApp Webhook] 📡 WhatsApp channel enabled:', whatsappChannelEnabled);
+                  } catch (e) {
+                    console.error('[WhatsApp Webhook] Channel status check error:', e);
+                  }
+
+                  if (whatsappChannelEnabled) {
+                  // =====================================================
                   // AUTO-CREATE/UPDATE LEAD com telefone do WhatsApp
                   // =====================================================
                   try {
@@ -579,6 +602,9 @@ serve(async (req) => {
                     } catch (aiErr) {
                       console.error('[WhatsApp Webhook] AI response error:', aiErr);
                     }
+                  }
+                  } else {
+                    console.log('[WhatsApp Webhook] ⏸️ WhatsApp channel DISABLED - skipping all automation, message saved to inbox only');
                   }
                 }
               }
