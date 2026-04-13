@@ -308,17 +308,23 @@ serve(async (req) => {
                     }
                     await supabase.from('omnichat_conversations').update(convUpdate).eq('id', convId);
                   } else {
-                    // Check if any agent is TRULY online (last_seen within 30 minutes)
+                    // Check if any agent is TRULY online (last_seen within 30 minutes) AND has whatsapp channel enabled
                     const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
                     const { data: onlineAgents } = await supabase
                       .from('agent_status')
-                      .select('user_id')
+                      .select('user_id, channel_status')
                       .eq('status', 'online')
                       .gte('last_seen', thirtyMinAgo)
-                      .limit(1);
+                      .limit(10);
 
-                    const botActive = !onlineAgents || onlineAgents.length === 0;
-                    console.log('[WhatsApp Webhook] 🤖 Bot active:', botActive, '(recent agents:', onlineAgents?.length || 0, ')');
+                    // Filter agents that have whatsapp channel enabled
+                    const whatsappAgents = (onlineAgents || []).filter((a: any) => {
+                      const cs = a.channel_status;
+                      return !cs || cs.whatsapp !== false; // default to enabled
+                    });
+
+                    const botActive = whatsappAgents.length === 0;
+                    console.log('[WhatsApp Webhook] 🤖 Bot active:', botActive, '(whatsapp agents online:', whatsappAgents.length, ')');
 
                     const { data: newConv } = await supabase
                       .from('omnichat_conversations')
