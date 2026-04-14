@@ -256,6 +256,19 @@ export const OmnichatInboxPanel = () => {
     toast({ title: "Conversa encerrada" });
   };
 
+  const handleDeleteConversation = async (convId: string) => {
+    try {
+      // Delete messages first, then conversation
+      await supabase.from("omnichat_messages" as any).delete().eq("conversation_id", convId);
+      await supabase.from("omnichat_conversations" as any).delete().eq("id", convId);
+      if (selectedConv?.id === convId) setSelectedConv(null);
+      setConversations(prev => prev.filter(c => c.id !== convId));
+      toast({ title: "🗑️ Conversa excluída" });
+    } catch (err: any) {
+      toast({ title: "Erro ao excluir", description: err.message, variant: "destructive" });
+    }
+  };
+
   const handleMoveToCRM = async () => {
     if (!selectedConv) return;
     try {
