@@ -1864,28 +1864,27 @@ Me conta: você está procurando um imóvel para morar ou investir?"`;
                 }).eq("id", omnichatConvId);
               }
 
-              // Notify broker for escalation
+              // Notify FIXED broker for escalation
               try {
-                const { data: brokers } = await spb.from('brokers').select('whatsapp, name').eq('active', true).limit(1);
-                if (brokers && brokers.length > 0) {
-                  const { data: leadData } = await spb.from('leads').select('name, phone').eq('id', currentLeadId).single();
-                  const reason = isVisitScheduled 
-                    ? '📅 VISITA AGENDADA pelo chat do site!'
-                    : '💬 Cliente precisa de atendimento humano';
-                  
-                  const brokerMsg = `🚨 Lead Encaminhado (Chat do Site)\n\n` +
-                    `👤 Nome: ${leadData?.name || 'Não informado'}\n` +
-                    `📱 Telefone: ${leadData?.phone || 'Não informado'}\n` +
-                    `🎯 ${reason}\n\n` +
-                    (leadData?.phone ? `📲 Responder: https://wa.me/${leadData.phone.replace(/\D/g, '')}` : '');
+                const BROKER_WHATSAPP = '5562999918353';
+                const { data: leadData } = await spb.from('leads').select('name, phone').eq('id', currentLeadId).single();
+                const reason = isVisitScheduled 
+                  ? '📅 VISITA AGENDADA pelo chat do site!'
+                  : '💬 Cliente precisa de atendimento humano';
+                
+                const brokerMsg = `🚨 Lead Encaminhado (Chat do Site)\n\n` +
+                  `👤 Nome: ${leadData?.name || 'Não informado'}\n` +
+                  `📱 Telefone: ${leadData?.phone || 'Não informado'}\n` +
+                  `🎯 ${reason}\n\n` +
+                  (leadData?.phone ? `📲 Responder: https://wa.me/${leadData.phone.replace(/\D/g, '')}` : '');
 
-                  await fetch(`${SUPABASE_URL_INNER}/functions/v1/send-whatsapp`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ to: brokers[0].whatsapp, message: brokerMsg }),
-                  });
-                  console.log('[real-estate-chat] ✅ Broker notified for escalation');
-                }
+                console.log('📤 ENVIANDO ESCALAÇÃO PARA CORRETOR:', leadData?.name || 'Lead');
+                await fetch(`${SUPABASE_URL_INNER}/functions/v1/send-whatsapp`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ to: BROKER_WHATSAPP, message: brokerMsg }),
+                });
+                console.log('[real-estate-chat] ✅ Broker notified for escalation');
               } catch (notifyErr) {
                 console.error('[real-estate-chat] Broker notification error:', notifyErr);
               }
