@@ -11,9 +11,14 @@ import { Switch } from "@/components/ui/switch";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "@/hooks/use-toast";
 import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   MessageSquare, Phone, Instagram, Send, Bot, User, Wifi, WifiOff,
   ArrowRight, X, Clock, RefreshCw, LayoutGrid, Search, PhoneCall,
-  Video, MoreVertical, Globe, Tag, Sparkles, Pencil, Check, ArrowLeft, Settings2
+  Video, MoreVertical, Globe, Tag, Sparkles, Pencil, Check, ArrowLeft, Settings2, Trash2
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -251,6 +256,19 @@ export const OmnichatInboxPanel = () => {
     toast({ title: "Conversa encerrada" });
   };
 
+  const handleDeleteConversation = async (convId: string) => {
+    try {
+      // Delete messages first, then conversation
+      await supabase.from("omnichat_messages" as any).delete().eq("conversation_id", convId);
+      await supabase.from("omnichat_conversations" as any).delete().eq("id", convId);
+      if (selectedConv?.id === convId) setSelectedConv(null);
+      setConversations(prev => prev.filter(c => c.id !== convId));
+      toast({ title: "🗑️ Conversa excluída" });
+    } catch (err: any) {
+      toast({ title: "Erro ao excluir", description: err.message, variant: "destructive" });
+    }
+  };
+
   const handleMoveToCRM = async () => {
     if (!selectedConv) return;
     try {
@@ -458,7 +476,7 @@ export const OmnichatInboxPanel = () => {
                     <button
                       key={conv.id}
                       onClick={() => setSelectedConv(conv)}
-                      className={`w-full text-left px-3 py-2.5 flex items-center gap-3 transition-all hover:bg-slate-50 ${isActive ? "bg-amber-50/60 border-l-2 border-l-amber-500" : "border-l-2 border-l-transparent"}`}
+                      className={`group w-full text-left px-3 py-2.5 flex items-center gap-3 transition-all hover:bg-slate-50 ${isActive ? "bg-amber-50/60 border-l-2 border-l-amber-500" : "border-l-2 border-l-transparent"}`}
                     >
                       {/* Avatar */}
                       <div className="relative shrink-0">
@@ -496,6 +514,31 @@ export const OmnichatInboxPanel = () => {
                           {conv.unread_count}
                         </span>
                       )}
+                      {/* Delete button */}
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <button
+                            onClick={e => e.stopPropagation()}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full hover:bg-red-50 text-muted-foreground hover:text-red-500 shrink-0"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Excluir conversa?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Todas as mensagens desta conversa serão permanentemente removidas.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDeleteConversation(conv.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                              Excluir
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </button>
                   );
                 })}
@@ -720,6 +763,27 @@ export const OmnichatInboxPanel = () => {
                     <X className="w-4 h-4 mr-2" /> Encerrar
                   </Button>
                 )}
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button size="sm" variant="ghost" className="w-full rounded-xl text-red-500 hover:bg-red-50">
+                      <Trash2 className="w-4 h-4 mr-2" /> Excluir Conversa
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Excluir conversa?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Todas as mensagens desta conversa serão permanentemente removidas.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => handleDeleteConversation(selectedConv.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                        Excluir
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </div>
           ) : (
