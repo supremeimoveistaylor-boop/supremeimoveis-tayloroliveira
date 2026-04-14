@@ -11,9 +11,14 @@ import { Switch } from "@/components/ui/switch";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "@/hooks/use-toast";
 import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   MessageSquare, Phone, Instagram, Send, Bot, User, Wifi, WifiOff,
   ArrowRight, X, Clock, RefreshCw, LayoutGrid, Search, PhoneCall,
-  Video, MoreVertical, Globe, Tag, Sparkles, Pencil, Check, ArrowLeft, Settings2
+  Video, MoreVertical, Globe, Tag, Sparkles, Pencil, Check, ArrowLeft, Settings2, Trash2
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
