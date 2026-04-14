@@ -763,6 +763,27 @@ export const OmnichatInboxPanel = () => {
                     <X className="w-4 h-4 mr-2" /> Encerrar
                   </Button>
                 )}
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button size="sm" variant="ghost" className="w-full rounded-xl text-red-500 hover:bg-red-50">
+                      <Trash2 className="w-4 h-4 mr-2" /> Excluir Conversa
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Excluir conversa?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Todas as mensagens desta conversa serão permanentemente removidas.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => handleDeleteConversation(selectedConv.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                        Excluir
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </div>
           ) : (
