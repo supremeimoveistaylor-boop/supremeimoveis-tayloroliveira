@@ -576,23 +576,27 @@ serve(async (req) => {
         console.log("Corretor atribuído via RPC:", brokerId);
       }
 
-      // 5. 🔥 Enviar WhatsApp ao corretor IMEDIATAMENTE (sem depender de nome/telefone)
+      // 5. 🔥 Enviar WhatsApp ao corretor SOMENTE quando tiver nome E telefone reais
       {
-        const BROKER_WHATSAPP_IMMEDIATE = '5562999918353';
-        try {
-          let propertyTitle = "Não especificado";
-          if (propertyId) {
-            const { data: property } = await supabase
-              .from("properties")
-              .select("title, location")
-              .eq("id", propertyId)
-              .single();
-            if (property) {
-              propertyTitle = `${property.title}${property.location ? ` - ${property.location}` : ""}`;
+        const hasRealName = leadName && leadName !== 'Visitante do Chat' && leadName !== 'Visitante' && !/^\d+$/.test(leadName);
+        const hasRealPhone = leadPhone && leadPhone !== 'Não informado' && leadPhone.replace(/\D/g, '').length >= 10;
+        
+        if (hasRealName && hasRealPhone) {
+          const BROKER_WHATSAPP_IMMEDIATE = '5562999918353';
+          try {
+            let propertyTitle = "Não especificado";
+            if (propertyId) {
+              const { data: property } = await supabase
+                .from("properties")
+                .select("title, location")
+                .eq("id", propertyId)
+                .single();
+              if (property) {
+                propertyTitle = `${property.title}${property.location ? ` - ${property.location}` : ""}`;
+              }
             }
-          }
 
-          const whatsappMessage = `🔥 *NOVO LEAD NO CHAT*
+            const whatsappMessage = `🔥 *NOVO LEAD NO CHAT*
 
 👤 *Nome:* ${leadName}
 📞 *Telefone:* ${leadPhone}
@@ -600,33 +604,36 @@ serve(async (req) => {
 🌐 *Origem:* ${origin || "site"}
 🔗 *Página:* ${pageUrl || "Homepage"}
 
-⚡ Atendimento imediato — acesse o painel.`;
+⚡ Atendimento imediato — acesse o painel.
+📲 Responder: https://wa.me/${leadPhone.replace(/\D/g, '')}`;
 
-          const sendWhatsappUrl = `${SUPABASE_URL}/functions/v1/send-whatsapp`;
-          
-          console.log('🔥 ENVIANDO NOTIFICAÇÃO IMEDIATA AO CORRETOR');
-          const whatsappResponse = await fetch(sendWhatsappUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              to: BROKER_WHATSAPP_IMMEDIATE,
-              message: whatsappMessage
-            })
-          });
+            const sendWhatsappUrl = `${SUPABASE_URL}/functions/v1/send-whatsapp`;
+            
+            console.log('🔥 ENVIANDO NOTIFICAÇÃO AO CORRETOR (nome+telefone confirmados)');
+            const whatsappResponse = await fetch(sendWhatsappUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                to: BROKER_WHATSAPP_IMMEDIATE,
+                message: whatsappMessage
+              })
+            });
 
-          if (whatsappResponse.ok) {
-            console.log(`✅ WhatsApp IMEDIATO enviado para corretor 5562999918353`);
-            // Marcar como enviado para não duplicar
-            await supabase.from("leads").update({
-              whatsapp_sent: true,
-              whatsapp_sent_at: new Date().toISOString()
-            }).eq("id", currentLeadId);
-          } else {
-            const errorData = await whatsappResponse.json();
-            console.error("Erro ao enviar WhatsApp imediato:", errorData);
+            if (whatsappResponse.ok) {
+              console.log(`✅ WhatsApp enviado para corretor - Lead: ${leadName} (${leadPhone})`);
+              await supabase.from("leads").update({
+                whatsapp_sent: true,
+                whatsapp_sent_at: new Date().toISOString()
+              }).eq("id", currentLeadId);
+            } else {
+              const errorData = await whatsappResponse.json();
+              console.error("Erro ao enviar WhatsApp:", errorData);
+            }
+          } catch (whatsappError) {
+            console.error("Erro ao processar envio de WhatsApp:", whatsappError);
           }
-        } catch (whatsappError) {
-          console.error("Erro ao processar envio imediato de WhatsApp:", whatsappError);
+        } else {
+          console.log(`⏳ Aguardando dados completos para notificar corretor. Nome: ${leadName}, Telefone: ${leadPhone}`);
         }
       }
     }
@@ -1561,8 +1568,7 @@ Entre em contato imediatamente.`;
           }
         }
 
-        // --- NOTIFICAÇÃO UNIVERSAL PARA CORRETOR (todos os leads, todos os canais) ---
-        // Enviar para o corretor fixo IMEDIATAMENTE, sem depender de nome/telefone
+        // --- NOTIFICAÇÃO PARA CORRETOR (Chat) — SÓ quando tiver nome E telefone ---
         try {
           const { data: leadForNotify } = await supabase
             .from("leads")
@@ -1570,23 +1576,24 @@ Entre em contato imediatamente.`;
             .eq("id", currentLeadId)
             .single();
 
-          if (leadForNotify && !leadForNotify.whatsapp_sent) {
+          const hasName = leadForNotify?.name && leadForNotify.name !== 'Visitante do Chat' && leadForNotify.name !== 'Visitante' && !/^\d+$/.test(leadForNotify.name);
+          const hasPhone = leadForNotify?.phone && leadForNotify.phone.replace(/\D/g, '').length >= 10;
+
+          if (leadForNotify && !leadForNotify.whatsapp_sent && hasName && hasPhone) {
             const BROKER_WHATSAPP = '5562999918353';
-            const displayName = (leadForNotify.name && leadForNotify.name !== 'Visitante do Chat' && leadForNotify.name !== 'Visitante') 
-              ? leadForNotify.name : (leadForNotify.phone || 'Novo visitante');
-            const contactLink = leadForNotify.phone ? `https://wa.me/${leadForNotify.phone.replace(/\D/g, '')}` : 'N/A';
+            const contactLink = `https://wa.me/${leadForNotify.phone!.replace(/\D/g, '')}`;
             const lastUserMsg = messages.filter((m: ChatMessage) => m.role === 'user').pop();
             const lastMsgText = typeof lastUserMsg?.content === 'string' ? lastUserMsg.content : '';
 
             const brokerMessage = `🚨 *Novo Lead Chat do Site*\n\n` +
-              `👤 Nome: ${displayName}\n` +
-              `📱 Telefone: ${leadForNotify.phone || 'Ainda não informado'}\n` +
+              `👤 Nome: ${leadForNotify.name}\n` +
+              `📱 Telefone: ${leadForNotify.phone}\n` +
               `📍 Origem: Chat do Site\n` +
               `💬 Mensagem: ${lastMsgText.substring(0, 200) || '(primeira interação)'}\n` +
               `📊 Score: ${leadScoreNum}/100 (${leadScore})\n\n` +
               `📲 Responder: ${contactLink}`;
 
-            console.log('📤 ENVIANDO LEAD PARA CORRETOR (Chat):', displayName);
+            console.log('📤 ENVIANDO LEAD PARA CORRETOR (Chat - nome+telefone confirmados):', leadForNotify.name);
             const sendWhatsappUrl = `${SUPABASE_URL}/functions/v1/send-whatsapp`;
             fetch(sendWhatsappUrl, {
               method: "POST",
@@ -1594,12 +1601,14 @@ Entre em contato imediatamente.`;
               body: JSON.stringify({ to: BROKER_WHATSAPP, message: brokerMessage }),
             }).then(async (r) => {
               if (r.ok) {
-                console.log(`✅ Corretor notificado (5562999918353) - Lead Chat: ${displayName}`);
+                console.log(`✅ Corretor notificado - Lead Chat: ${leadForNotify.name} (${leadForNotify.phone})`);
                 await supabase.from("leads").update({ whatsapp_sent: true, whatsapp_sent_at: new Date().toISOString() }).eq("id", currentLeadId);
               } else {
                 console.error(`❌ Falha notificação corretor`);
               }
             }).catch(err => console.error("WhatsApp broker notification error:", err));
+          } else if (leadForNotify && !leadForNotify.whatsapp_sent) {
+            console.log(`⏳ Chat: aguardando nome+telefone para notificar. Nome: ${leadForNotify.name}, Tel: ${leadForNotify.phone}`);
           }
         } catch (notifyErr) {
           console.error("Broker notification error (non-blocking):", notifyErr);
