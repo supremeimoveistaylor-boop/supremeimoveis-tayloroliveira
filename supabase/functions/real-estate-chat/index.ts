@@ -629,6 +629,7 @@ serve(async (req) => {
           console.error("Erro ao processar envio imediato de WhatsApp:", whatsappError);
         }
       }
+    }
 
     // =====================================================
     // INTEGRAÇÃO OMNICHAT - WEBCHAT
