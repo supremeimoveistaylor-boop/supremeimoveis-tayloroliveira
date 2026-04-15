@@ -1285,7 +1285,7 @@ Entre em contato o quanto antes.`;
     // =====================================================
     // PIPELINE INVISÍVEL: SCORING + CRM + DISTRIBUIÇÃO
     // =====================================================
-    if (currentLeadId && messages.length >= 2) {
+    if (currentLeadId && messages.length >= 1) {
       try {
         // Concatenar todas as mensagens do usuário para análise
         const allUserText = messages
