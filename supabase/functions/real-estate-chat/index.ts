@@ -576,23 +576,27 @@ serve(async (req) => {
         console.log("Corretor atribuído via RPC:", brokerId);
       }
 
-      // 5. 🔥 Enviar WhatsApp ao corretor IMEDIATAMENTE (sem depender de nome/telefone)
+      // 5. 🔥 Enviar WhatsApp ao corretor SOMENTE quando tiver nome E telefone reais
       {
-        const BROKER_WHATSAPP_IMMEDIATE = '5562999918353';
-        try {
-          let propertyTitle = "Não especificado";
-          if (propertyId) {
-            const { data: property } = await supabase
-              .from("properties")
-              .select("title, location")
-              .eq("id", propertyId)
-              .single();
-            if (property) {
-              propertyTitle = `${property.title}${property.location ? ` - ${property.location}` : ""}`;
+        const hasRealName = leadName && leadName !== 'Visitante do Chat' && leadName !== 'Visitante' && !/^\d+$/.test(leadName);
+        const hasRealPhone = leadPhone && leadPhone !== 'Não informado' && leadPhone.replace(/\D/g, '').length >= 10;
+        
+        if (hasRealName && hasRealPhone) {
+          const BROKER_WHATSAPP_IMMEDIATE = '5562999918353';
+          try {
+            let propertyTitle = "Não especificado";
+            if (propertyId) {
+              const { data: property } = await supabase
+                .from("properties")
+                .select("title, location")
+                .eq("id", propertyId)
+                .single();
+              if (property) {
+                propertyTitle = `${property.title}${property.location ? ` - ${property.location}` : ""}`;
+              }
             }
-          }
 
-          const whatsappMessage = `🔥 *NOVO LEAD NO CHAT*
+            const whatsappMessage = `🔥 *NOVO LEAD NO CHAT*
 
 👤 *Nome:* ${leadName}
 📞 *Telefone:* ${leadPhone}
@@ -600,33 +604,36 @@ serve(async (req) => {
 🌐 *Origem:* ${origin || "site"}
 🔗 *Página:* ${pageUrl || "Homepage"}
 
-⚡ Atendimento imediato — acesse o painel.`;
+⚡ Atendimento imediato — acesse o painel.
+📲 Responder: https://wa.me/${leadPhone.replace(/\D/g, '')}`;
 
-          const sendWhatsappUrl = `${SUPABASE_URL}/functions/v1/send-whatsapp`;
-          
-          console.log('🔥 ENVIANDO NOTIFICAÇÃO IMEDIATA AO CORRETOR');
-          const whatsappResponse = await fetch(sendWhatsappUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              to: BROKER_WHATSAPP_IMMEDIATE,
-              message: whatsappMessage
-            })
-          });
+            const sendWhatsappUrl = `${SUPABASE_URL}/functions/v1/send-whatsapp`;
+            
+            console.log('🔥 ENVIANDO NOTIFICAÇÃO AO CORRETOR (nome+telefone confirmados)');
+            const whatsappResponse = await fetch(sendWhatsappUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                to: BROKER_WHATSAPP_IMMEDIATE,
+                message: whatsappMessage
+              })
+            });
 
-          if (whatsappResponse.ok) {
-            console.log(`✅ WhatsApp IMEDIATO enviado para corretor 5562999918353`);
-            // Marcar como enviado para não duplicar
-            await supabase.from("leads").update({
-              whatsapp_sent: true,
-              whatsapp_sent_at: new Date().toISOString()
-            }).eq("id", currentLeadId);
-          } else {
-            const errorData = await whatsappResponse.json();
-            console.error("Erro ao enviar WhatsApp imediato:", errorData);
+            if (whatsappResponse.ok) {
+              console.log(`✅ WhatsApp enviado para corretor - Lead: ${leadName} (${leadPhone})`);
+              await supabase.from("leads").update({
+                whatsapp_sent: true,
+                whatsapp_sent_at: new Date().toISOString()
+              }).eq("id", currentLeadId);
+            } else {
+              const errorData = await whatsappResponse.json();
+              console.error("Erro ao enviar WhatsApp:", errorData);
+            }
+          } catch (whatsappError) {
+            console.error("Erro ao processar envio de WhatsApp:", whatsappError);
           }
-        } catch (whatsappError) {
-          console.error("Erro ao processar envio imediato de WhatsApp:", whatsappError);
+        } else {
+          console.log(`⏳ Aguardando dados completos para notificar corretor. Nome: ${leadName}, Telefone: ${leadPhone}`);
         }
       }
     }
