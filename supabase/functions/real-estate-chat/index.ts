@@ -1013,6 +1013,64 @@ serve(async (req) => {
           updates.visit_requested = true;
           updates.status = "visita_solicitada";
           imobUpdates.status = "visita_agendada";
+
+          // 🔥 PERSISTIR AGENDAMENTO em scheduled_visits
+          try {
+            const { data: tenantRole } = await supabase
+              .from("user_roles")
+              .select("user_id")
+              .in("role", ["super_admin", "admin"])
+              .limit(1)
+              .single();
+            
+            if (tenantRole?.user_id) {
+              const clientNameForVisit = clientName || "Visitante do Chat";
+              const clientPhoneForVisit = (updates.phone as string) || clientPhone || "A definir";
+              
+              // Upsert visit_client
+              const { data: existingClient } = await supabase
+                .from("visit_clients")
+                .select("id")
+                .eq("phone", clientPhoneForVisit)
+                .eq("tenant_id", tenantRole.user_id)
+                .maybeSingle();
+              
+              let visitClientId: string;
+              if (existingClient) {
+                visitClientId = existingClient.id;
+              } else {
+                const { data: newClient } = await supabase
+                  .from("visit_clients")
+                  .insert({
+                    name: clientNameForVisit,
+                    phone: clientPhoneForVisit,
+                    tenant_id: tenantRole.user_id,
+                  })
+                  .select("id")
+                  .single();
+                visitClientId = newClient!.id;
+              }
+
+              // Create scheduled visit for tomorrow 10:00
+              const tomorrow = new Date();
+              tomorrow.setDate(tomorrow.getDate() + 1);
+              const visitDate = tomorrow.toISOString().split("T")[0];
+
+              await supabase.from("scheduled_visits").insert({
+                client_id: visitClientId,
+                tenant_id: tenantRole.user_id,
+                property_id: propertyId || null,
+                property_name: propertyName || "A definir",
+                visit_date: visitDate,
+                visit_time: "10:00",
+                status: "pending",
+                notes: `Agendamento automático via chat. Mensagem: "${textContent.substring(0, 200)}"`,
+              });
+              console.log(`📅 Agendamento salvo em scheduled_visits para ${visitDate}`);
+            }
+          } catch (schedErr) {
+            console.error("Erro ao salvar agendamento:", schedErr);
+          }
         }
 
         if (phoneExtracted) {
