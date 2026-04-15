@@ -576,8 +576,9 @@ serve(async (req) => {
         console.log("Corretor atribuído via RPC:", brokerId);
       }
 
-      // 5. Enviar WhatsApp ao atendente ativo
-      if (activeAttendant?.phone && leadName !== "Visitante do Chat") {
+      // 5. 🔥 Enviar WhatsApp ao corretor IMEDIATAMENTE (sem depender de nome/telefone)
+      {
+        const BROKER_WHATSAPP_IMMEDIATE = '5562999918353';
         try {
           let propertyTitle = "Não especificado";
           if (propertyId) {
@@ -591,9 +592,7 @@ serve(async (req) => {
             }
           }
 
-          const whatsappMessage = `🏠 *Novo Lead - Supreme Empreendimentos*
-
-Olá ${activeAttendant.name}! Você recebeu um novo lead no chat.
+          const whatsappMessage = `🔥 *NOVO LEAD NO CHAT*
 
 👤 *Nome:* ${leadName}
 📞 *Telefone:* ${leadPhone}
@@ -601,27 +600,33 @@ Olá ${activeAttendant.name}! Você recebeu um novo lead no chat.
 🌐 *Origem:* ${origin || "site"}
 🔗 *Página:* ${pageUrl || "Homepage"}
 
-Acesse o painel para mais detalhes.`;
+⚡ Atendimento imediato — acesse o painel.`;
 
           const sendWhatsappUrl = `${SUPABASE_URL}/functions/v1/send-whatsapp`;
           
+          console.log('🔥 ENVIANDO NOTIFICAÇÃO IMEDIATA AO CORRETOR');
           const whatsappResponse = await fetch(sendWhatsappUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              to: activeAttendant.phone,
+              to: BROKER_WHATSAPP_IMMEDIATE,
               message: whatsappMessage
             })
           });
 
           if (whatsappResponse.ok) {
-            console.log(`✅ WhatsApp enviado para atendente ${activeAttendant.name}`);
+            console.log(`✅ WhatsApp IMEDIATO enviado para corretor 5562999918353`);
+            // Marcar como enviado para não duplicar
+            await supabase.from("leads").update({
+              whatsapp_sent: true,
+              whatsapp_sent_at: new Date().toISOString()
+            }).eq("id", currentLeadId);
           } else {
             const errorData = await whatsappResponse.json();
-            console.error("Erro ao enviar WhatsApp:", errorData);
+            console.error("Erro ao enviar WhatsApp imediato:", errorData);
           }
         } catch (whatsappError) {
-          console.error("Erro ao processar envio de WhatsApp:", whatsappError);
+          console.error("Erro ao processar envio imediato de WhatsApp:", whatsappError);
         }
       }
     }
@@ -1009,6 +1014,64 @@ Acesse o painel para mais detalhes.`;
           updates.visit_requested = true;
           updates.status = "visita_solicitada";
           imobUpdates.status = "visita_agendada";
+
+          // 🔥 PERSISTIR AGENDAMENTO em scheduled_visits
+          try {
+            const { data: tenantRole } = await supabase
+              .from("user_roles")
+              .select("user_id")
+              .in("role", ["super_admin", "admin"])
+              .limit(1)
+              .single();
+            
+            if (tenantRole?.user_id) {
+              const clientNameForVisit = clientName || "Visitante do Chat";
+              const clientPhoneForVisit = (updates.phone as string) || clientPhone || "A definir";
+              
+              // Upsert visit_client
+              const { data: existingClient } = await supabase
+                .from("visit_clients")
+                .select("id")
+                .eq("phone", clientPhoneForVisit)
+                .eq("tenant_id", tenantRole.user_id)
+                .maybeSingle();
+              
+              let visitClientId: string;
+              if (existingClient) {
+                visitClientId = existingClient.id;
+              } else {
+                const { data: newClient } = await supabase
+                  .from("visit_clients")
+                  .insert({
+                    name: clientNameForVisit,
+                    phone: clientPhoneForVisit,
+                    tenant_id: tenantRole.user_id,
+                  })
+                  .select("id")
+                  .single();
+                visitClientId = newClient!.id;
+              }
+
+              // Create scheduled visit for tomorrow 10:00
+              const tomorrow = new Date();
+              tomorrow.setDate(tomorrow.getDate() + 1);
+              const visitDate = tomorrow.toISOString().split("T")[0];
+
+              await supabase.from("scheduled_visits").insert({
+                client_id: visitClientId,
+                tenant_id: tenantRole.user_id,
+                property_id: propertyId || null,
+                property_name: propertyName || "A definir",
+                visit_date: visitDate,
+                visit_time: "10:00",
+                status: "pending",
+                notes: `Agendamento automático via chat. Mensagem: "${textContent.substring(0, 200)}"`,
+              });
+              console.log(`📅 Agendamento salvo em scheduled_visits para ${visitDate}`);
+            }
+          } catch (schedErr) {
+            console.error("Erro ao salvar agendamento:", schedErr);
+          }
         }
 
         if (phoneExtracted) {
@@ -1281,7 +1344,7 @@ Entre em contato o quanto antes.`;
     // =====================================================
     // PIPELINE INVISÍVEL: SCORING + CRM + DISTRIBUIÇÃO
     // =====================================================
-    if (currentLeadId && messages.length >= 2) {
+    if (currentLeadId && messages.length >= 1) {
       try {
         // Concatenar todas as mensagens do usuário para análise
         const allUserText = messages
