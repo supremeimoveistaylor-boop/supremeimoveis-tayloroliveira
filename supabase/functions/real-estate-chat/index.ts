@@ -576,8 +576,9 @@ serve(async (req) => {
         console.log("Corretor atribuído via RPC:", brokerId);
       }
 
-      // 5. Enviar WhatsApp ao atendente ativo
-      if (activeAttendant?.phone && leadName !== "Visitante do Chat") {
+      // 5. 🔥 Enviar WhatsApp ao corretor IMEDIATAMENTE (sem depender de nome/telefone)
+      {
+        const BROKER_WHATSAPP_IMMEDIATE = '5562999918353';
         try {
           let propertyTitle = "Não especificado";
           if (propertyId) {
@@ -591,9 +592,7 @@ serve(async (req) => {
             }
           }
 
-          const whatsappMessage = `🏠 *Novo Lead - Supreme Empreendimentos*
-
-Olá ${activeAttendant.name}! Você recebeu um novo lead no chat.
+          const whatsappMessage = `🔥 *NOVO LEAD NO CHAT*
 
 👤 *Nome:* ${leadName}
 📞 *Telefone:* ${leadPhone}
@@ -601,30 +600,35 @@ Olá ${activeAttendant.name}! Você recebeu um novo lead no chat.
 🌐 *Origem:* ${origin || "site"}
 🔗 *Página:* ${pageUrl || "Homepage"}
 
-Acesse o painel para mais detalhes.`;
+⚡ Atendimento imediato — acesse o painel.`;
 
           const sendWhatsappUrl = `${SUPABASE_URL}/functions/v1/send-whatsapp`;
           
+          console.log('🔥 ENVIANDO NOTIFICAÇÃO IMEDIATA AO CORRETOR');
           const whatsappResponse = await fetch(sendWhatsappUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              to: activeAttendant.phone,
+              to: BROKER_WHATSAPP_IMMEDIATE,
               message: whatsappMessage
             })
           });
 
           if (whatsappResponse.ok) {
-            console.log(`✅ WhatsApp enviado para atendente ${activeAttendant.name}`);
+            console.log(`✅ WhatsApp IMEDIATO enviado para corretor 5562999918353`);
+            // Marcar como enviado para não duplicar
+            await supabase.from("leads").update({
+              whatsapp_sent: true,
+              whatsapp_sent_at: new Date().toISOString()
+            }).eq("id", currentLeadId);
           } else {
             const errorData = await whatsappResponse.json();
-            console.error("Erro ao enviar WhatsApp:", errorData);
+            console.error("Erro ao enviar WhatsApp imediato:", errorData);
           }
         } catch (whatsappError) {
-          console.error("Erro ao processar envio de WhatsApp:", whatsappError);
+          console.error("Erro ao processar envio imediato de WhatsApp:", whatsappError);
         }
       }
-    }
 
     // =====================================================
     // INTEGRAÇÃO OMNICHAT - WEBCHAT
