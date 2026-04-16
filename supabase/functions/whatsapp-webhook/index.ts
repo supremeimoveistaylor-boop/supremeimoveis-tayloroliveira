@@ -9,6 +9,42 @@ const corsHeaders = {
 const VERIFY_TOKEN = Deno.env.get('WHATSAPP_WEBHOOK_VERIFY_TOKEN') || Deno.env.get('INSTAGRAM_WEBHOOK_VERIFY_TOKEN');
 
 // =====================================================
+// SIGNATURE VERIFICATION — HMAC-SHA256
+// =====================================================
+async function verifyWebhookSignature(req: Request): Promise<{ valid: boolean; bodyText: string }> {
+  const META_APP_SECRET = Deno.env.get('META_APP_SECRET');
+  const signature = req.headers.get('X-Hub-Signature-256');
+  const bodyText = await req.text();
+
+  if (!META_APP_SECRET) {
+    console.warn('[WhatsApp Webhook] META_APP_SECRET not set — skipping signature verification');
+    return { valid: true, bodyText };
+  }
+
+  if (!signature) {
+    console.error('[WhatsApp Webhook] Missing X-Hub-Signature-256 header');
+    return { valid: false, bodyText };
+  }
+
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(META_APP_SECRET),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const mac = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(bodyText));
+  const expected = 'sha256=' + Array.from(new Uint8Array(mac)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+  if (signature !== expected) {
+    console.error('[WhatsApp Webhook] Invalid signature');
+    return { valid: false, bodyText };
+  }
+
+  return { valid: true, bodyText };
+}
+
+// =====================================================
 // IGNORE WORDS — messages that are NOT names
 // =====================================================
 const IGNORE_WORDS = new Set([
@@ -90,10 +126,6 @@ function normalizeName(raw: string | null): string | null {
   return firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
 }
 
-// =====================================================
-// INTERCEPTOR: processIncomingMessage — runs BEFORE AI
-// Detects name from message text and saves immediately
-// =====================================================
 async function processIncomingMessage(
   supabase: any,
   messageText: string,
@@ -104,16 +136,12 @@ async function processIncomingMessage(
   if (!messageText || !messageText.trim()) return null;
 
   const text = messageText.trim();
-
-  // Skip messages that are clearly not names
   if (/^\d+$/.test(text)) return null;
   const lowerText = text.toLowerCase().replace(/[.,!?]+$/, '').trim();
   if (IGNORE_WORDS.has(lowerText)) return null;
 
-  // 1. Try pattern-based extraction ("me chamo João", "meu nome é Maria")
   let detectedName = extractNameFromText(text);
 
-  // 2. Try contextual extraction: if bot asked for name and user replied
   if (!detectedName) {
     const { data: lastBotMsg } = await supabase
       .from('omnichat_messages')
@@ -132,7 +160,6 @@ async function processIncomingMessage(
     }
   }
 
-  // 3. Try bare name: 1-3 words starting with uppercase
   if (!detectedName) {
     const words = text.split(/\s+/);
     if (words.length <= 3 && /^[A-ZÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ]/.test(text)) {
@@ -140,15 +167,12 @@ async function processIncomingMessage(
     }
   }
 
-  // Validate
   if (!detectedName) return null;
   if (detectedName.length < 3) return null;
   if (/\d/.test(detectedName)) return null;
 
-  // LOG OBRIGATÓRIO
   console.log('CAPTURA NOME:', { mensagem: text, nome_detectado: detectedName, canal: channel, convId });
 
-  // Check if name is actually needed (current is fallback)
   const { data: convData } = await supabase
     .from('omnichat_conversations')
     .select('contact_name, lead_id')
@@ -164,13 +188,11 @@ async function processIncomingMessage(
 
   const nowIso = new Date().toISOString();
 
-  // SAVE 1: omnichat_conversations
   await supabase.from('omnichat_conversations').update({
     contact_name: detectedName,
   }).eq('id', convId);
   console.log('[processIncomingMessage] ✅ omnichat_conversations.contact_name =', detectedName);
 
-  // SAVE 2: leads
   if (effectiveLeadId) {
     const { data: lead } = await supabase.from('leads').select('name').eq('id', effectiveLeadId).single();
     if (isFallbackName(lead?.name)) {
@@ -182,7 +204,6 @@ async function processIncomingMessage(
       console.log('[processIncomingMessage] ✅ leads.name =', detectedName);
     }
 
-    // SAVE 3: crm_cards
     const { data: crmCards } = await supabase.from('crm_cards').select('id, cliente').eq('lead_id', effectiveLeadId);
     for (const card of (crmCards || [])) {
       if (isFallbackName(card.cliente)) {
@@ -229,7 +250,19 @@ serve(async (req) => {
   // POST - Receive webhook events
   if (req.method === 'POST') {
     try {
-      const body = await req.json();
+      // =====================================================
+      // VERIFY WEBHOOK SIGNATURE BEFORE PROCESSING
+      // =====================================================
+      const { valid, bodyText } = await verifyWebhookSignature(req);
+      if (!valid) {
+        console.error('[WhatsApp Webhook] ❌ Signature verification failed — rejecting request');
+        return new Response(JSON.stringify({ ok: false, error: 'Invalid signature' }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const body = JSON.parse(bodyText);
       console.log('[WhatsApp Webhook] Event received:', JSON.stringify(body, null, 2));
 
       if (body.object === 'whatsapp_business_account') {
@@ -261,18 +294,15 @@ serve(async (req) => {
                 const contactInfo = contacts.find((c: any) => c.wa_id === senderPhone);
                 const rawContactName = contactInfo?.profile?.name || null;
                 
-                // ENHANCED LOGGING: Show exactly what the API sends
                 console.log('[WhatsApp Webhook] 📋 RAW contacts array:', JSON.stringify(contacts));
                 console.log('[WhatsApp Webhook] 📋 RAW profile.name:', rawContactName);
                 
-                // Accept name if it's not just digits and not the phone number
                 const contactName = (rawContactName && rawContactName !== senderPhone && !/^\d+$/.test(rawContactName)) ? rawContactName : null;
                 const messageText = message.text?.body || message.caption || '';
                 const mediaUrl = message.image?.url || message.video?.url || message.document?.url || null;
 
                 console.log('[WhatsApp Webhook] 📋 Contact data:', { wa_id: senderPhone, profile_name: rawContactName, resolved_name: contactName });
 
-                // Detect Meta Ads origin (click-to-WhatsApp ads send referral data)
                 const referral = message.referral || null;
                 const isFromMetaAds = !!referral;
                 const adSource = referral ? `meta_ads` : 'whatsapp';
@@ -281,7 +311,6 @@ serve(async (req) => {
                 console.log('[WhatsApp Webhook] Message:', { from: senderPhone, text: messageText, contact: contactName, hasReferral: isFromMetaAds });
 
                 if (connection) {
-                  // Create or update omnichat conversation
                   const { data: existingConv } = await supabase
                     .from('omnichat_conversations')
                     .select('id, unread_count, contact_name, contact_phone, lead_id')
@@ -301,14 +330,12 @@ serve(async (req) => {
                       status: 'open',
                       contact_phone: senderPhone,
                     };
-                    // Always update name from WhatsApp profile if current is null/fallback
                     if (contactName && (!existingConv.contact_name || existingConv.contact_name === 'Visitante' || existingConv.contact_name === 'Cliente' || /^\d+$/.test(existingConv.contact_name))) {
                       convUpdate.contact_name = contactName;
                       console.log('[WhatsApp Webhook] 📝 Updating conv name to:', contactName);
                     }
                     await supabase.from('omnichat_conversations').update(convUpdate).eq('id', convId);
                   } else {
-                    // Check if any agent is TRULY online (last_seen within 30 minutes) AND has whatsapp channel enabled
                     const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
                     const { data: onlineAgents } = await supabase
                       .from('agent_status')
@@ -317,10 +344,9 @@ serve(async (req) => {
                       .gte('last_seen', thirtyMinAgo)
                       .limit(10);
 
-                    // Filter agents that have whatsapp channel enabled
                     const whatsappAgents = (onlineAgents || []).filter((a: any) => {
                       const cs = a.channel_status;
-                      return !cs || cs.whatsapp !== false; // default to enabled
+                      return !cs || cs.whatsapp !== false;
                     });
 
                     const botActive = whatsappAgents.length === 0;
@@ -346,7 +372,6 @@ serve(async (req) => {
                     convId = newConv!.id;
                   }
 
-                  // Save message
                   await supabase.from('omnichat_messages').insert({
                     conversation_id: convId,
                     sender_type: 'client',
@@ -356,9 +381,6 @@ serve(async (req) => {
                     meta_message_id: message.id,
                   });
 
-                  // =====================================================
-                  // CHECK IF WHATSAPP CHANNEL IS ENABLED (any agent)
-                  // =====================================================
                   let whatsappChannelEnabled = true;
                   try {
                     const { data: allAgentStatuses } = await supabase
@@ -367,7 +389,6 @@ serve(async (req) => {
                       .limit(10);
                     
                     if (allAgentStatuses && allAgentStatuses.length > 0) {
-                      // Channel is enabled if ANY agent has it enabled (or no channel_status set = default enabled)
                       whatsappChannelEnabled = allAgentStatuses.some((a: any) => {
                         const cs = a.channel_status;
                         return !cs || cs.whatsapp !== false;
@@ -379,250 +400,199 @@ serve(async (req) => {
                   }
 
                   if (whatsappChannelEnabled) {
-                  // =====================================================
-                  // AUTO-CREATE/UPDATE LEAD com telefone do WhatsApp
-                  // =====================================================
                   try {
                     const sanitizedPhone = senderPhone.replace(/\D/g, '');
                     
-                    // Verificar se já existe lead com este telefone
                     const { data: existingLead } = await supabase
                       .from('leads')
                       .select('id, name, phone, whatsapp_sent')
                       .eq('phone', sanitizedPhone)
                       .maybeSingle();
 
-                    // Determine the best name: contactName from WhatsApp profile > extracted from text > fallback
-                    const isFallback = (n: string | null) => !n || n === 'Visitante' || n === 'Visitante do Chat' || n === 'Cliente' || n === 'A definir' || /^WhatsApp \d+$/.test(n || '');
-                    
+                    const bestName = contactName || (existingLead?.name && !isFallbackName(existingLead.name) ? existingLead.name : null);
+                    const nowIso = new Date().toISOString();
+
+                    let leadId: string;
+                    let shouldNotify = false;
+
                     if (existingLead) {
+                      leadId = existingLead.id;
                       const leadUpdate: Record<string, unknown> = {
-                        last_interaction_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString(),
+                        last_interaction_at: nowIso,
+                        updated_at: nowIso,
+                        origin: adSource,
                       };
-                      // Always update name if current is fallback and we have a real name
-                      if (contactName && isFallback(existingLead.name)) {
-                        leadUpdate.name = contactName;
+                      if (bestName && isFallbackName(existingLead.name)) {
+                        leadUpdate.name = bestName;
                       }
-                      // Ensure phone is set
-                      if (!existingLead.phone) {
-                        leadUpdate.phone = sanitizedPhone;
+                      if (adCampaign) leadUpdate.campaign = adCampaign;
+                      if (isFromMetaAds) {
+                        leadUpdate.source = 'meta_ads';
+                        leadUpdate.source_detail = adCampaign;
+                        leadUpdate.medium = 'cpc';
                       }
-                      await supabase.from('leads').update(leadUpdate).eq('id', existingLead.id);
-                      
-                      await supabase.from('omnichat_conversations').update({
-                        lead_id: existingLead.id,
-                        contact_name: contactName && isFallback(existingConv?.contact_name ?? null) ? contactName : undefined,
-                        contact_phone: sanitizedPhone,
-                      }).eq('id', convId);
-
-                      // Update CRM card
-                      const crmUpdate: Record<string, unknown> = { 
-                        telefone: sanitizedPhone,
-                        updated_at: new Date().toISOString(),
-                        last_interaction_at: new Date().toISOString(),
-                      };
-                      if (contactName && isFallback(existingLead.name)) {
-                        crmUpdate.cliente = contactName;
-                        crmUpdate.titulo = `Lead WhatsApp - ${contactName}`;
-                      }
-                      await supabase.from('crm_cards').update(crmUpdate).eq('lead_id', existingLead.id);
-                      
-                      // Notify broker if not yet notified for this lead
-                      if (!existingLead.whatsapp_sent) {
-                        try {
-                          const BROKER_WHATSAPP = '5562999918353';
-                          const displayName = contactName || existingLead.name || sanitizedPhone;
-                          const brokerMessage = `🚨 *Novo Lead WhatsApp*\n\n👤 Nome: ${displayName}\n📱 Telefone: ${sanitizedPhone}\n📍 Origem: WhatsApp\n💬 Mensagem: ${messageText.substring(0, 200) || '(mídia)'}\n\n📲 Responder: https://wa.me/${sanitizedPhone}`;
-                          await fetch(`${SUPABASE_URL}/functions/v1/send-whatsapp`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ to: BROKER_WHATSAPP, message: brokerMessage }),
-                          });
-                          await supabase.from('leads').update({ whatsapp_sent: true, whatsapp_sent_at: new Date().toISOString() }).eq('id', existingLead.id);
-                          console.log('[WhatsApp Webhook] ✅ Broker notificado (lead existente):', displayName);
-                        } catch (notifyErr) {
-                          console.error('[WhatsApp Webhook] Broker notification error (existing):', notifyErr);
-                        }
-                      }
-                      
-                      console.log('[WhatsApp Webhook] ✅ Lead existente atualizado:', existingLead.id, 'nome:', contactName);
+                      await supabase.from('leads').update(leadUpdate).eq('id', leadId);
+                      console.log('[WhatsApp Webhook] ✅ Lead updated:', leadId);
+                      shouldNotify = !existingLead.whatsapp_sent;
                     } else {
-                      const leadName = contactName || null;
-                      const { data: newLead } = await supabase
-                        .from('leads')
-                        .insert({
-                          name: leadName,
-                          phone: sanitizedPhone,
-                          origin: adSource,
-                          source: adSource,
-                          source_detail: isFromMetaAds ? 'click_to_whatsapp' : 'direct',
-                          medium: isFromMetaAds ? 'paid' : 'messaging',
-                          campaign: adCampaign || null,
-                          status: 'novo',
-                          lead_temperature: isFromMetaAds ? 'quente' : 'frio',
-                          qualification: isFromMetaAds ? 'quente' : 'frio',
-                          lead_score: isFromMetaAds ? 50 : 0,
-                          page_url: adCampaign ? `meta_ads: ${adCampaign}` : undefined,
-                        })
-                        .select('id')
-                        .single();
-                      
-                      if (newLead) {
-                        await supabase.from('omnichat_conversations').update({
-                          lead_id: newLead.id,
-                          contact_name: contactName || undefined,
-                          contact_phone: sanitizedPhone,
-                        }).eq('id', convId);
+                      const { data: newLead } = await supabase.from('leads').insert({
+                        name: bestName,
+                        phone: sanitizedPhone,
+                        origin: adSource,
+                        status: 'novo',
+                        intent: messageText.substring(0, 200),
+                        lead_temperature: isFromMetaAds ? 'quente' : 'morno',
+                        source: isFromMetaAds ? 'meta_ads' : 'whatsapp',
+                        source_detail: adCampaign,
+                        medium: isFromMetaAds ? 'cpc' : 'organic',
+                        campaign: adCampaign,
+                        last_interaction_at: nowIso,
+                      }).select('id').single();
+                      leadId = newLead!.id;
+                      console.log('[WhatsApp Webhook] ✅ New lead created:', leadId);
+                      shouldNotify = true;
+                    }
 
-                        // Create CRM card
-                        await supabase.from('crm_cards').insert({
-                          titulo: isFromMetaAds ? `Lead Meta Ads - ${leadName || sanitizedPhone}` : `Lead WhatsApp - ${leadName}`,
-                          cliente: leadName,
-                          telefone: sanitizedPhone,
-                          coluna: isFromMetaAds ? 'qualificacao' : 'leads',
-                          origem_lead: adSource,
-                          source: adSource,
-                          source_detail: isFromMetaAds ? 'click_to_whatsapp' : 'direct',
-                          campaign: adCampaign || null,
-                          medium: isFromMetaAds ? 'paid' : 'messaging',
-                          classificacao: isFromMetaAds ? 'quente' : 'frio',
-                          prioridade: isFromMetaAds ? 'alta' : 'normal',
-                          lead_id: newLead.id,
-                          lead_score: isFromMetaAds ? 50 : 10,
-                          probabilidade_fechamento: isFromMetaAds ? 25 : 5,
-                          valor_estimado: 0,
-                          notas: isFromMetaAds ? `Lead de anúncio Meta Ads\nCampanha: ${adCampaign || 'N/A'}\nHeadline: ${referral?.headline || 'N/A'}` : null,
-                        });
-                        
-                        // 🔥 Notify broker for EVERY new lead
-                        try {
-                          const BROKER_WHATSAPP = '5562999918353';
-                          const displayName = contactName || sanitizedPhone;
-                          const adTag = isFromMetaAds ? `\n📣 Campanha: ${adCampaign || 'Meta Ads'}\n🔥 Lead QUENTE de anúncio` : '';
-                          const brokerMessage = `🚨 *Novo Lead WhatsApp${isFromMetaAds ? ' (Meta Ads)' : ''}*\n\n👤 Nome: ${displayName}\n📱 Telefone: ${sanitizedPhone}\n📍 Origem: ${isFromMetaAds ? 'Meta Ads' : 'WhatsApp'}${adTag}\n💬 Mensagem: ${messageText.substring(0, 200) || '(mídia)'}\n\n📲 Responder: https://wa.me/${sanitizedPhone}`;
-                          console.log('📤 ENVIANDO LEAD PARA CORRETOR:', displayName);
-                          await fetch(`${SUPABASE_URL}/functions/v1/send-whatsapp`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ to: BROKER_WHATSAPP, message: brokerMessage }),
-                          });
-                          await supabase.from('leads').update({ whatsapp_sent: true, whatsapp_sent_at: new Date().toISOString() }).eq('id', newLead.id);
-                          console.log('[WhatsApp Webhook] ✅ Broker notificado (novo lead):', displayName);
-                        } catch (notifyErr) {
-                          console.error('[WhatsApp Webhook] Broker notification error:', notifyErr);
-                        }
-                        
-                        console.log('[WhatsApp Webhook] ✅ Novo lead + CRM card criado:', sanitizedPhone, 'nome:', leadName);
-                      }
+                    await supabase.from('omnichat_conversations')
+                      .update({ lead_id: leadId })
+                      .eq('id', convId)
+                      .is('lead_id', null);
+
+                    // Run interceptor
+                    if (messageText.trim()) {
+                      await processIncomingMessage(supabase, messageText, convId, leadId, 'whatsapp');
+                    }
+
+                    // CRM Card
+                    const { data: existingCard } = await supabase
+                      .from('crm_cards')
+                      .select('id')
+                      .eq('lead_id', leadId)
+                      .maybeSingle();
+
+                    if (!existingCard) {
+                      const displayName = bestName || `WhatsApp ${sanitizedPhone}`;
+                      await supabase.from('crm_cards').insert({
+                        lead_id: leadId,
+                        titulo: `Lead WhatsApp - ${displayName}`,
+                        cliente: displayName,
+                        telefone: sanitizedPhone,
+                        coluna: 'leads',
+                        origem_lead: adSource,
+                        classificacao: isFromMetaAds ? 'quente' : 'morno',
+                        source: isFromMetaAds ? 'meta_ads' : 'whatsapp',
+                        source_detail: adCampaign,
+                        medium: isFromMetaAds ? 'cpc' : 'organic',
+                        campaign: adCampaign,
+                        last_interaction_at: nowIso,
+                      });
+                      console.log('[WhatsApp Webhook] ✅ CRM card created for lead:', leadId);
+                    }
+
+                    // Notify broker
+                    if (shouldNotify) {
+                      const SUPABASE_URL_ENV = Deno.env.get('SUPABASE_URL')!;
+                      const BROKER_WHATSAPP = '5562999918353';
+                      const displayName = bestName || sanitizedPhone;
+                      const contactLink = `https://wa.me/${sanitizedPhone}`;
+                      
+                      const brokerMsg = `🚨 *Novo Lead WhatsApp*\n\n` +
+                        `👤 Nome: ${displayName}\n` +
+                        `📱 Telefone: ${sanitizedPhone}\n` +
+                        `📍 Origem: ${adSource}${adCampaign ? ` (${adCampaign})` : ''}\n` +
+                        `💬 Mensagem: ${messageText.substring(0, 200)}\n\n` +
+                        `📲 Responder: ${contactLink}`;
+
+                      console.log(`📤 ENVIANDO LEAD PARA CORRETOR: ${displayName} / ${sanitizedPhone}`);
+
+                      await fetch(`${SUPABASE_URL_ENV}/functions/v1/send-whatsapp`, {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+                        },
+                        body: JSON.stringify({ to: BROKER_WHATSAPP, message: brokerMsg }),
+                      });
+
+                      await supabase.from('leads').update({ 
+                        whatsapp_sent: true, 
+                        whatsapp_sent_at: nowIso 
+                      }).eq('id', leadId);
+
+                      console.log('[WhatsApp Webhook] ✅ Broker notified successfully');
+                    }
+
+                    // Score
+                    try {
+                      await supabase.rpc('calculate_lead_score', { p_lead_id: leadId });
+                    } catch (scoreErr) {
+                      console.warn('[WhatsApp Webhook] Score calculation error:', scoreErr);
+                    }
+
+                    // Assign broker
+                    try {
+                      await supabase.rpc('assign_lead_to_broker', { p_lead_id: leadId, p_property_id: null });
+                    } catch (assignErr) {
+                      console.warn('[WhatsApp Webhook] Broker assignment error:', assignErr);
                     }
                   } catch (leadErr) {
-                    console.error('[WhatsApp Webhook] Lead sync error:', leadErr);
+                    console.error('[WhatsApp Webhook] Lead processing error:', leadErr);
                   }
 
-                  // =====================================================
-                  // INTERCEPTOR: processIncomingMessage — ANTES da IA
-                  // =====================================================
+                  // AI response
                   try {
-                    const { data: convForIntercept } = await supabase
+                    const { data: conv } = await supabase
                       .from('omnichat_conversations')
-                      .select('lead_id')
+                      .select('bot_active')
                       .eq('id', convId)
                       .single();
-                    
-                    const interceptedName = await processIncomingMessage(
-                      supabase,
-                      messageText,
-                      convId,
-                      convForIntercept?.lead_id || null,
-                      'whatsapp',
-                    );
-                    if (interceptedName) {
-                      // Use intercepted name for AI context
-                      contactName = interceptedName;
-                    }
-                  } catch (interceptErr) {
-                    console.error('[WhatsApp Webhook] processIncomingMessage error:', interceptErr);
-                  }
 
-                  // If bot is active and no agent online, trigger AI response
-                  const { data: conv } = await supabase
-                    .from('omnichat_conversations')
-                    .select('bot_active')
-                    .eq('id', convId)
-                    .single();
-
-                  if (conv?.bot_active && messageText) {
-                    // Call dedicated WhatsApp AI module
-                    try {
-                      const chatRes = await fetch(`${SUPABASE_URL}/functions/v1/whatsapp-ai-chat`, {
+                    if (conv?.bot_active) {
+                      const SUPABASE_URL_ENV = Deno.env.get('SUPABASE_URL')!;
+                      const aiResponse = await fetch(`${SUPABASE_URL_ENV}/functions/v1/whatsapp-ai-chat`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                           message: messageText,
                           senderPhone,
                           conversationId: convId,
-                          contactName,
-                          adContext: isFromMetaAds ? {
-                            source: adSource,
-                            campaign: adCampaign,
-                            headline: referral?.headline || null,
-                            body: referral?.body || null,
-                            sourceUrl: referral?.source_url || null,
-                            sourceType: referral?.source_type || null,
-                          } : null,
+                          connectionId: connection.id,
+                          userId: connection.user_id,
                         }),
                       });
-                      const chatData = await chatRes.json();
-                      const aiReply = chatData?.reply;
-
-                      if (aiReply) {
-                        // Send AI reply via WhatsApp
-                        await fetch(`${SUPABASE_URL}/functions/v1/send-whatsapp`, {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ to: senderPhone, message: aiReply }),
-                        });
-
-                        // Save bot message
-                        await supabase.from('omnichat_messages').insert({
-                          conversation_id: convId,
-                          sender_type: 'bot',
-                          channel: 'whatsapp',
-                          content: aiReply,
-                        });
-
-                        await supabase.from('omnichat_conversations').update({
-                          last_message_at: new Date().toISOString(),
-                          last_message_preview: aiReply.substring(0, 100),
-                        }).eq('id', convId);
-
-                        console.log('[WhatsApp Webhook] ✅ AI replied to', senderPhone);
-                      }
-                    } catch (aiErr) {
-                      console.error('[WhatsApp Webhook] AI response error:', aiErr);
+                      
+                      const aiResult = await aiResponse.json();
+                      console.log('[WhatsApp Webhook] AI response:', aiResult);
                     }
+                  } catch (aiErr) {
+                    console.error('[WhatsApp Webhook] AI response error:', aiErr);
                   }
-                  } else {
-                    console.log('[WhatsApp Webhook] ⏸️ WhatsApp channel DISABLED - skipping all automation, message saved to inbox only');
-                  }
-                }
-              }
+                  } // end whatsappChannelEnabled
+                } // end if connection
+              } // end for messages
+            } // end if messages field
 
-              // Log status updates
-              const statuses = value.statuses || [];
+            // Handle status updates
+            if (change.field === 'messages') {
+              const statuses = change.value?.statuses || [];
               for (const status of statuses) {
-                console.log('[WhatsApp Webhook] Status:', { id: status.id, status: status.status });
+                console.log('[WhatsApp Webhook] Status update:', { id: status.id, status: status.status });
               }
             }
-          }
-        }
+          } // end for changes
+        } // end for entries
       }
 
-      return new Response('ok', { status: 200, headers: { ...corsHeaders, 'Content-Type': 'text/plain' } });
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     } catch (error) {
       console.error('[WhatsApp Webhook] Error:', error);
-      return new Response('ok', { status: 200, headers: { ...corsHeaders, 'Content-Type': 'text/plain' } });
+      return new Response(JSON.stringify({ ok: true, error: 'Internal processing error' }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
   }
 

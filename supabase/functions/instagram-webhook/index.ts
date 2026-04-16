@@ -9,6 +9,42 @@ const corsHeaders = {
 console.log('[Instagram Webhook] Function loaded successfully');
 
 // =====================================================
+// SIGNATURE VERIFICATION — HMAC-SHA256
+// =====================================================
+async function verifyWebhookSignature(req: Request): Promise<{ valid: boolean; bodyText: string }> {
+  const META_APP_SECRET = Deno.env.get('META_APP_SECRET') || Deno.env.get('META_INSTAGRAM_APP_SECRET');
+  const signature = req.headers.get('X-Hub-Signature-256');
+  const bodyText = await req.text();
+
+  if (!META_APP_SECRET) {
+    console.warn('[Instagram Webhook] META_APP_SECRET not set — skipping signature verification');
+    return { valid: true, bodyText };
+  }
+
+  if (!signature) {
+    console.error('[Instagram Webhook] Missing X-Hub-Signature-256 header');
+    return { valid: false, bodyText };
+  }
+
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(META_APP_SECRET),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const mac = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(bodyText));
+  const expected = 'sha256=' + Array.from(new Uint8Array(mac)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+  if (signature !== expected) {
+    console.error('[Instagram Webhook] Invalid signature');
+    return { valid: false, bodyText };
+  }
+
+  return { valid: true, bodyText };
+}
+
+// =====================================================
 // HELPER: Extract phone number from text
 // =====================================================
 function extractPhone(text: string): string | null {
@@ -406,7 +442,16 @@ serve(async (req) => {
   // POST — Receive Instagram Events
   if (req.method === 'POST') {
     try {
-      const body = await req.json();
+      // Verify webhook signature
+      const { valid, bodyText } = await verifyWebhookSignature(req);
+      if (!valid) {
+        console.error('[Instagram Webhook] ❌ Signature verification failed');
+        return new Response(JSON.stringify({ ok: false, error: 'Invalid signature' }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const body = JSON.parse(bodyText);
       console.log('[Instagram Webhook] Event received');
 
       if (body.object !== 'instagram') {
