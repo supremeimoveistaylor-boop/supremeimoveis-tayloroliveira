@@ -3,8 +3,8 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
-// Admin whitelist for immediate elevated access
-const ADMIN_WHITELIST = ['crv.taylor@gmail.com', 'supremeimoveis.taylor@gmail.com'];
+// Admin emails used only for signup gating — actual role comes from database
+const SIGNUP_WHITELIST = ['crv.taylor@gmail.com', 'supremeimoveis.taylor@gmail.com'];
 
 interface AuthContextType {
   user: User | null;
@@ -35,18 +35,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(session);
       setUser(session?.user ?? null);
 
-      // Prefer whitelist to grant admin immediately
+      // Always fetch role from database
       if (session?.user) {
-        const email = session.user.email?.toLowerCase() || '';
-        if (ADMIN_WHITELIST.includes(email)) {
-          setUserRole('admin');
-          setIsAdmin(true);
-        } else {
-          // Defer Supabase calls to avoid deadlocks
-          setTimeout(() => {
-            fetchUserRole(session.user!.id);
-          }, 0);
-        }
+        setTimeout(() => {
+          fetchUserRole(session.user!.id);
+        }, 0);
       } else {
         setUserRole(null);
         setIsAdmin(false);
@@ -126,7 +119,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const redirectUrl = `${window.location.origin}/`;
     
     // Whitelist validation - only these emails can sign up
-    const whitelistedEmails = ['crv.taylor@gmail.com', 'supremeimoveis.taylor@gmail.com'];
+    const whitelistedEmails = SIGNUP_WHITELIST;
     if (!whitelistedEmails.includes(email.toLowerCase())) {
       toast({
         title: "Acesso negado",

@@ -702,13 +702,13 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
         return;
       }
 
-      const { data: urlData } = supabase.storage
+      const { data: urlData } = await supabase.storage
         .from("chat-attachments")
-        .getPublicUrl(data.path);
+        .createSignedUrl(data.path, 3600);
 
       setPendingAttachment({
         type: "audio",
-        url: urlData.publicUrl,
+        url: urlData?.signedUrl || '',
         name: `audio_${timestamp}.webm`,
         mimeType: "audio/webm",
       });

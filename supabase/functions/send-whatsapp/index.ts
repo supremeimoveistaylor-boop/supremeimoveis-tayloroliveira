@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,15 +9,14 @@ const corsHeaders = {
 const WHATSAPP_API_VERSION = 'v21.0';
 
 interface SendMessageRequest {
-  to: string; // Número do destinatário (formato: 5562999999999)
-  message: string; // Mensagem de texto
-  templateName?: string; // Nome do template (opcional)
-  templateLanguage?: string; // Idioma do template (ex: pt_BR)
-  templateComponents?: any[]; // Componentes do template
+  to: string;
+  message: string;
+  templateName?: string;
+  templateLanguage?: string;
+  templateComponents?: any[];
 }
 
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -29,6 +29,44 @@ serve(async (req) => {
   }
 
   try {
+    // =====================================================
+    // AUTHENTICATION: Require valid JWT or service_role key
+    // =====================================================
+    const authHeader = req.headers.get('Authorization');
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+    const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+    // Allow service_role calls (from other edge functions)
+    const token = authHeader?.replace('Bearer ', '') || '';
+    const isServiceRole = token === SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!isServiceRole) {
+      // Validate user JWT
+      if (!authHeader?.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        global: { headers: { Authorization: authHeader } },
+      });
+
+      const { data, error } = await supabase.auth.getUser();
+      if (error || !data?.user) {
+        return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      console.log('[Send WhatsApp] Authenticated user:', data.user.id);
+    } else {
+      console.log('[Send WhatsApp] Service role call');
+    }
+
     const PHONE_NUMBER_ID = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID');
     const ACCESS_TOKEN = Deno.env.get('WHATSAPP_ACCESS_TOKEN');
 
@@ -50,13 +88,25 @@ serve(async (req) => {
       );
     }
 
-    // Formata o número (remove caracteres não numéricos)
+    // Input validation
     const formattedPhone = to.replace(/\D/g, '');
+    if (formattedPhone.length < 10 || formattedPhone.length > 15) {
+      return new Response(
+        JSON.stringify({ ok: false, error: 'Invalid phone number format' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (message && message.length > 4096) {
+      return new Response(
+        JSON.stringify({ ok: false, error: 'Message too long (max 4096 chars)' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     let payload: any;
 
     if (templateName) {
-      // Envio com template
       payload = {
         messaging_product: 'whatsapp',
         recipient_type: 'individual',
@@ -64,23 +114,17 @@ serve(async (req) => {
         type: 'template',
         template: {
           name: templateName,
-          language: {
-            code: templateLanguage || 'pt_BR',
-          },
+          language: { code: templateLanguage || 'pt_BR' },
           components: templateComponents || [],
         },
       };
     } else if (message) {
-      // Envio de texto simples
       payload = {
         messaging_product: 'whatsapp',
         recipient_type: 'individual',
         to: formattedPhone,
         type: 'text',
-        text: {
-          preview_url: false,
-          body: message,
-        },
+        text: { preview_url: false, body: message },
       };
     } else {
       return new Response(
@@ -107,7 +151,7 @@ serve(async (req) => {
     if (!response.ok) {
       console.error('[Send WhatsApp] API Error:', result);
       return new Response(
-        JSON.stringify({ ok: false, error: 'Failed to send message', details: result }),
+        JSON.stringify({ ok: false, error: 'Failed to send message' }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -115,14 +159,14 @@ serve(async (req) => {
     console.log('[Send WhatsApp] Message sent successfully:', result);
 
     return new Response(
-      JSON.stringify({ ok: true, success: true, messageId: result.messages?.[0]?.id, result }),
+      JSON.stringify({ ok: true, success: true, messageId: result.messages?.[0]?.id }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
     console.error('[Send WhatsApp] Error:', error);
     return new Response(
-      JSON.stringify({ ok: false, error: 'Internal server error', message: error.message }),
+      JSON.stringify({ ok: false, error: 'Internal server error' }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
