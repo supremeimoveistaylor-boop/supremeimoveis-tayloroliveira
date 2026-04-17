@@ -80,7 +80,7 @@ export const BrokerNotificationsPanel = () => {
         </Card>
         <Card>
           <CardContent className="p-4 flex items-center gap-3">
-            <CheckCircle2 className="h-8 w-8 text-green-500" />
+            <CheckCircle2 className="h-8 w-8 text-success" />
             <div>
               <p className="text-2xl font-bold">{sentCount}</p>
               <p className="text-sm text-muted-foreground">Sucesso</p>
@@ -162,7 +162,7 @@ export const BrokerNotificationsPanel = () => {
                       </TableCell>
                       <TableCell>
                         {n.status === "sent" ? (
-                          <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
+                          <Badge variant="secondary" className="text-success">
                             <CheckCircle2 className="h-3 w-3 mr-1" />
                             Enviado
                           </Badge>
