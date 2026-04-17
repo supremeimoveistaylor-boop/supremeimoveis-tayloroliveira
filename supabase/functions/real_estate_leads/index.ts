@@ -9,12 +9,39 @@ const corsHeaders = {
 const WHATSAPP_API_VERSION = 'v22.0';
 const BROKER_PHONE = '5562999918353';
 
-async function sendLeadToWhatsApp(leadName: string, leadPhone: string, leadInterest: string) {
+async function sendLeadToWhatsApp(
+  supabase: any,
+  leadId: string | null,
+  leadName: string,
+  leadPhone: string,
+  leadInterest: string,
+  origin: string
+) {
   const PHONE_NUMBER_ID = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID');
   const ACCESS_TOKEN = Deno.env.get('WHATSAPP_ACCESS_TOKEN');
 
+  // Helper para registrar histórico de envio
+  const logNotification = async (status: string, messageId: string | null, errorMsg: string | null) => {
+    try {
+      await supabase.from('broker_lead_notifications').insert({
+        lead_id: leadId,
+        broker_phone: BROKER_PHONE,
+        lead_name: leadName,
+        lead_phone: leadPhone,
+        lead_interest: leadInterest,
+        origin: origin,
+        whatsapp_message_id: messageId,
+        status,
+        error_message: errorMsg,
+      });
+    } catch (e) {
+      console.error('[BrokerNotifications] Failed to log:', e);
+    }
+  };
+
   if (!PHONE_NUMBER_ID || !ACCESS_TOKEN) {
     console.error('[WhatsApp] Missing WHATSAPP_PHONE_NUMBER_ID or WHATSAPP_ACCESS_TOKEN');
+    await logNotification('failed', null, 'Missing WhatsApp credentials');
     return;
   }
 
@@ -41,11 +68,15 @@ async function sendLeadToWhatsApp(leadName: string, leadPhone: string, leadInter
     const result = await res.json();
     if (!res.ok) {
       console.error('[WhatsApp] API error:', JSON.stringify(result));
+      await logNotification('failed', null, JSON.stringify(result).slice(0, 500));
     } else {
-      console.log('[WhatsApp] Message sent successfully:', result.messages?.[0]?.id);
+      const msgId = result.messages?.[0]?.id ?? null;
+      console.log('[WhatsApp] Message sent successfully:', msgId);
+      await logNotification('sent', msgId, null);
     }
-  } catch (err) {
+  } catch (err: any) {
     console.error('[WhatsApp] Send failed:', err.message);
+    await logNotification('failed', null, err.message ?? 'Unknown error');
   }
 }
 
@@ -162,7 +193,7 @@ serve(async (req: Request): Promise<Response> => {
 
     // 🔥 Disparo assíncrono do WhatsApp — não bloqueia a resposta
     const interest = clientInterest || "Não informado";
-    sendLeadToWhatsApp(clientName, sanitizedPhone, interest).catch(err => {
+    sendLeadToWhatsApp(supabase, leadId, clientName, sanitizedPhone, interest, origin).catch(err => {
       console.error("[real_estate_leads] WhatsApp async error:", err.message);
     });
 

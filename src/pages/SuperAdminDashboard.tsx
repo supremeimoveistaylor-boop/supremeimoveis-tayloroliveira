@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SuperAdminUsersPanel } from "@/components/admin/SuperAdminUsersPanel";
 import { AdminDashboardPanel } from "@/components/admin/AdminDashboardPanel";
-import { LeadsImobiliariosPanel } from "@/components/admin/LeadsImobiliariosPanel";
+import { LeadsTabsPanel } from "@/components/admin/LeadsTabsPanel";
 import { ChatAttendantsPanel } from "@/components/admin/ChatAttendantsPanel";
 import { ChatSessionsPanel } from "@/components/admin/ChatSessionsPanel";
 import { ChatFlowMetricsPanel } from "@/components/admin/ChatFlowMetricsPanel";
@@ -608,7 +608,7 @@ const SuperAdminDashboard = () => {
 
           {/* Leads Tab */}
           <TabsContent value="leads" className="space-y-4">
-            <LeadsImobiliariosPanel />
+            <LeadsTabsPanel />
           </TabsContent>
 
           {/* Attendants Tab */}

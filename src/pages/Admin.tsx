@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Plus, Home, Edit, Trash2, ArrowLeft, Users, UserCheck, MessageSquare, Headphones, MessageCircle, BarChart3, TrendingUp, LayoutDashboard, CalendarCheck, Kanban, Wallet, Phone, Archive, HardDrive, Newspaper, Globe } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { LeadsImobiliariosPanel } from '@/components/admin/LeadsImobiliariosPanel';
+import { LeadsTabsPanel } from '@/components/admin/LeadsTabsPanel';
 import { ChatAttendantsPanel } from '@/components/admin/ChatAttendantsPanel';
 import { ChatSessionsPanel } from '@/components/admin/ChatSessionsPanel';
 import { ChatFlowMetricsPanel } from '@/components/admin/ChatFlowMetricsPanel';
@@ -564,7 +564,7 @@ const Admin = () => {
 
         {/* Leads Tab */}
         {activeTab === 'leads' && (
-          <LeadsImobiliariosPanel />
+          <LeadsTabsPanel />
         )}
 
         {/* Users Tab */}
