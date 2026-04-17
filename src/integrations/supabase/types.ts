@@ -113,6 +113,59 @@ export type Database = {
         }
         Relationships: []
       }
+      broker_lead_notifications: {
+        Row: {
+          broker_phone: string
+          created_at: string
+          error_message: string | null
+          id: string
+          lead_id: string | null
+          lead_interest: string | null
+          lead_name: string
+          lead_phone: string
+          origin: string | null
+          sent_at: string
+          status: string
+          whatsapp_message_id: string | null
+        }
+        Insert: {
+          broker_phone: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          lead_id?: string | null
+          lead_interest?: string | null
+          lead_name: string
+          lead_phone: string
+          origin?: string | null
+          sent_at?: string
+          status?: string
+          whatsapp_message_id?: string | null
+        }
+        Update: {
+          broker_phone?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          lead_id?: string | null
+          lead_interest?: string | null
+          lead_name?: string
+          lead_phone?: string
+          origin?: string | null
+          sent_at?: string
+          status?: string
+          whatsapp_message_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "broker_lead_notifications_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       brokers: {
         Row: {
           active: boolean
