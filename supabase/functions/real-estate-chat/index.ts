@@ -1606,6 +1606,21 @@ Entre em contato imediatamente.`;
               } else {
                 console.error(`❌ Falha notificação corretor`);
               }
+              // 📒 Registra no histórico admin (broker_lead_notifications)
+              try {
+                await supabase.from('broker_lead_notifications').insert({
+                  lead_id: currentLeadId,
+                  broker_phone: BROKER_WHATSAPP,
+                  lead_name: leadForNotify.name || 'Não informado',
+                  lead_phone: leadForNotify.phone || 'Não informado',
+                  lead_interest: lastMsgText.substring(0, 200) || null,
+                  origin: 'chat:site',
+                  status: r.ok ? 'sent' : 'failed',
+                  error_message: r.ok ? null : `HTTP ${r.status}`,
+                });
+              } catch (logErr) {
+                console.warn('[real-estate-chat] Notification log error (non-blocking):', logErr);
+              }
             }).catch(err => console.error("WhatsApp broker notification error:", err));
           } else if (leadForNotify && !leadForNotify.whatsapp_sent) {
             console.log(`⏳ Chat: aguardando nome+telefone para notificar. Nome: ${leadForNotify.name}, Tel: ${leadForNotify.phone}`);
