@@ -505,7 +505,7 @@ serve(async (req) => {
 
                       console.log(`📤 ENVIANDO LEAD PARA CORRETOR: ${displayName} / ${sanitizedPhone}`);
 
-                      await fetch(`${SUPABASE_URL_ENV}/functions/v1/send-whatsapp`, {
+                      const notifyRes = await fetch(`${SUPABASE_URL_ENV}/functions/v1/send-whatsapp`, {
                         method: 'POST',
                         headers: {
                           'Content-Type': 'application/json',
@@ -518,6 +518,22 @@ serve(async (req) => {
                         whatsapp_sent: true, 
                         whatsapp_sent_at: nowIso 
                       }).eq('id', leadId);
+
+                      // 📒 Registra no histórico admin (broker_lead_notifications)
+                      try {
+                        await supabase.from('broker_lead_notifications').insert({
+                          lead_id: leadId,
+                          broker_phone: BROKER_WHATSAPP,
+                          lead_name: displayName,
+                          lead_phone: sanitizedPhone,
+                          lead_interest: messageText.substring(0, 200) || null,
+                          origin: `whatsapp:${adSource}`,
+                          status: notifyRes.ok ? 'sent' : 'failed',
+                          error_message: notifyRes.ok ? null : `HTTP ${notifyRes.status}`,
+                        });
+                      } catch (logErr) {
+                        console.warn('[WhatsApp Webhook] Notification log error (non-blocking):', logErr);
+                      }
 
                       console.log('[WhatsApp Webhook] ✅ Broker notified successfully');
                     }

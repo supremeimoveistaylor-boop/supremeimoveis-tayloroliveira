@@ -500,11 +500,28 @@ REGRA OBRIGATÓRIA para leads de anúncio:
                 `O cliente entrou em contato e aguarda retorno.\n` +
                 `Clique para atender: https://wa.me/${leadCheck.phone}`;
 
-              await fetch(`${SUPABASE_URL}/functions/v1/send-whatsapp`, {
+              const notifyRes = await fetch(`${SUPABASE_URL}/functions/v1/send-whatsapp`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ to: selectedBroker.whatsapp, message: brokerMessage }),
               });
+
+              // 📒 Registra no histórico admin (broker_lead_notifications)
+              try {
+                await supabase.from('broker_lead_notifications').insert({
+                  lead_id: convData.lead_id,
+                  broker_phone: selectedBroker.whatsapp,
+                  lead_name: leadCheck.name || 'Não informado',
+                  lead_phone: leadCheck.phone || 'Não informado',
+                  lead_interest: `${intent.type} (${temperature})`,
+                  origin: 'whatsapp:ai-chat',
+                  status: notifyRes.ok ? 'sent' : 'failed',
+                  error_message: notifyRes.ok ? null : `HTTP ${notifyRes.status}`,
+                });
+              } catch (logErr) {
+                console.warn('[WhatsApp AI] Notification log error (non-blocking):', logErr);
+              }
+
               console.log(`[WhatsApp AI] ✅ Broker ${selectedBroker.name} notified (round-robin)`);
             }
             await supabase.from('leads').update({ whatsapp_sent: true, whatsapp_sent_at: new Date().toISOString() }).eq('id', convData.lead_id);

@@ -318,11 +318,27 @@ async function notifyBroker(
 
     console.log(`📤 ENVIANDO LEAD PARA CORRETOR: ${displayName} / ${phone || 'sem tel'}`);
 
-    await fetch(`${SUPABASE_URL}/functions/v1/send-whatsapp`, {
+    const notifyRes = await fetch(`${SUPABASE_URL}/functions/v1/send-whatsapp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ to: BROKER_WHATSAPP, message: brokerMessage }),
     });
+
+    // 📒 Registra no histórico admin (broker_lead_notifications)
+    try {
+      await supabase.from('broker_lead_notifications').insert({
+        broker_phone: BROKER_WHATSAPP,
+        lead_name: displayName,
+        lead_phone: phone || 'não informado',
+        lead_interest: (lastMessage || '').substring(0, 200) || null,
+        origin: `instagram:${origin}`,
+        status: notifyRes.ok ? 'sent' : 'failed',
+        error_message: notifyRes.ok ? null : `HTTP ${notifyRes.status}`,
+      });
+    } catch (logErr) {
+      console.warn('[Instagram Webhook] Notification log error (non-blocking):', logErr);
+    }
+
     console.log(`[Instagram Webhook] ✅ Broker notified: ${displayName}`);
   } catch (notifyErr) {
     console.error('[Instagram Webhook] Broker notification error:', notifyErr);
