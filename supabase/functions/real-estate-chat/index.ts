@@ -1341,7 +1341,10 @@ Entre em contato o quanto antes.`;
                 const sendWhatsappUrl = `${SUPABASE_URL}/functions/v1/send-whatsapp`;
                 await fetch(sendWhatsappUrl, {
                   method: "POST",
-                  headers: { "Content-Type": "application/json" },
+                  headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+                  },
                   body: JSON.stringify({
                     to: activeAttendant.phone,
                     message: leadMessage
@@ -1566,11 +1569,15 @@ Entre em contato imediatamente.`;
                 const sendWhatsappUrl = `${SUPABASE_URL}/functions/v1/send-whatsapp`;
                 fetch(sendWhatsappUrl, {
                   method: "POST",
-                  headers: { "Content-Type": "application/json" },
+                  headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+                  },
                   body: JSON.stringify({ to: brokerPhone, message: brokerMessage }),
-                }).then(r => {
-                  if (r.ok) console.log(`✅ WhatsApp enviado ao corretor ${broker.name}`);
-                  else console.error(`❌ Falha WhatsApp ao corretor ${broker.name}`);
+                }).then(async r => {
+                  const notifyData = await r.json().catch(() => null);
+                  if (r.ok && notifyData?.ok) console.log(`✅ WhatsApp enviado ao corretor ${broker.name}`);
+                  else console.error(`❌ Falha WhatsApp ao corretor ${broker.name}`, notifyData ?? { status: r.status });
                 }).catch(err => console.error("WhatsApp broker error:", err));
               }
             }
@@ -1982,7 +1989,10 @@ Me conta: você está procurando um imóvel para morar ou investir?"`;
                 console.log('📤 ENVIANDO ESCALAÇÃO PARA CORRETOR:', leadData?.name || 'Lead');
                 await fetch(`${SUPABASE_URL_INNER}/functions/v1/send-whatsapp`, {
                   method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${SUPABASE_KEY_INNER}`,
+                  },
                   body: JSON.stringify({ to: BROKER_WHATSAPP, message: brokerMsg }),
                 });
                 console.log('[real-estate-chat] ✅ Broker notified for escalation');
