@@ -318,11 +318,17 @@ async function notifyBroker(
 
     console.log(`📤 ENVIANDO LEAD PARA CORRETOR: ${displayName} / ${phone || 'sem tel'}`);
 
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const notifyRes = await fetch(`${SUPABASE_URL}/functions/v1/send-whatsapp`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      },
       body: JSON.stringify({ to: BROKER_WHATSAPP, message: brokerMessage }),
     });
+
+    const notifyResult = await notifyRes.json().catch(() => null);
 
     // 📒 Registra no histórico admin (broker_lead_notifications)
     try {
@@ -332,8 +338,8 @@ async function notifyBroker(
         lead_phone: phone || 'não informado',
         lead_interest: (lastMessage || '').substring(0, 200) || null,
         origin: `instagram:${origin}`,
-        status: notifyRes.ok ? 'sent' : 'failed',
-        error_message: notifyRes.ok ? null : `HTTP ${notifyRes.status}`,
+        status: notifyRes.ok && notifyResult?.ok ? 'sent' : 'failed',
+        error_message: notifyRes.ok && notifyResult?.ok ? null : JSON.stringify(notifyResult ?? { status: notifyRes.status }).slice(0, 500),
       });
     } catch (logErr) {
       console.warn('[Instagram Webhook] Notification log error (non-blocking):', logErr);

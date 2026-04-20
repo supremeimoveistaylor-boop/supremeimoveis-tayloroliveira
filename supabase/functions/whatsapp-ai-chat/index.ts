@@ -502,9 +502,14 @@ REGRA OBRIGATÓRIA para leads de anúncio:
 
               const notifyRes = await fetch(`${SUPABASE_URL}/functions/v1/send-whatsapp`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+                },
                 body: JSON.stringify({ to: selectedBroker.whatsapp, message: brokerMessage }),
               });
+
+              const notifyResult = await notifyRes.json().catch(() => null);
 
               // 📒 Registra no histórico admin (broker_lead_notifications)
               try {
@@ -515,14 +520,14 @@ REGRA OBRIGATÓRIA para leads de anúncio:
                   lead_phone: leadCheck.phone || 'Não informado',
                   lead_interest: `${intent.type} (${temperature})`,
                   origin: 'whatsapp:ai-chat',
-                  status: notifyRes.ok ? 'sent' : 'failed',
-                  error_message: notifyRes.ok ? null : `HTTP ${notifyRes.status}`,
+                  status: notifyRes.ok && notifyResult?.ok ? 'sent' : 'failed',
+                  error_message: notifyRes.ok && notifyResult?.ok ? null : JSON.stringify(notifyResult ?? { status: notifyRes.status }).slice(0, 500),
                 });
               } catch (logErr) {
                 console.warn('[WhatsApp AI] Notification log error (non-blocking):', logErr);
               }
 
-              console.log(`[WhatsApp AI] ✅ Broker ${selectedBroker.name} notified (round-robin)`);
+              console.log(`[WhatsApp AI] ${notifyRes.ok && notifyResult?.ok ? '✅' : '❌'} Broker ${selectedBroker.name} notify result`);
             }
             await supabase.from('leads').update({ whatsapp_sent: true, whatsapp_sent_at: new Date().toISOString() }).eq('id', convData.lead_id);
           }

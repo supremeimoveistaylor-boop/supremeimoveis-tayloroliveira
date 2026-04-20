@@ -514,10 +514,14 @@ serve(async (req) => {
                         body: JSON.stringify({ to: BROKER_WHATSAPP, message: brokerMsg }),
                       });
 
-                      await supabase.from('leads').update({ 
-                        whatsapp_sent: true, 
-                        whatsapp_sent_at: nowIso 
-                      }).eq('id', leadId);
+                      const notifyResult = await notifyRes.json().catch(() => null);
+
+                      if (notifyRes.ok && notifyResult?.ok) {
+                        await supabase.from('leads').update({ 
+                          whatsapp_sent: true, 
+                          whatsapp_sent_at: nowIso 
+                        }).eq('id', leadId);
+                      }
 
                       // 📒 Registra no histórico admin (broker_lead_notifications)
                       try {
@@ -528,8 +532,8 @@ serve(async (req) => {
                           lead_phone: sanitizedPhone,
                           lead_interest: messageText.substring(0, 200) || null,
                           origin: `whatsapp:${adSource}`,
-                          status: notifyRes.ok ? 'sent' : 'failed',
-                          error_message: notifyRes.ok ? null : `HTTP ${notifyRes.status}`,
+                          status: notifyRes.ok && notifyResult?.ok ? 'sent' : 'failed',
+                          error_message: notifyRes.ok && notifyResult?.ok ? null : JSON.stringify(notifyResult ?? { status: notifyRes.status }).slice(0, 500),
                         });
                       } catch (logErr) {
                         console.warn('[WhatsApp Webhook] Notification log error (non-blocking):', logErr);

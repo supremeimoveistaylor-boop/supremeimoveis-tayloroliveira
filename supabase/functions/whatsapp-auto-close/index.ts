@@ -147,7 +147,10 @@ serve(async (req) => {
         console.log(`[Auto-Close] Notifying broker for lead: ${leadName}`);
         await fetch(`${SUPABASE_URL}/functions/v1/send-whatsapp`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          },
           body: JSON.stringify({ to: BROKER_WHATSAPP, message: brokerMessage }),
         });
 
