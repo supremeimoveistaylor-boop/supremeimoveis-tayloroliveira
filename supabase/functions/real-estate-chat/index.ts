@@ -612,22 +612,26 @@ serve(async (req) => {
             console.log('🔥 ENVIANDO NOTIFICAÇÃO AO CORRETOR (nome+telefone confirmados)');
             const whatsappResponse = await fetch(sendWhatsappUrl, {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+              },
               body: JSON.stringify({
                 to: BROKER_WHATSAPP_IMMEDIATE,
                 message: whatsappMessage
               })
             });
 
-            if (whatsappResponse.ok) {
+            const whatsappResponseData = await whatsappResponse.json().catch(() => null);
+
+            if (whatsappResponse.ok && whatsappResponseData?.ok) {
               console.log(`✅ WhatsApp enviado para corretor - Lead: ${leadName} (${leadPhone})`);
               await supabase.from("leads").update({
                 whatsapp_sent: true,
                 whatsapp_sent_at: new Date().toISOString()
               }).eq("id", currentLeadId);
             } else {
-              const errorData = await whatsappResponse.json();
-              console.error("Erro ao enviar WhatsApp:", errorData);
+              console.error("Erro ao enviar WhatsApp:", whatsappResponseData);
             }
           } catch (whatsappError) {
             console.error("Erro ao processar envio de WhatsApp:", whatsappError);
@@ -1186,14 +1190,19 @@ Acesse o CRM para atendimento imediato.`;
               const sendWhatsappUrl = `${SUPABASE_URL}/functions/v1/send-whatsapp`;
               const whatsappRes = await fetch(sendWhatsappUrl, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+                },
                 body: JSON.stringify({
                   to: BROKER_PHONE,
                   message: brokerMessage
                 })
               });
 
-              if (whatsappRes.ok) {
+              const whatsappResData = await whatsappRes.json().catch(() => null);
+
+              if (whatsappRes.ok && whatsappResData?.ok) {
                 // Marcar como enviado para não duplicar
                 await supabase.from("leads").update({
                   whatsapp_sent: true,
@@ -1215,7 +1224,7 @@ Acesse o CRM para atendimento imediato.`;
                   }
                 });
               } else {
-                const errData = await whatsappRes.text();
+                const errData = JSON.stringify(whatsappResData ?? { status: whatsappRes.status });
                 console.error(`❌ Erro WhatsApp para corretor: ${errData}`);
                 
                 await supabase.from("security_logs").insert({
@@ -1597,10 +1606,15 @@ Entre em contato imediatamente.`;
             const sendWhatsappUrl = `${SUPABASE_URL}/functions/v1/send-whatsapp`;
             fetch(sendWhatsappUrl, {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+              },
               body: JSON.stringify({ to: BROKER_WHATSAPP, message: brokerMessage }),
             }).then(async (r) => {
-              if (r.ok) {
+              const notifyData = await r.json().catch(() => null);
+
+              if (r.ok && notifyData?.ok) {
                 console.log(`✅ Corretor notificado - Lead Chat: ${leadForNotify.name} (${leadForNotify.phone})`);
                 await supabase.from("leads").update({ whatsapp_sent: true, whatsapp_sent_at: new Date().toISOString() }).eq("id", currentLeadId);
               } else {
@@ -1615,8 +1629,8 @@ Entre em contato imediatamente.`;
                   lead_phone: leadForNotify.phone || 'Não informado',
                   lead_interest: lastMsgText.substring(0, 200) || null,
                   origin: 'chat:site',
-                  status: r.ok ? 'sent' : 'failed',
-                  error_message: r.ok ? null : `HTTP ${r.status}`,
+                  status: r.ok && notifyData?.ok ? 'sent' : 'failed',
+                  error_message: r.ok && notifyData?.ok ? null : JSON.stringify(notifyData ?? { status: r.status }).slice(0, 500),
                 });
               } catch (logErr) {
                 console.warn('[real-estate-chat] Notification log error (non-blocking):', logErr);
