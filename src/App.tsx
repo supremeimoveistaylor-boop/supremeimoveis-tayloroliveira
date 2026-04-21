@@ -40,7 +40,6 @@ import BlogPostPage from "./pages/BlogPost";
 import ShareTarget from "./pages/ShareTarget";
 import Parcerias from "./pages/Parcerias";
 import ParceriasImovel from "./pages/ParceriasImovel";
-import CitageSanteUrbanismo from "./pages/CitageSanteUrbanismo";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Chat agora é injetado via script no <head> (index.html), não via React
@@ -95,7 +94,6 @@ const App = () => (
                 <Route path="/share" element={<ShareTarget />} />
                 <Route path="/parcerias" element={<Parcerias />} />
                 <Route path="/parcerias/imovel/:id" element={<ParceriasImovel />} />
-                <Route path="/citage-sante-urbanismo" element={<CitageSanteUrbanismo />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
