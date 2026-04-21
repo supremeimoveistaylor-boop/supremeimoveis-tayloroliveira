@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Phone, MapPin, User, Menu, X } from "lucide-react";
+import { Phone, MapPin, User, Menu, X, MessageCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useState } from "react";
@@ -109,11 +109,11 @@ export const Header = () => {
             )}
             <Button 
               variant="default" 
-              className="bg-green-600 hover:bg-green-700 text-white font-semibold text-sm md:text-base px-4 md:px-6"
+              className="bg-green-500 hover:bg-green-600 text-white font-semibold text-sm md:text-base px-4 md:px-6 animate-pulse shadow-[0_0_15px_rgba(34,197,94,0.6)] hover:shadow-[0_0_25px_rgba(34,197,94,0.9)] transition-shadow"
               onClick={() => window.open('https://wa.me/5562999918353', '_blank')}
             >
+              <MessageCircle className="h-4 w-4 md:mr-2" />
               <span className="hidden sm:inline">Falar com Especialista</span>
-              <span className="sm:hidden">WhatsApp</span>
             </Button>
           </div>
         </div>
