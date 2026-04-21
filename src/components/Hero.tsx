@@ -222,7 +222,7 @@ export const Hero = () => {
                     <span className="text-[#C6A85B] font-bold text-sm tracking-wide">
                       🏗️ LANÇAMENTO LOTES — CITY URBANISMO
                     </span>
-                    <span className="text-[#7B4B2A] font-semibold text-xs mt-1">
+                    <span className="text-white font-bold text-base mt-1">
                       CLIQUE AQUI
                     </span>
                   </span>
