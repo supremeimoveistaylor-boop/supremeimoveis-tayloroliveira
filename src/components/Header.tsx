@@ -109,10 +109,11 @@ export const Header = () => {
             )}
             <Button 
               variant="default" 
-              className="bg-green-500 hover:bg-green-600 text-white font-semibold text-sm md:text-base px-4 md:px-6 animate-pulse shadow-[0_0_15px_rgba(34,197,94,0.6)] hover:shadow-[0_0_25px_rgba(34,197,94,0.9)] transition-shadow"
+              size="sm"
+              className="bg-green-500 hover:bg-green-600 text-white font-semibold text-xs px-3 animate-pulse shadow-[0_0_15px_rgba(34,197,94,0.6)] hover:shadow-[0_0_25px_rgba(34,197,94,0.9)] transition-shadow"
               onClick={() => window.open('https://wa.me/5562999918353', '_blank')}
             >
-              <MessageCircle className="h-4 w-4 md:mr-2" />
+              <MessageCircle className="h-3.5 w-3.5 sm:mr-1.5" />
               <span className="hidden sm:inline">Falar com Especialista</span>
             </Button>
           </div>
