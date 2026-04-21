@@ -17,6 +17,99 @@ const CitageSanteUrbanismo = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    // SEO: title + meta tags
+    const prevTitle = document.title;
+    document.title = "Lotes Alto Padrão em Goiânia | Citage Santé Urbanismo";
+
+    const setMeta = (attr: "name" | "property", key: string, content: string) => {
+      let el = document.querySelector<HTMLMetaElement>(`meta[${attr}="${key}"]`);
+      if (!el) {
+        el = document.createElement("meta");
+        el.setAttribute(attr, key);
+        document.head.appendChild(el);
+      }
+      el.setAttribute("content", content);
+      return el;
+    };
+
+    setMeta(
+      "name",
+      "description",
+      "Garanta seu lote em condomínio fechado de alto padrão na região sul de Goiânia, próximo ao Shopping Flamboyant. Exclusividade, segurança e valorização. Cadastre-se."
+    );
+    setMeta(
+      "name",
+      "keywords",
+      "lotes em goiânia, condomínio fechado goiânia, lotes alto padrão goiânia, terrenos luxo goiânia, citage santé urbanismo, lotes sul goiânia, próximo flamboyant"
+    );
+    setMeta("name", "robots", "index, follow");
+    setMeta("property", "og:title", "Citage Santé Urbanismo | Lançamento Alto Padrão Goiânia");
+    setMeta(
+      "property",
+      "og:description",
+      "Lotes exclusivos em condomínio fechado. Localização privilegiada e alta valorização."
+    );
+    setMeta("property", "og:type", "website");
+    setMeta(
+      "property",
+      "og:url",
+      "https://supremeempreendimentos.com/citage-sante-urbanismo"
+    );
+    setMeta("property", "og:locale", "pt_BR");
+
+    // Canonical
+    let canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+    const prevCanonical = canonical?.href;
+    if (!canonical) {
+      canonical = document.createElement("link");
+      canonical.rel = "canonical";
+      document.head.appendChild(canonical);
+    }
+    canonical.href = "https://supremeempreendimentos.com/citage-sante-urbanismo";
+
+    // JSON-LD schemas
+    const schemaListing = {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name: "Citage Santé Urbanismo - Lotes Alto Padrão Goiânia",
+      description:
+        "Lançamento de lotes em condomínio fechado de alto padrão na região sul de Goiânia, próximo ao Shopping Flamboyant. Segurança 24h, infraestrutura completa e alto potencial de valorização.",
+      brand: { "@type": "Brand", name: "Supreme Empreendimentos" },
+      category: "Imóveis / Lotes / Condomínio Fechado",
+      offers: {
+        "@type": "AggregateOffer",
+        priceCurrency: "BRL",
+        availability: "https://schema.org/PreOrder",
+        seller: {
+          "@type": "RealEstateAgent",
+          name: "Supreme Negócios Imobiliários",
+          telephone: "+55-62-99991-8353",
+        },
+      },
+    };
+    const schemaPlace = {
+      "@context": "https://schema.org",
+      "@type": "Place",
+      name: "Citage Santé Urbanismo",
+      description: "Condomínio fechado de lotes alto padrão em Goiânia - Região Sul",
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: "Goiânia",
+        addressRegion: "GO",
+        addressCountry: "BR",
+      },
+    };
+    const s1 = document.createElement("script");
+    s1.type = "application/ld+json";
+    s1.text = JSON.stringify(schemaListing);
+    s1.dataset.lpCitage = "1";
+    document.head.appendChild(s1);
+    const s2 = document.createElement("script");
+    s2.type = "application/ld+json";
+    s2.text = JSON.stringify(schemaPlace);
+    s2.dataset.lpCitage = "1";
+    document.head.appendChild(s2);
+
     // Track LP view
     try {
       if (typeof (window as any).gtag === "function") {
@@ -32,6 +125,14 @@ const CitageSanteUrbanismo = () => {
         });
       }
     } catch {}
+
+    return () => {
+      document.title = prevTitle;
+      if (canonical && prevCanonical) canonical.href = prevCanonical;
+      document
+        .querySelectorAll('script[data-lp-citage="1"]')
+        .forEach((n) => n.parentNode?.removeChild(n));
+    };
   }, []);
 
   const sanitizePhone = (v: string) => v.replace(/\D/g, "");
