@@ -213,14 +213,22 @@ export const Hero = () => {
 
                 {/* Lançamento City Urbanismo - Botão Destacado */}
                 <a
-                  href="https://citagecityurbanismo.lovable.app/"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href="/citage-sante-urbanismo"
+                  onClick={() => {
+                    try {
+                      if (typeof (window as any).gtag === "function") {
+                        (window as any).gtag("event", "click_lp_citage", {
+                          event_category: "lp_citage",
+                          event_label: "hero_button",
+                        });
+                      }
+                    } catch {}
+                  }}
                   className="block w-full rounded-md p-[2px] bg-gradient-to-r from-[#C6A85B] via-[#7B4B2A] to-black animate-pulse shadow-[0_0_20px_rgba(198,168,91,0.6)] hover:shadow-[0_0_30px_rgba(198,168,91,0.9)] transition-shadow"
                 >
                   <span className="flex flex-col items-center justify-center w-full bg-black text-center rounded-[4px] px-4 py-3">
                     <span className="text-[#C6A85B] font-bold text-sm tracking-wide">
-                      🏗️ LANÇAMENTO LOTES — CITY URBANISMO
+                      🏗️ LANÇAMENTO LOTES — CITAGE SANTÉ URBANISMO
                     </span>
                     <span className="text-white font-bold text-base mt-1">
                       CLIQUE AQUI
