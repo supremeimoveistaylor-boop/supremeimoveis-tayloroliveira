@@ -216,76 +216,8 @@ const CitageSanteUrbanismo = () => {
     }
   };
 
-  // JSON-LD: RealEstateListing + Product
-  const schemaListing = {
-    "@context": "https://schema.org",
-    "@type": "Product",
-    name: "Citage Santé Urbanismo - Lotes Alto Padrão Goiânia",
-    description:
-      "Lançamento de lotes em condomínio fechado de alto padrão na região sul de Goiânia, próximo ao Shopping Flamboyant. Segurança 24h, infraestrutura completa e alto potencial de valorização.",
-    brand: { "@type": "Brand", name: "Supreme Empreendimentos" },
-    category: "Imóveis / Lotes / Condomínio Fechado",
-    offers: {
-      "@type": "AggregateOffer",
-      priceCurrency: "BRL",
-      availability: "https://schema.org/PreOrder",
-      seller: {
-        "@type": "RealEstateAgent",
-        name: "Supreme Negócios Imobiliários",
-        telephone: "+55-62-99991-8353",
-      },
-    },
-  };
-
-  const schemaPlace = {
-    "@context": "https://schema.org",
-    "@type": "Place",
-    name: "Citage Santé Urbanismo",
-    description: "Condomínio fechado de lotes alto padrão em Goiânia - Região Sul",
-    address: {
-      "@type": "PostalAddress",
-      addressLocality: "Goiânia",
-      addressRegion: "GO",
-      addressCountry: "BR",
-    },
-  };
-
   return (
     <div className="min-h-screen bg-background">
-      <Helmet>
-        <title>Lotes Alto Padrão em Goiânia | Citage Santé Urbanismo</title>
-        <meta
-          name="description"
-          content="Garanta seu lote em condomínio fechado de alto padrão na região sul de Goiânia, próximo ao Shopping Flamboyant. Exclusividade, segurança e valorização. Cadastre-se."
-        />
-        <meta
-          name="keywords"
-          content="lotes em goiânia, condomínio fechado goiânia, lotes alto padrão goiânia, terrenos luxo goiânia, citage santé urbanismo, lotes sul goiânia, próximo flamboyant"
-        />
-        <meta name="robots" content="index, follow" />
-        <link rel="canonical" href="https://supremeempreendimentos.com/citage-sante-urbanismo" />
-
-        <meta property="og:title" content="Citage Santé Urbanismo | Lançamento Alto Padrão Goiânia" />
-        <meta
-          property="og:description"
-          content="Lotes exclusivos em condomínio fechado. Localização privilegiada e alta valorização."
-        />
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://supremeempreendimentos.com/citage-sante-urbanismo" />
-        <meta property="og:locale" content="pt_BR" />
-        <meta property="og:image" content="https://supremeempreendimentos.com/favicon-512x512.png" />
-
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Citage Santé Urbanismo | Lançamento Alto Padrão" />
-        <meta
-          name="twitter:description"
-          content="Lotes exclusivos em condomínio fechado de alto padrão em Goiânia. Cadastre-se para acesso antecipado."
-        />
-
-        <script type="application/ld+json">{JSON.stringify(schemaListing)}</script>
-        <script type="application/ld+json">{JSON.stringify(schemaPlace)}</script>
-      </Helmet>
-
       <Header />
 
       {/* HERO + Form acima da dobra */}
