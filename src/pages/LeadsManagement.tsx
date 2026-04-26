@@ -15,11 +15,12 @@ import { toast } from "@/hooks/use-toast";
 import { 
   Users, MessageSquare, Settings, Plus, Phone, Mail, 
   ArrowLeft, Eye, UserPlus, Trash2, Edit2, Flame, Thermometer,
-  Search, ArrowUpDown, Filter, BarChart3, Download
+  Search, ArrowUpDown, Filter, BarChart3, Download, Volume2, VolumeX, Sparkles
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import LeadsDashboard from "@/components/LeadsDashboard";
+import { useNewLeadNotification } from "@/hooks/useNewLeadNotification";
 
 interface Broker {
   id: string;
