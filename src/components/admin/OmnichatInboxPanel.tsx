@@ -215,11 +215,23 @@ export const OmnichatInboxPanel = () => {
     setIsSending(true);
     try {
       if (selectedConv.channel === "whatsapp") {
-        const res = await fetch(`https://ypkmorgcpooygsvhcpvo.supabase.co/functions/v1/send-whatsapp`, {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ to: selectedConv.external_contact_id, message: newMessage.trim() }),
+        // Destinatário: prioriza contact_phone, fallback para external_contact_id
+        const destination = (selectedConv.contact_phone || selectedConv.external_contact_id || "").replace(/\D/g, "");
+        if (!destination || destination.length < 10) {
+          throw new Error("Número de telefone do contato inválido");
+        }
+        // Usa invoke para incluir automaticamente o JWT do usuário (Authorization)
+        const { data, error } = await supabase.functions.invoke("send-whatsapp", {
+          body: { to: destination, message: newMessage.trim() },
         });
-        if (!res.ok) throw new Error("Falha ao enviar WhatsApp");
+        if (error) {
+          console.error("[Omnichat] send-whatsapp invoke error:", error);
+          throw new Error(error.message || "Falha ao enviar WhatsApp");
+        }
+        if (data && data.ok === false) {
+          console.error("[Omnichat] send-whatsapp returned error:", data);
+          throw new Error(data.error || "Falha ao enviar WhatsApp");
+        }
       } else if (selectedConv.channel === "instagram") {
         const res = await supabase.functions.invoke("send-instagram-message", {
           body: { recipient_id: selectedConv.external_contact_id, message: newMessage.trim(), connection_id: selectedConv.connection_id },
