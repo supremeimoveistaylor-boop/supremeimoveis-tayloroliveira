@@ -75,6 +75,32 @@ const LeadsManagement = () => {
   const [sortBy, setSortBy] = useState<string>("created_at");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [searchTerm, setSearchTerm] = useState("");
+  const [highlightedIds, setHighlightedIds] = useState<Set<string>>(new Set());
+
+  // 🔔 Notificação sonora em tempo real para novos leads
+  const { latestNewLeadId, soundEnabled, setSoundEnabled } = useNewLeadNotification({
+    enabled: !authLoading && isAdmin,
+    onNewLead: () => {
+      // Refaz fetch para incluir o novo lead com joins (properties/brokers)
+      fetchData();
+      // Scroll ao topo da página/lista
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    },
+  });
+
+  // Marca o lead novo como destacado por 8s
+  useEffect(() => {
+    if (!latestNewLeadId) return;
+    setHighlightedIds((prev) => new Set(prev).add(latestNewLeadId));
+    const t = setTimeout(() => {
+      setHighlightedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(latestNewLeadId);
+        return next;
+      });
+    }, 8000);
+    return () => clearTimeout(t);
+  }, [latestNewLeadId]);
 
   // Filtered and sorted leads
   const filteredLeads = leads
