@@ -15,11 +15,12 @@ import { toast } from "@/hooks/use-toast";
 import { 
   Users, MessageSquare, Settings, Plus, Phone, Mail, 
   ArrowLeft, Eye, UserPlus, Trash2, Edit2, Flame, Thermometer,
-  Search, ArrowUpDown, Filter, BarChart3, Download
+  Search, ArrowUpDown, Filter, BarChart3, Download, Volume2, VolumeX, Sparkles
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import LeadsDashboard from "@/components/LeadsDashboard";
+import { useNewLeadNotification } from "@/hooks/useNewLeadNotification";
 
 interface Broker {
   id: string;
@@ -74,6 +75,32 @@ const LeadsManagement = () => {
   const [sortBy, setSortBy] = useState<string>("created_at");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [searchTerm, setSearchTerm] = useState("");
+  const [highlightedIds, setHighlightedIds] = useState<Set<string>>(new Set());
+
+  // 🔔 Notificação sonora em tempo real para novos leads
+  const { latestNewLeadId, soundEnabled, setSoundEnabled } = useNewLeadNotification({
+    enabled: !authLoading && isAdmin,
+    onNewLead: () => {
+      // Refaz fetch para incluir o novo lead com joins (properties/brokers)
+      fetchData();
+      // Scroll ao topo da página/lista
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    },
+  });
+
+  // Marca o lead novo como destacado por 8s
+  useEffect(() => {
+    if (!latestNewLeadId) return;
+    setHighlightedIds((prev) => new Set(prev).add(latestNewLeadId));
+    const t = setTimeout(() => {
+      setHighlightedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(latestNewLeadId);
+        return next;
+      });
+    }, 8000);
+    return () => clearTimeout(t);
+  }, [latestNewLeadId]);
 
   // Filtered and sorted leads
   const filteredLeads = leads
@@ -336,6 +363,15 @@ const LeadsManagement = () => {
             </Button>
             <h1 className="text-2xl font-bold">Gestão de Leads e Corretores</h1>
           </div>
+          <Button
+            variant={soundEnabled ? "default" : "outline"}
+            size="sm"
+            onClick={() => setSoundEnabled(!soundEnabled)}
+            title={soundEnabled ? "Desativar som de notificação" : "Ativar som de notificação"}
+          >
+            {soundEnabled ? <Volume2 className="h-4 w-4 mr-2" /> : <VolumeX className="h-4 w-4 mr-2" />}
+            {soundEnabled ? "Som ON" : "Som OFF"}
+          </Button>
         </div>
 
         <Tabs defaultValue="dashboard" className="space-y-4">
@@ -471,12 +507,31 @@ const LeadsManagement = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredLeads.map((lead) => (
-                        <tr key={lead.id} className="border-b hover:bg-muted/50">
+                      {filteredLeads.map((lead) => {
+                        const isNew = highlightedIds.has(lead.id);
+                        return (
+                        <tr
+                          key={lead.id}
+                          className={`border-b transition-colors ${
+                            isNew
+                              ? "bg-emerald-100/70 dark:bg-emerald-900/30 animate-pulse"
+                              : "hover:bg-muted/50"
+                          }`}
+                        >
                           <td className="p-3 text-sm text-muted-foreground">
                             {new Date(lead.created_at).toLocaleDateString("pt-BR")}
                           </td>
-                          <td className="p-3">{lead.name || "Não informado"}</td>
+                          <td className="p-3">
+                            <div className="flex items-center gap-2">
+                              <span>{lead.name || "Não informado"}</span>
+                              {isNew && (
+                                <Badge className="bg-emerald-500 hover:bg-emerald-500 text-white gap-1">
+                                  <Sparkles className="h-3 w-3" />
+                                  Novo
+                                </Badge>
+                              )}
+                            </div>
+                          </td>
                           <td className="p-3">
                             {lead.phone ? (
                               <a href={`tel:${lead.phone}`} className="text-primary hover:underline">
@@ -560,7 +615,8 @@ const LeadsManagement = () => {
                             </Dialog>
                           </td>
                         </tr>
-                      ))}
+                        );
+                      })}
                       {filteredLeads.length === 0 && (
                         <tr>
                           <td colSpan={9} className="text-center p-8 text-muted-foreground">
