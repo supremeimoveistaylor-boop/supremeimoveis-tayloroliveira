@@ -507,12 +507,31 @@ const LeadsManagement = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredLeads.map((lead) => (
-                        <tr key={lead.id} className="border-b hover:bg-muted/50">
+                      {filteredLeads.map((lead) => {
+                        const isNew = highlightedIds.has(lead.id);
+                        return (
+                        <tr
+                          key={lead.id}
+                          className={`border-b transition-colors ${
+                            isNew
+                              ? "bg-emerald-100/70 dark:bg-emerald-900/30 animate-pulse"
+                              : "hover:bg-muted/50"
+                          }`}
+                        >
                           <td className="p-3 text-sm text-muted-foreground">
                             {new Date(lead.created_at).toLocaleDateString("pt-BR")}
                           </td>
-                          <td className="p-3">{lead.name || "Não informado"}</td>
+                          <td className="p-3">
+                            <div className="flex items-center gap-2">
+                              <span>{lead.name || "Não informado"}</span>
+                              {isNew && (
+                                <Badge className="bg-emerald-500 hover:bg-emerald-500 text-white gap-1">
+                                  <Sparkles className="h-3 w-3" />
+                                  Novo
+                                </Badge>
+                              )}
+                            </div>
+                          </td>
                           <td className="p-3">
                             {lead.phone ? (
                               <a href={`tel:${lead.phone}`} className="text-primary hover:underline">
