@@ -363,6 +363,15 @@ const LeadsManagement = () => {
             </Button>
             <h1 className="text-2xl font-bold">Gestão de Leads e Corretores</h1>
           </div>
+          <Button
+            variant={soundEnabled ? "default" : "outline"}
+            size="sm"
+            onClick={() => setSoundEnabled(!soundEnabled)}
+            title={soundEnabled ? "Desativar som de notificação" : "Ativar som de notificação"}
+          >
+            {soundEnabled ? <Volume2 className="h-4 w-4 mr-2" /> : <VolumeX className="h-4 w-4 mr-2" />}
+            {soundEnabled ? "Som ON" : "Som OFF"}
+          </Button>
         </div>
 
         <Tabs defaultValue="dashboard" className="space-y-4">
