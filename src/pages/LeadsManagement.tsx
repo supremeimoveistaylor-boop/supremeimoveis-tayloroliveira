@@ -615,7 +615,8 @@ const LeadsManagement = () => {
                             </Dialog>
                           </td>
                         </tr>
-                      ))}
+                        );
+                      })}
                       {filteredLeads.length === 0 && (
                         <tr>
                           <td colSpan={9} className="text-center p-8 text-muted-foreground">
