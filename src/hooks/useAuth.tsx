@@ -13,6 +13,7 @@ interface AuthContextType {
   isAdmin: boolean;
   isSuperAdmin: boolean;
   userRole: string | null;
+  roleLoading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
@@ -28,6 +29,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [roleLoading, setRoleLoading] = useState(true);
 
   useEffect(() => {
     // Set up auth state listener FIRST (no async in callback)
@@ -37,6 +39,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       // Always fetch role from database
       if (session?.user) {
+        setRoleLoading(true);
         setTimeout(() => {
           fetchUserRole(session.user!.id);
         }, 0);
@@ -44,6 +47,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUserRole(null);
         setIsAdmin(false);
         setIsSuperAdmin(false);
+        setRoleLoading(false);
       }
 
       setLoading(false);
@@ -54,9 +58,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
+        setRoleLoading(true);
         setTimeout(() => {
           fetchUserRole(session.user!.id);
         }, 0);
+      } else {
+        setRoleLoading(false);
       }
       setLoading(false);
     });
@@ -90,6 +97,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUserRole('user');
       setIsAdmin(false);
       setIsSuperAdmin(false);
+    } finally {
+      setRoleLoading(false);
     }
   };
 
@@ -210,6 +219,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     isAdmin,
     isSuperAdmin,
     userRole,
+    roleLoading,
     signIn,
     signUp,
     signOut,
