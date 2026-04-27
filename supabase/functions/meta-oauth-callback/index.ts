@@ -385,7 +385,7 @@ serve(async (req) => {
       const redirectUrl = `${errorOrigin}/super-admin?tab=omnichat&error=internal`;
       return new Response(null, { status: 302, headers: { 'Location': redirectUrl } });
     }
-    return new Response(JSON.stringify({ error: 'Internal server error', message: error.message }), {
+    return new Response(JSON.stringify({ error: 'Internal server error', message: error instanceof Error ? error.message : String(error) }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }

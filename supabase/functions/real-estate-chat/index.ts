@@ -1243,15 +1243,17 @@ Acesse o CRM para atendimento imediato.`;
           } catch (whatsappAutoErr) {
             console.error("❌ Erro no disparo automático WhatsApp:", whatsappAutoErr);
             
-            await supabase.from("security_logs").insert({
-              action: "whatsapp_notification",
-              table_name: "leads",
-              record_id: currentLeadId,
-              metadata: {
-                status: "error",
-                error_message: whatsappAutoErr instanceof Error ? whatsappAutoErr.message : "Unknown error"
-              }
-            }).catch(() => {});
+            try {
+              await supabase.from("security_logs").insert({
+                action: "whatsapp_notification",
+                table_name: "leads",
+                record_id: currentLeadId,
+                metadata: {
+                  status: "error",
+                  error_message: whatsappAutoErr instanceof Error ? whatsappAutoErr.message : "Unknown error"
+                }
+              });
+            } catch (_) { /* ignore */ }
           }
         }
 

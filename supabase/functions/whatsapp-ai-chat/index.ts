@@ -367,7 +367,7 @@ REGRA OBRIGATÓRIA para leads de anúncio:
           const finalText = withoutPrefix || cleaned;
           const words = finalText.split(/\s+/);
           if (words.length >= 1 && words.length <= 4 && /^[a-záàâãéèêíïóôõöúçñ\s]+$/i.test(finalText) && finalText.length >= 2) {
-            extractedName = words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
+            extractedName = words.map((w: string) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
             console.log('[WhatsApp AI] 👤 NOME CAPTURADO (contextual):', extractedName);
           }
         }
@@ -637,7 +637,7 @@ REGRA OBRIGATÓRIA para leads de anúncio:
   } catch (error) {
     console.error('[WhatsApp AI] Error:', error);
     return new Response(
-      JSON.stringify({ ok: false, error: error.message || 'Internal error', reply: null }),
+      JSON.stringify({ ok: false, error: (error instanceof Error ? error.message : String(error)) || 'Internal error', reply: null }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

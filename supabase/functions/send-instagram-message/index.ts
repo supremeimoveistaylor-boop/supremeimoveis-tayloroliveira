@@ -188,7 +188,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('[Send Instagram] Error:', error);
-    return new Response(JSON.stringify({ ok: false, error: 'Internal server error', message: error.message }), {
+    return new Response(JSON.stringify({ ok: false, error: 'Internal server error', message: error instanceof Error ? error.message : String(error) }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
