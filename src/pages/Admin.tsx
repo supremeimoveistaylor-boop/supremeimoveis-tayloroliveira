@@ -57,13 +57,28 @@ interface Profile {
 }
 
 const Admin = () => {
-  const { user, isAdmin, loading, userRole } = useAuth();
+  const { user, isAdmin, loading, userRole, roleLoading } = useAuth() as any;
   const navigate = useNavigate();
   const [properties, setProperties] = useState<Property[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'properties' | 'users' | 'leads' | 'attendants' | 'sessions' | 'metrics' | 'conversions' | 'visits' | 'crm' | 'financial' | 'omnichat' | 'archive' | 'captacao' | 'storage' | 'blog' | 'sources'>('dashboard');
   const [accessDenied, setAccessDenied] = useState(false);
+
+  // 📱 PWA: troca o manifest dinamicamente para "Supreme Admin" e bloqueia o screen wake
+  useEffect(() => {
+    const link = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
+    const previous = link?.getAttribute('href') ?? '/manifest.json';
+    if (link) link.setAttribute('href', '/manifest-admin.json');
+    // Theme color escuro/dourado para a barra do app
+    const themeMeta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+    const previousTheme = themeMeta?.getAttribute('content') ?? '#d4af37';
+    if (themeMeta) themeMeta.setAttribute('content', '#000000');
+    return () => {
+      if (link) link.setAttribute('href', previous);
+      if (themeMeta) themeMeta.setAttribute('content', previousTheme);
+    };
+  }, []);
 
   // 🔔 Sistema unificado de notificações em tempo real (lead + mensagem)
   const notifications = useAdminNotifications({
@@ -130,13 +145,15 @@ const Admin = () => {
 
   // ALL useEffects MUST come before any conditional returns
   useEffect(() => {
-    // Check access after loading completes
-    if (!loading && !user) {
+    // Aguarda fim do auth E da consulta de role para evitar falso "acesso negado"
+    if (loading || roleLoading) return;
+
+    if (!user) {
       setIsLoading(false);
       return;
     }
-    
-    if (!loading && user && !isAdmin) {
+
+    if (user && !isAdmin) {
       setAccessDenied(true);
       setIsLoading(false);
       toast({
@@ -146,17 +163,28 @@ const Admin = () => {
       });
       return;
     }
-    
-    if (!loading && isAdmin) {
+
+    if (isAdmin) {
       setIsLoading(true);
       Promise.all([fetchAllProperties(), fetchAllProfiles()])
         .catch(err => console.error('Error loading admin data:', err))
         .finally(() => setIsLoading(false));
     }
-  }, [loading, user, isAdmin]);
+  }, [loading, roleLoading, user, isAdmin]);
 
   // Conditional returns AFTER all hooks
-  if (!user && !loading) {
+  if (loading || roleLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-3">
+          <div className="h-8 w-8 mx-auto border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-muted-foreground">Verificando acesso...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
     return <Navigate to="/auth" replace />;
   }
 
