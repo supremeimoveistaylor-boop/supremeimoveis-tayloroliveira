@@ -367,7 +367,7 @@ REGRA OBRIGATÓRIA para leads de anúncio:
           const finalText = withoutPrefix || cleaned;
           const words = finalText.split(/\s+/);
           if (words.length >= 1 && words.length <= 4 && /^[a-záàâãéèêíïóôõöúçñ\s]+$/i.test(finalText) && finalText.length >= 2) {
-            extractedName = words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
+            extractedName = words.map((w: string) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
             console.log('[WhatsApp AI] 👤 NOME CAPTURADO (contextual):', extractedName);
           }
         }
@@ -558,8 +558,14 @@ REGRA OBRIGATÓRIA para leads de anúncio:
     if (shouldEscalate) {
       console.log('[WhatsApp AI] 🔄 Escalation triggered for', senderPhone, 'reason:', isVisitScheduled ? 'visit_scheduled' : intent.isScheduling ? 'scheduling' : 'ai_tag');
 
+      const { data: escalationConv } = await supabase
+        .from('omnichat_conversations')
+        .select('lead_id')
+        .eq('id', conversationId)
+        .single();
+
       // Update CRM to "visita_agendada" stage
-      if (isVisitScheduled && convData?.lead_id) {
+      if (isVisitScheduled && escalationConv?.lead_id) {
         await supabase.from('crm_cards').update({
           coluna: 'negociacao',
           proxima_acao: 'Visita agendada pelo chat - confirmar com cliente',
@@ -567,16 +573,16 @@ REGRA OBRIGATÓRIA para leads de anúncio:
           lead_score: 90,
           probabilidade_fechamento: 50,
           updated_at: new Date().toISOString(),
-        }).eq('lead_id', convData.lead_id);
+        }).eq('lead_id', escalationConv.lead_id);
 
         await supabase.from('leads').update({
           visit_requested: true,
           status: 'em_atendimento',
           updated_at: new Date().toISOString(),
-        }).eq('id', convData.lead_id);
+        }).eq('id', escalationConv.lead_id);
 
         await supabase.from('crm_events').insert({
-          lead_id: convData.lead_id,
+          lead_id: escalationConv.lead_id,
           event_type: 'visita_agendada',
           new_value: 'agendada_via_chat',
           metadata: { source: 'whatsapp_ai', temperature, messageCount: clientMessageCount },
@@ -637,7 +643,7 @@ REGRA OBRIGATÓRIA para leads de anúncio:
   } catch (error) {
     console.error('[WhatsApp AI] Error:', error);
     return new Response(
-      JSON.stringify({ ok: false, error: error.message || 'Internal error', reply: null }),
+      JSON.stringify({ ok: false, error: (error instanceof Error ? error.message : String(error)) || 'Internal error', reply: null }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

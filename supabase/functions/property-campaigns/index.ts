@@ -122,7 +122,7 @@ serve(async (req) => {
           console.log(`[Campaigns] New property "${property.title}" sent to ${lead.name}`);
         } catch (e) {
           console.error(`[Campaigns] Error for property ${property.id}, lead ${lead.id}:`, e);
-          results.errors.push(`New prop ${property.id}/${lead.id}: ${e.message}`);
+          results.errors.push(`New prop ${property.id}/${lead.id}: ${e instanceof Error ? e.message : String(e)}`);
         }
       }
     }
@@ -205,7 +205,7 @@ serve(async (req) => {
           console.log(`[Campaigns] Price drop "${property.title}" (-${discount}%) sent to ${lead.name}`);
         } catch (e) {
           console.error(`[Campaigns] Price drop error ${property.id}/${lead.id}:`, e);
-          results.errors.push(`Price drop ${property.id}/${lead.id}: ${e.message}`);
+          results.errors.push(`Price drop ${property.id}/${lead.id}: ${e instanceof Error ? e.message : String(e)}`);
         }
       }
 
@@ -222,7 +222,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('[Campaigns] Fatal error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error instanceof Error ? error.message : String(error) }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

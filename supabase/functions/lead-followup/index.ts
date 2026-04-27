@@ -162,7 +162,7 @@ serve(async (req) => {
 
       } catch (e) {
         console.error(`[Follow-up] Error processing lead ${lead.id}:`, e);
-        results.errors.push(`Lead ${lead.id}: ${e.message}`);
+        results.errors.push(`Lead ${lead.id}: ${e instanceof Error ? e.message : String(e)}`);
       }
     }
 
@@ -258,7 +258,7 @@ serve(async (req) => {
 
       } catch (e) {
         console.error(`[Follow-up] Broker reminder error for lead ${lead.id}:`, e);
-        results.errors.push(`Broker reminder ${lead.id}: ${e.message}`);
+        results.errors.push(`Broker reminder ${lead.id}: ${e instanceof Error ? e.message : String(e)}`);
       }
     }
 
@@ -350,7 +350,7 @@ serve(async (req) => {
         console.log(`[Nurturing] Topic "${topic.topic}" sent to lead ${lead.id} (${lead.name})`);
       } catch (e) {
         console.error(`[Nurturing] Error for lead ${lead.id}:`, e);
-        results.errors.push(`Nurturing ${lead.id}: ${e.message}`);
+        results.errors.push(`Nurturing ${lead.id}: ${e instanceof Error ? e.message : String(e)}`);
       }
     }
 
@@ -364,7 +364,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('[Follow-up] Fatal error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error instanceof Error ? error.message : String(error) }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
