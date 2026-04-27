@@ -137,29 +137,102 @@ serve(async (req) => {
 
     const whatsappUrl = `https://graph.facebook.com/${WHATSAPP_API_VERSION}/${PHONE_NUMBER_ID}/messages`;
 
-    const response = await fetch(whatsappUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${ACCESS_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
+    // =====================================================
+    // RETRY WITH EXPONENTIAL BACKOFF
+    // =====================================================
+    // Strategy:
+    //  - Up to 4 attempts (1 initial + 3 retries)
+    //  - Backoff: 500ms, 1500ms, 4000ms (with ±20% jitter)
+    //  - Retry on: network errors (fetch throws), 5xx responses, 408, 429
+    //  - DO NOT retry on: 4xx (except 408/429) — these are permanent client errors
+    //    (e.g. invalid recipient, unauthorized, template not approved, etc.)
+    // =====================================================
+    const MAX_ATTEMPTS = 4;
+    const BACKOFF_DELAYS_MS = [500, 1500, 4000];
+    const RETRYABLE_STATUSES = new Set([408, 429, 500, 502, 503, 504]);
 
-    const result = await response.json();
+    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    const jitter = (ms: number) => Math.round(ms * (0.8 + Math.random() * 0.4));
 
-    if (!response.ok) {
-      console.error('[Send WhatsApp] API Error:', result);
+    let response: Response | null = null;
+    let result: any = null;
+    let lastError: string | null = null;
+    let attempts = 0;
+    let succeeded = false;
+
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      attempts = attempt;
+      try {
+        response = await fetch(whatsappUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${ACCESS_TOKEN}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        result = await response.json().catch(() => ({}));
+
+        if (response.ok) {
+          succeeded = true;
+          if (attempt > 1) {
+            console.log(`[Send WhatsApp] ✅ Succeeded on attempt ${attempt}/${MAX_ATTEMPTS}`);
+          }
+          break;
+        }
+
+        const status = response.status;
+        const isRetryable = RETRYABLE_STATUSES.has(status);
+        lastError = `HTTP ${status}: ${JSON.stringify(result).slice(0, 300)}`;
+
+        console.error(`[Send WhatsApp] Attempt ${attempt}/${MAX_ATTEMPTS} failed [${status}]:`, result);
+
+        if (!isRetryable) {
+          console.warn(`[Send WhatsApp] ❌ Non-retryable status ${status} — aborting retries`);
+          break;
+        }
+
+        if (attempt < MAX_ATTEMPTS) {
+          const delay = jitter(BACKOFF_DELAYS_MS[attempt - 1]);
+          console.log(`[Send WhatsApp] ⏳ Retrying in ${delay}ms...`);
+          await sleep(delay);
+        }
+      } catch (networkErr) {
+        // Network failure (DNS, connection reset, timeout, etc.)
+        lastError = networkErr instanceof Error ? networkErr.message : String(networkErr);
+        console.error(`[Send WhatsApp] Attempt ${attempt}/${MAX_ATTEMPTS} network error:`, lastError);
+
+        if (attempt < MAX_ATTEMPTS) {
+          const delay = jitter(BACKOFF_DELAYS_MS[attempt - 1]);
+          console.log(`[Send WhatsApp] ⏳ Retrying in ${delay}ms (network)...`);
+          await sleep(delay);
+        }
+      }
+    }
+
+    if (!succeeded) {
+      console.error(`[Send WhatsApp] ❌ All ${attempts} attempt(s) failed. Last error:`, lastError);
       return new Response(
-        JSON.stringify({ ok: false, error: 'Failed to send message' }),
+        JSON.stringify({
+          ok: false,
+          error: 'Failed to send message',
+          attempts,
+          last_error: lastError,
+        }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('[Send WhatsApp] Message sent successfully:', result);
+    console.log(`[Send WhatsApp] Message sent successfully (attempts=${attempts}):`, result);
 
     return new Response(
-      JSON.stringify({ ok: true, success: true, messageId: result.messages?.[0]?.id }),
+      JSON.stringify({
+        ok: true,
+        success: true,
+        messageId: result.messages?.[0]?.id,
+        attempts,
+      }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
