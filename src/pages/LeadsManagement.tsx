@@ -799,6 +799,16 @@ const LeadsManagement = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      <NotificationControlPanel
+        prefs={notifications.prefs}
+        setPrefs={notifications.setPrefs}
+        unseenCount={notifications.unseenCount}
+        connected={notifications.connected}
+        acknowledge={notifications.acknowledge}
+        previewLead={notifications.previewLead}
+        previewMessage={notifications.previewMessage}
+      />
     </div>
   );
 };
