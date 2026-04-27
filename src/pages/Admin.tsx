@@ -19,7 +19,8 @@ import { CRMKanbanPanel } from '@/components/admin/crm';
 import { FinancialControlPanel } from '@/components/admin/financial';
 import { WhatsAppConnectionPanel } from '@/components/admin/WhatsAppConnectionPanel';
 import { ArchiveStatusPanel } from '@/components/admin/ArchiveStatusPanel';
-import { useLeadNotification } from '@/hooks/useLeadNotification';
+import { useAdminNotifications } from '@/hooks/useAdminNotifications';
+import { NotificationControlPanel } from '@/components/admin/NotificationControlPanel';
 import { CaptacaoImoveisPanel } from '@/components/admin/CaptacaoImoveisPanel';
 import { StorageCleanupPanel } from '@/components/admin/StorageCleanupPanel';
 import { BlogAdminPanel } from '@/components/admin/BlogAdminPanel';
@@ -64,8 +65,11 @@ const Admin = () => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'properties' | 'users' | 'leads' | 'attendants' | 'sessions' | 'metrics' | 'conversions' | 'visits' | 'crm' | 'financial' | 'omnichat' | 'archive' | 'captacao' | 'storage' | 'blog' | 'sources'>('dashboard');
   const [accessDenied, setAccessDenied] = useState(false);
 
-  // Enable real-time lead notifications with sound
-  useLeadNotification();
+  // 🔔 Sistema unificado de notificações em tempo real (lead + mensagem)
+  const notifications = useAdminNotifications({
+    enabled: !loading && isAdmin,
+    userId: user?.id ?? null,
+  });
 
   // Fetch data functions
   const fetchAllProperties = async () => {
@@ -652,6 +656,16 @@ const Admin = () => {
           <BlogAdminPanel />
         )}
       </main>
+
+      <NotificationControlPanel
+        prefs={notifications.prefs}
+        setPrefs={notifications.setPrefs}
+        unseenCount={notifications.unseenCount}
+        connected={notifications.connected}
+        acknowledge={notifications.acknowledge}
+        previewLead={notifications.previewLead}
+        previewMessage={notifications.previewMessage}
+      />
     </div>
   );
 };

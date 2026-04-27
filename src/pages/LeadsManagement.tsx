@@ -20,7 +20,8 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import LeadsDashboard from "@/components/LeadsDashboard";
-import { useNewLeadNotification } from "@/hooks/useNewLeadNotification";
+import { useAdminNotifications } from "@/hooks/useAdminNotifications";
+import { NotificationControlPanel } from "@/components/admin/NotificationControlPanel";
 
 interface Broker {
   id: string;
@@ -77,16 +78,18 @@ const LeadsManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [highlightedIds, setHighlightedIds] = useState<Set<string>>(new Set());
 
-  // 🔔 Notificação sonora em tempo real para novos leads
-  const { latestNewLeadId, soundEnabled, setSoundEnabled } = useNewLeadNotification({
+  // 🔔 Notificação sonora unificada (lead + mensagens) em tempo real
+  const notifications = useAdminNotifications({
     enabled: !authLoading && isAdmin,
     onNewLead: () => {
       // Refaz fetch para incluir o novo lead com joins (properties/brokers)
       fetchData();
-      // Scroll ao topo da página/lista
       window.scrollTo({ top: 0, behavior: "smooth" });
     },
   });
+  const { latestNewLeadId } = notifications;
+  const soundEnabled = notifications.prefs.enabled;
+  const setSoundEnabled = (v: boolean) => notifications.setPrefs({ enabled: v });
 
   // Marca o lead novo como destacado por 8s
   useEffect(() => {
@@ -796,6 +799,16 @@ const LeadsManagement = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      <NotificationControlPanel
+        prefs={notifications.prefs}
+        setPrefs={notifications.setPrefs}
+        unseenCount={notifications.unseenCount}
+        connected={notifications.connected}
+        acknowledge={notifications.acknowledge}
+        previewLead={notifications.previewLead}
+        previewMessage={notifications.previewMessage}
+      />
     </div>
   );
 };
