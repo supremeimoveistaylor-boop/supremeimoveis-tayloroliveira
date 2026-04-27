@@ -239,10 +239,9 @@ export function useAdminNotifications({
 
     const request = async () => {
       try {
-        // @ts-expect-error wakeLock pode não existir em todos os browsers
-        if (navigator.wakeLock?.request) {
-          // @ts-expect-error
-          wakeLock = await navigator.wakeLock.request("screen");
+        const nav = navigator as any;
+        if (nav.wakeLock?.request) {
+          wakeLock = await nav.wakeLock.request("screen");
         }
       } catch {
         /* ignore */
