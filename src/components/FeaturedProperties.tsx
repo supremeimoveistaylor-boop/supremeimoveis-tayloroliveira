@@ -357,8 +357,26 @@ export const FeaturedProperties = ({ filterPurpose }: { filterPurpose?: 'sale' |
                   <MapPin className="h-4 w-4 mr-1 flex-shrink-0" />
                   <span className="line-clamp-1">{property.location}</span>
                 </div>
-                <div className="text-2xl font-bold text-accent">
-                  {formatPrice(property.price, property.purpose)}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="text-2xl font-bold text-accent">
+                    {formatPrice(property.price, property.purpose)}
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    aria-label="Falar com corretor no WhatsApp"
+                    className="bg-green-500 hover:bg-green-600 text-white rounded-full h-10 w-10 p-0 shadow-md flex-shrink-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const propertyUrl = `${window.location.origin}/property/${property.id}`;
+                      const msg = `Olá! Tenho interesse no imóvel: ${property.title} - ${formatPrice(property.price, property.purpose)} (${property.location}). Link: ${propertyUrl}`;
+                      const url = `https://wa.me/message/4EYVDAV2VZELG1?text=${encodeURIComponent(msg)}`;
+                      trackWhatsAppClick(`property_card_${property.id}`);
+                      window.open(url, '_blank', 'noopener,noreferrer');
+                    }}
+                  >
+                    <MessageCircle className="h-5 w-5" />
+                  </Button>
                 </div>
               </div>
 
