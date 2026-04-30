@@ -80,7 +80,7 @@ serve(async (req) => {
     }
 
     const body: SendMessageRequest = await req.json();
-    const { to, message, templateName, templateLanguage, templateComponents } = body;
+    const { to, message, templateName, templateLanguage, templateComponents, interactive } = body;
 
     if (!to) {
       return new Response(
