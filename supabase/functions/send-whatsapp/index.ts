@@ -10,10 +10,11 @@ const WHATSAPP_API_VERSION = 'v21.0';
 
 interface SendMessageRequest {
   to: string;
-  message: string;
+  message?: string;
   templateName?: string;
   templateLanguage?: string;
   templateComponents?: any[];
+  interactive?: any; // Raw WhatsApp interactive object (cta_url, button, list, etc.)
 }
 
 serve(async (req) => {
@@ -79,7 +80,7 @@ serve(async (req) => {
     }
 
     const body: SendMessageRequest = await req.json();
-    const { to, message, templateName, templateLanguage, templateComponents } = body;
+    const { to, message, templateName, templateLanguage, templateComponents, interactive } = body;
 
     if (!to) {
       return new Response(
@@ -118,17 +119,25 @@ serve(async (req) => {
           components: templateComponents || [],
         },
       };
+    } else if (interactive) {
+      payload = {
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: formattedPhone,
+        type: 'interactive',
+        interactive,
+      };
     } else if (message) {
       payload = {
         messaging_product: 'whatsapp',
         recipient_type: 'individual',
         to: formattedPhone,
         type: 'text',
-        text: { preview_url: false, body: message },
+        text: { preview_url: true, body: message },
       };
     } else {
       return new Response(
-        JSON.stringify({ ok: false, error: 'Message or template is required' }),
+        JSON.stringify({ ok: false, error: 'Message, interactive, or template is required' }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
