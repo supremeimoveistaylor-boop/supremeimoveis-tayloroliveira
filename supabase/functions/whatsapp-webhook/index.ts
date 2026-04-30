@@ -561,6 +561,76 @@ serve(async (req) => {
                   }
 
                   // ============================================
+                  // WELCOME MESSAGE — primeiro contato (botão CTA premium)
+                  // ============================================
+                  if (isFirstContact) {
+                    try {
+                      const SUPABASE_URL_ENV = Deno.env.get('SUPABASE_URL')!;
+                      const welcomeInteractive = {
+                        type: 'cta_url',
+                        body: {
+                          text: '✨ *Seja bem-vindo(a) à Supreme Empreendimentos!*\n\nPara um atendimento ainda mais rápido e exclusivo, fale agora mesmo direto com *Taylor Oliveira*, nosso especialista em imóveis de alto padrão em Goiânia.\n\nEm instantes nossa equipe também responderá por aqui. 🏡',
+                        },
+                        footer: { text: 'Supreme Empreendimentos • CRECI 20.316' },
+                        action: {
+                          name: 'cta_url',
+                          parameters: {
+                            display_text: '💬 Falar com Taylor Oliveira',
+                            url: 'https://wa.me/message/4EYVDAV2VZELG1',
+                          },
+                        },
+                      };
+
+                      console.log('[WhatsApp Webhook] 👋 Enviando boas-vindas com botão CTA para:', senderPhone);
+                      const welcomeRes = await fetch(`${SUPABASE_URL_ENV}/functions/v1/send-whatsapp`, {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+                          'apikey': SUPABASE_SERVICE_ROLE_KEY,
+                        },
+                        body: JSON.stringify({ to: senderPhone, interactive: welcomeInteractive }),
+                      });
+
+                      const welcomeResult = await welcomeRes.json().catch(() => null);
+
+                      if (welcomeRes.ok && welcomeResult?.ok) {
+                        console.log('[WhatsApp Webhook] ✅ Boas-vindas enviadas. msgId:', welcomeResult.messageId);
+                        await supabase.from('omnichat_messages').insert({
+                          conversation_id: convId,
+                          sender_type: 'bot',
+                          channel: 'whatsapp',
+                          content: '✨ Seja bem-vindo(a)! Para atendimento mais rápido, fale direto com Taylor Oliveira: https://wa.me/message/4EYVDAV2VZELG1',
+                          status: 'sent',
+                          meta_message_id: welcomeResult.messageId || null,
+                        });
+                      } else {
+                        // Fallback: se interactive falhar (ex: cta_url não suportado), envia texto simples com link
+                        console.warn('[WhatsApp Webhook] ⚠️ Interactive falhou, fallback texto:', welcomeResult);
+                        const fallbackText = '✨ *Seja bem-vindo(a) à Supreme Empreendimentos!*\n\nPara um atendimento mais rápido, clique aqui e fale direto com *Taylor Oliveira*:\n\n👉 https://wa.me/message/4EYVDAV2VZELG1\n\nEm instantes nossa equipe também responderá por aqui. 🏡';
+                        await fetch(`${SUPABASE_URL_ENV}/functions/v1/send-whatsapp`, {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+                            'apikey': SUPABASE_SERVICE_ROLE_KEY,
+                          },
+                          body: JSON.stringify({ to: senderPhone, message: fallbackText }),
+                        });
+                        await supabase.from('omnichat_messages').insert({
+                          conversation_id: convId,
+                          sender_type: 'bot',
+                          channel: 'whatsapp',
+                          content: fallbackText,
+                          status: 'sent',
+                        });
+                      }
+                    } catch (welcomeErr) {
+                      console.error('[WhatsApp Webhook] Welcome message error:', welcomeErr);
+                    }
+                  }
+
+                  // ============================================
                   // AI RESPONSE — generate + send to WhatsApp
                   // ============================================
                   try {
