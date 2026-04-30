@@ -320,6 +320,7 @@ serve(async (req) => {
                     .maybeSingle();
 
                   let convId: string;
+                  const isFirstContact = !existingConv;
 
                   if (existingConv) {
                     convId = existingConv.id;
