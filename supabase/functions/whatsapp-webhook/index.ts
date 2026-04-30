@@ -639,14 +639,12 @@ serve(async (req) => {
                             }).eq('id', convId);
                           } else {
                             console.error('[WhatsApp Webhook] ❌ Erro ao enviar resposta IA ao WhatsApp:', sendResult);
-                            // Still save the reply marked as failed so we have a trail
                             await supabase.from('omnichat_messages').insert({
                               conversation_id: convId,
                               sender_type: 'bot',
                               channel: 'whatsapp',
                               content: replyText,
                               status: 'failed',
-                              error_message: JSON.stringify(sendResult ?? { status: sendRes.status }).slice(0, 500),
                             });
                           }
                         } else {
