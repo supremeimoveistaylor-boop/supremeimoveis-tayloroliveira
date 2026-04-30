@@ -42,6 +42,12 @@ verify_jwt = false
 [functions.whatsapp-ai-chat]
 verify_jwt = false
 
+[functions.whatsapp-auto-close]
+verify_jwt = false
+
+[functions.update-instagram-names]
+verify_jwt = false
+
 [functions.track-event]
 verify_jwt = false
 
