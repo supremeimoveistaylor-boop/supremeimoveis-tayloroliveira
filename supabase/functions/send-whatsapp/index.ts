@@ -10,10 +10,11 @@ const WHATSAPP_API_VERSION = 'v21.0';
 
 interface SendMessageRequest {
   to: string;
-  message: string;
+  message?: string;
   templateName?: string;
   templateLanguage?: string;
   templateComponents?: any[];
+  interactive?: any; // Raw WhatsApp interactive object (cta_url, button, list, etc.)
 }
 
 serve(async (req) => {
