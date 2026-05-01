@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Plus, Home, Edit, Trash2, Eye, TestTube } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { ImageDebugger } from '@/components/ImageDebugger';
+import { AdminLayout } from '@/components/admin/layout/AdminLayout';
 
 interface Property {
   id: string;
@@ -114,37 +115,26 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold">Painel de Controle</h1>
-              <p className="text-muted-foreground">Gerencie seus imóveis</p>
-            </div>
-            <div className="flex items-center gap-4">
-              {isAdmin && (
-                <Button variant="secondary" onClick={() => navigate('/admin')}>
-                  Painel do Admin
-                </Button>
-              )}
-              <Button onClick={() => navigate('/add-property')}>
-                <Plus className="mr-2 h-4 w-4" />
-                Adicionar Imóvel
-              </Button>
-              <Button variant="outline" onClick={signOut}>
-                Sair
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+    <AdminLayout
+      title="Painel de Controle"
+      subtitle="Gerencie seus imóveis"
+      rightSlot={
+        <>
+          {isAdmin && (
+            <Button variant="secondary" size="sm" onClick={() => navigate('/admin')} className="hidden sm:inline-flex">
+              Painel do Admin
+            </Button>
+          )}
+          <Button size="sm" onClick={() => navigate('/add-property')} className="hidden sm:inline-flex">
+            <Plus className="mr-2 h-4 w-4" />
+            Adicionar Imóvel
+          </Button>
+        </>
+      }
+    >
+      <div className="max-w-[1600px] mx-auto w-full">
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 lg:gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total de Imóveis</CardTitle>
@@ -309,8 +299,8 @@ const Dashboard = () => {
             </div>
           )}
         </div>
-      </main>
-    </div>
+      </div>
+    </AdminLayout>
   );
 };
 

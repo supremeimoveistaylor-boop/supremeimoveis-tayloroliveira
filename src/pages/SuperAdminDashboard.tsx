@@ -50,6 +50,9 @@ import {
   Home
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { AdminLayout } from "@/components/admin/layout/AdminLayout";
+import { useAdminNotifications } from "@/hooks/useAdminNotifications";
+import { NotificationControlPanel } from "@/components/admin/NotificationControlPanel";
 
 // PWA install hook
 function usePWAInstall() {
@@ -197,6 +200,10 @@ const SuperAdminDashboard = () => {
   const [serverValidated, setServerValidated] = useState(false);
   const [validationFailed, setValidationFailed] = useState(false);
   const { canInstall, isInstalled, install } = usePWAInstall();
+  const notifications = useAdminNotifications({
+    enabled: !loading && serverValidated,
+    userId: user?.id ?? null,
+  });
 
   // Server-side validation via RPC before rendering
   useEffect(() => {
@@ -357,65 +364,49 @@ const SuperAdminDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
-      {/* Header */}
-      <header className="border-b border-slate-200 bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-amber-500/15 rounded-xl flex items-center justify-center">
-              <Shield className="w-5 h-5 text-amber-600" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-slate-800">Super Admin Dashboard</h1>
-              <p className="text-xs text-slate-500">{user?.email}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            {canInstall && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={async () => {
-                  const ok = await install();
-                  if (ok) toast({ title: "✅ App instalado!", description: "Acesse pelo ícone na tela inicial." });
-                }}
-                className="border-amber-400 text-amber-600 hover:bg-amber-50"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Instalar App
-              </Button>
-            )}
-            {isInstalled && (
-              <Badge variant="outline" className="border-green-400 text-green-600 text-xs">
-                <Smartphone className="w-3 h-3 mr-1" />
-                App Instalado
-              </Badge>
-            )}
+    <>
+    <AdminLayout
+      title="Super Admin Dashboard"
+      subtitle={user?.email ?? undefined}
+      unseenCount={notifications.unseenCount}
+      connected={notifications.connected}
+      rightSlot={
+        <>
+          {canInstall && (
             <Button
               variant="outline"
               size="sm"
-              onClick={fetchDashboardData}
-              className="border-slate-300 text-slate-600 hover:bg-slate-50"
+              onClick={async () => {
+                const ok = await install();
+                if (ok) toast({ title: "✅ App instalado!", description: "Acesse pelo ícone na tela inicial." });
+              }}
+              className="hidden md:inline-flex border-amber-400 text-amber-600 hover:bg-amber-50"
             >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Atualizar
+              <Download className="w-4 h-4 mr-2" />
+              Instalar App
             </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={handleLogout}
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Sair
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+          )}
+          {isInstalled && (
+            <Badge variant="outline" className="hidden md:inline-flex border-green-400 text-green-600 text-xs">
+              <Smartphone className="w-3 h-3 mr-1" />
+              Instalado
+            </Badge>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchDashboardData}
+            className="hidden sm:inline-flex border-slate-300 text-slate-600 hover:bg-slate-50"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Atualizar
+          </Button>
+        </>
+      }
+    >
+      <div className="max-w-[1600px] mx-auto w-full">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 lg:gap-4 mb-6">
           <Card className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
@@ -780,8 +771,18 @@ const SuperAdminDashboard = () => {
             </Card>
           </TabsContent>
         </Tabs>
-      </main>
-    </div>
+      </div>
+    </AdminLayout>
+    <NotificationControlPanel
+      prefs={notifications.prefs}
+      setPrefs={notifications.setPrefs}
+      unseenCount={notifications.unseenCount}
+      connected={notifications.connected}
+      acknowledge={notifications.acknowledge}
+      previewLead={notifications.previewLead}
+      previewMessage={notifications.previewMessage}
+    />
+    </>
   );
 };
 

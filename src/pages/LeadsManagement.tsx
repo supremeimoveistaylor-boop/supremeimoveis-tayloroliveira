@@ -22,6 +22,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import LeadsDashboard from "@/components/LeadsDashboard";
 import { useAdminNotifications } from "@/hooks/useAdminNotifications";
 import { NotificationControlPanel } from "@/components/admin/NotificationControlPanel";
+import { AdminLayout } from "@/components/admin/layout/AdminLayout";
 
 interface Broker {
   id: string;
@@ -356,26 +357,25 @@ const LeadsManagement = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => navigate("/dashboard")}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Voltar
-            </Button>
-            <h1 className="text-2xl font-bold">Gestão de Leads e Corretores</h1>
-          </div>
-          <Button
-            variant={soundEnabled ? "default" : "outline"}
-            size="sm"
-            onClick={() => setSoundEnabled(!soundEnabled)}
-            title={soundEnabled ? "Desativar som de notificação" : "Ativar som de notificação"}
-          >
-            {soundEnabled ? <Volume2 className="h-4 w-4 mr-2" /> : <VolumeX className="h-4 w-4 mr-2" />}
-            {soundEnabled ? "Som ON" : "Som OFF"}
-          </Button>
-        </div>
+    <>
+    <AdminLayout
+      title="Gestão de Leads e Corretores"
+      subtitle={`${leads.length} leads · ${brokers.length} corretores`}
+      unseenCount={notifications.unseenCount}
+      connected={notifications.connected}
+      rightSlot={
+        <Button
+          variant={soundEnabled ? "default" : "outline"}
+          size="sm"
+          onClick={() => setSoundEnabled(!soundEnabled)}
+          className="hidden sm:inline-flex"
+        >
+          {soundEnabled ? <Volume2 className="h-4 w-4 mr-2" /> : <VolumeX className="h-4 w-4 mr-2" />}
+          {soundEnabled ? "Som ON" : "Som OFF"}
+        </Button>
+      }
+    >
+      <div className="max-w-[1600px] mx-auto w-full">
 
         <Tabs defaultValue="dashboard" className="space-y-4">
           <TabsList>
@@ -799,17 +799,18 @@ const LeadsManagement = () => {
           </TabsContent>
         </Tabs>
       </div>
+    </AdminLayout>
 
-      <NotificationControlPanel
-        prefs={notifications.prefs}
-        setPrefs={notifications.setPrefs}
-        unseenCount={notifications.unseenCount}
-        connected={notifications.connected}
-        acknowledge={notifications.acknowledge}
-        previewLead={notifications.previewLead}
-        previewMessage={notifications.previewMessage}
-      />
-    </div>
+    <NotificationControlPanel
+      prefs={notifications.prefs}
+      setPrefs={notifications.setPrefs}
+      unseenCount={notifications.unseenCount}
+      connected={notifications.connected}
+      acknowledge={notifications.acknowledge}
+      previewLead={notifications.previewLead}
+      previewMessage={notifications.previewMessage}
+    />
+    </>
   );
 };
 
