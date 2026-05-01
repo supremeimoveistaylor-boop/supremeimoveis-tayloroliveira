@@ -618,11 +618,17 @@ serve(async (req) => {
                           status: 'sent',
                           meta_message_id: welcomeResult.messageId || null,
                         });
+                        await supabase.from('whatsapp_welcome_sent').upsert({
+                          phone: senderPhone,
+                          conversation_id: convId,
+                          message_id: welcomeResult.messageId || null,
+                          sent_at: new Date().toISOString(),
+                        }, { onConflict: 'phone' });
                       } else {
                         // Fallback: se interactive falhar (ex: cta_url não suportado), envia texto simples com link
                         console.warn('[WhatsApp Webhook] ⚠️ Interactive falhou, fallback texto:', welcomeResult);
                         const fallbackText = '✨ *Seja bem-vindo(a) à Supreme Empreendimentos!*\n\nPara um atendimento mais rápido, clique aqui e fale direto com *Taylor Oliveira*:\n\n👉 https://wa.me/message/4EYVDAV2VZELG1\n\nEm instantes nossa equipe também responderá por aqui. 🏡';
-                        await fetch(`${SUPABASE_URL_ENV}/functions/v1/send-whatsapp`, {
+                        const fbRes = await fetch(`${SUPABASE_URL_ENV}/functions/v1/send-whatsapp`, {
                           method: 'POST',
                           headers: {
                             'Content-Type': 'application/json',
@@ -631,13 +637,22 @@ serve(async (req) => {
                           },
                           body: JSON.stringify({ to: senderPhone, message: fallbackText }),
                         });
+                        const fbResult = await fbRes.json().catch(() => null);
                         await supabase.from('omnichat_messages').insert({
                           conversation_id: convId,
                           sender_type: 'bot',
                           channel: 'whatsapp',
                           content: fallbackText,
-                          status: 'sent',
+                          status: fbRes.ok && fbResult?.ok ? 'sent' : 'failed',
                         });
+                        if (fbRes.ok && fbResult?.ok) {
+                          await supabase.from('whatsapp_welcome_sent').upsert({
+                            phone: senderPhone,
+                            conversation_id: convId,
+                            message_id: fbResult.messageId || null,
+                            sent_at: new Date().toISOString(),
+                          }, { onConflict: 'phone' });
+                        }
                       }
                     } catch (welcomeErr) {
                       console.error('[WhatsApp Webhook] Welcome message error:', welcomeErr);
