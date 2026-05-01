@@ -26,6 +26,7 @@ import { StorageCleanupPanel } from '@/components/admin/StorageCleanupPanel';
 import { BlogAdminPanel } from '@/components/admin/BlogAdminPanel';
 import { SourceAnalyticsPanel } from '@/components/admin/SourceAnalyticsPanel';
 import { OmnichatInboxPanel } from '@/components/admin/OmnichatInboxPanel';
+import { AdminLayout } from '@/components/admin/layout/AdminLayout';
 
 interface Property {
   id: string;
@@ -670,18 +671,19 @@ const Admin = () => {
         {activeTab === 'blog' && (
           <BlogAdminPanel />
         )}
-      </main>
+      </div>
+    </AdminLayout>
 
-      <NotificationControlPanel
-        prefs={notifications.prefs}
-        setPrefs={notifications.setPrefs}
-        unseenCount={notifications.unseenCount}
-        connected={notifications.connected}
-        acknowledge={notifications.acknowledge}
-        previewLead={notifications.previewLead}
-        previewMessage={notifications.previewMessage}
-      />
-    </div>
+    <NotificationControlPanel
+      prefs={notifications.prefs}
+      setPrefs={notifications.setPrefs}
+      unseenCount={notifications.unseenCount}
+      connected={notifications.connected}
+      acknowledge={notifications.acknowledge}
+      previewLead={notifications.previewLead}
+      previewMessage={notifications.previewMessage}
+    />
+    </>
   );
 };
 
