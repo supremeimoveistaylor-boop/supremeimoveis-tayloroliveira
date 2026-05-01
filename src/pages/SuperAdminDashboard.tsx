@@ -200,6 +200,10 @@ const SuperAdminDashboard = () => {
   const [serverValidated, setServerValidated] = useState(false);
   const [validationFailed, setValidationFailed] = useState(false);
   const { canInstall, isInstalled, install } = usePWAInstall();
+  const notifications = useAdminNotifications({
+    enabled: !loading && serverValidated,
+    userId: user?.id ?? null,
+  });
 
   // Server-side validation via RPC before rendering
   useEffect(() => {
