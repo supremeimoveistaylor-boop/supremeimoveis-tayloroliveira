@@ -771,8 +771,18 @@ const SuperAdminDashboard = () => {
             </Card>
           </TabsContent>
         </Tabs>
-      </main>
-    </div>
+      </div>
+    </AdminLayout>
+    <NotificationControlPanel
+      prefs={notifications.prefs}
+      setPrefs={notifications.setPrefs}
+      unseenCount={notifications.unseenCount}
+      connected={notifications.connected}
+      acknowledge={notifications.acknowledge}
+      previewLead={notifications.previewLead}
+      previewMessage={notifications.previewMessage}
+    />
+    </>
   );
 };
 
