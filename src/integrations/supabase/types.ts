@@ -2223,6 +2223,27 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_welcome_sent: {
+        Row: {
+          conversation_id: string | null
+          message_id: string | null
+          phone: string
+          sent_at: string
+        }
+        Insert: {
+          conversation_id?: string | null
+          message_id?: string | null
+          phone: string
+          sent_at?: string
+        }
+        Update: {
+          conversation_id?: string | null
+          message_id?: string | null
+          phone?: string
+          sent_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       chat_conversion_metrics: {
