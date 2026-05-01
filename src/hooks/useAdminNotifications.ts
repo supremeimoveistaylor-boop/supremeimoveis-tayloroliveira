@@ -356,7 +356,6 @@ export function useAdminNotifications({
   // 🔁 Reconnect automático em caso de perda de rede
   useEffect(() => {
     const onOnline = () => {
-      // O cliente Supabase já tenta reconectar sozinho, mas forçamos um "kick".
       try {
         supabase.realtime?.connect?.();
       } catch {
@@ -366,6 +365,51 @@ export function useAdminNotifications({
     window.addEventListener("online", onOnline);
     return () => window.removeEventListener("online", onOnline);
   }, []);
+
+  // ⏱️ FALLBACK POLLING — garante notificação mesmo se Realtime cair
+  // Verifica novos leads a cada 5s usando created_at > último visto.
+  useEffect(() => {
+    if (!enabled) return;
+    let lastSeenAt = new Date().toISOString();
+
+    const poll = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("leads")
+          .select("id, name, phone, created_at")
+          .gt("created_at", lastSeenAt)
+          .order("created_at", { ascending: true })
+          .limit(20);
+
+        if (error || !data || data.length === 0) return;
+
+        for (const lead of data) {
+          if (seenLeadsRef.current.has(lead.id)) continue;
+          seenLeadsRef.current.add(lead.id);
+
+          playSoundOnce(prefsRef.current.leadSound);
+          vibrate([200, 80, 200, 80, 200]);
+          setLatestNewLeadId(lead.id);
+          setUnseenCount((c) => c + 1);
+          startRepeat(prefsRef.current.leadSound);
+
+          const title = "🔔 Novo lead recebido!";
+          const desc = `${lead.name || "Visitante"}${lead.phone ? " • " + lead.phone : ""}`;
+          toast({ title, description: desc });
+          showDesktopNotification(title, desc);
+
+          onNewLead?.(lead);
+        }
+
+        lastSeenAt = data[data.length - 1].created_at;
+      } catch {
+        /* silencia falhas transitórias */
+      }
+    };
+
+    const interval = window.setInterval(poll, 5000);
+    return () => clearInterval(interval);
+  }, [enabled, playSoundOnce, vibrate, startRepeat, showDesktopNotification, onNewLead]);
 
   // Limpa cache de IDs vistos quando passa de 1000 (evita memory leak)
   useEffect(() => {
