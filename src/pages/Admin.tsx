@@ -288,33 +288,20 @@ const Admin = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button variant="outline" size="sm" onClick={() => navigate('/dashboard')}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Voltar
-              </Button>
-              <div>
-                <h1 className="text-2xl font-bold">Painel do Administrador</h1>
-                <p className="text-muted-foreground">Gerencie imóveis, usuários e leads</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <Button onClick={() => navigate('/add-property')}>
-                <Plus className="mr-2 h-4 w-4" />
-                Adicionar Imóvel
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+    <>
+    <AdminLayout
+      title="Painel do Administrador"
+      subtitle="Gerencie imóveis, usuários e leads"
+      unseenCount={notifications.unseenCount}
+      connected={notifications.connected}
+      rightSlot={
+        <Button size="sm" onClick={() => navigate('/add-property')} className="hidden sm:inline-flex">
+          <Plus className="mr-2 h-4 w-4" />
+          Adicionar Imóvel
+        </Button>
+      }
+    >
+      <div className="max-w-[1600px] mx-auto w-full">
         {/* Tabs */}
         <div className="flex gap-4 mb-8 flex-wrap">
           <Button
