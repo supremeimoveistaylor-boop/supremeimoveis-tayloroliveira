@@ -50,6 +50,9 @@ import {
   Home
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { AdminLayout } from "@/components/admin/layout/AdminLayout";
+import { useAdminNotifications } from "@/hooks/useAdminNotifications";
+import { NotificationControlPanel } from "@/components/admin/NotificationControlPanel";
 
 // PWA install hook
 function usePWAInstall() {
