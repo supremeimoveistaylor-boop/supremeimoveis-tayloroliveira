@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Plus, Home, Edit, Trash2, Eye, TestTube } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { ImageDebugger } from '@/components/ImageDebugger';
+import { AdminLayout } from '@/components/admin/layout/AdminLayout';
 
 interface Property {
   id: string;
