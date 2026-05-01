@@ -561,9 +561,23 @@ serve(async (req) => {
                   }
 
                   // ============================================
-                  // WELCOME MESSAGE — primeiro contato (botão CTA premium)
+                  // WELCOME MESSAGE — uma vez por número (botão CTA premium)
+                  // Envia para TODO contato que ainda não recebeu, mesmo que a conversa já exista
                   // ============================================
-                  if (isFirstContact) {
+                  let shouldSendWelcome = false;
+                  try {
+                    const { data: alreadySent } = await supabase
+                      .from('whatsapp_welcome_sent')
+                      .select('phone')
+                      .eq('phone', senderPhone)
+                      .maybeSingle();
+                    shouldSendWelcome = !alreadySent;
+                  } catch (checkErr) {
+                    console.warn('[WhatsApp Webhook] welcome check error:', checkErr);
+                    shouldSendWelcome = isFirstContact; // fallback
+                  }
+
+                  if (shouldSendWelcome) {
                     try {
                       const SUPABASE_URL_ENV = Deno.env.get('SUPABASE_URL')!;
                       const welcomeInteractive = {
