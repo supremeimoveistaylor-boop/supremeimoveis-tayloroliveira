@@ -135,7 +135,7 @@ export function AdminTopbar({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {rightSlot ? null : null}
+        <button
           onClick={onBellClick}
           className="relative p-2 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors"
           aria-label="Notificações"
