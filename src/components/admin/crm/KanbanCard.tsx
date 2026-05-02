@@ -31,11 +31,16 @@ export const KanbanCardComponent = memo(function KanbanCardComponent({
   card, column, onEdit, onDelete, onMove, onAnalyze, canDelete = false, isAnalyzing = false,
 }: KanbanCardProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   const handleEdit = useCallback(() => { setIsMenuOpen(false); onEdit?.(card); }, [card, onEdit]);
-  const handleDelete = useCallback(() => {
+  const handleAskDelete = useCallback(() => {
     setIsMenuOpen(false);
-    if (confirm('Tem certeza que deseja excluir este card?')) onDelete?.(card?.id ?? '');
+    setConfirmDeleteOpen(true);
+  }, []);
+  const handleConfirmDelete = useCallback(() => {
+    setConfirmDeleteOpen(false);
+    onDelete?.(card?.id ?? '');
   }, [card?.id, onDelete]);
   const handleMove = useCallback((toColumn: KanbanColumn) => { setIsMenuOpen(false); onMove?.(toColumn); }, [onMove]);
 
