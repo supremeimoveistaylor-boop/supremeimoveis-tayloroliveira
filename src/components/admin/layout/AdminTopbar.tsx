@@ -78,7 +78,64 @@ export function AdminTopbar({
       <div className="flex items-center gap-1.5">
         {rightSlot}
 
-        <button
+        {/* Central de Ações */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="hidden sm:inline-flex items-center gap-1.5 h-9 px-2.5 text-slate-600 hover:text-amber-700 hover:bg-amber-50"
+              aria-label="Central de Ações"
+            >
+              <Zap className="w-4 h-4 text-amber-500" />
+              <span className="text-xs font-semibold">Ações</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-60">
+            <DropdownMenuLabel className="text-[11px] uppercase tracking-wide text-slate-500">
+              Atalhos rápidos
+            </DropdownMenuLabel>
+            <DropdownMenuItem onClick={() => navigate("/leads")} className="cursor-pointer">
+              <Users className="w-4 h-4 mr-2 text-blue-600" />
+              <div className="flex-1">
+                <div className="text-sm font-medium">Leads</div>
+                <div className="text-[10px] text-slate-500">Gerenciar contatos e CRM</div>
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/conversas")} className="cursor-pointer">
+              <MessageSquare className="w-4 h-4 mr-2 text-emerald-600" />
+              <div className="flex-1">
+                <div className="text-sm font-medium">Conversas</div>
+                <div className="text-[10px] text-slate-500">Omnichat unificado</div>
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/dashboard")} className="cursor-pointer">
+              <Building2 className="w-4 h-4 mr-2 text-amber-600" />
+              <div className="flex-1">
+                <div className="text-sm font-medium">Imóveis</div>
+                <div className="text-[10px] text-slate-500">Painel de propriedades</div>
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-[11px] uppercase tracking-wide text-slate-500">
+              Criar
+            </DropdownMenuLabel>
+            <DropdownMenuItem onClick={() => navigate("/add-property")} className="cursor-pointer">
+              <Plus className="w-4 h-4 mr-2 text-slate-600" />
+              <span className="text-sm">Novo imóvel</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/super-admin")} className="cursor-pointer">
+              <BarChart3 className="w-4 h-4 mr-2 text-slate-600" />
+              <span className="text-sm">Visão geral</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/super-admin?tab=visits")} className="cursor-pointer">
+              <Calendar className="w-4 h-4 mr-2 text-slate-600" />
+              <span className="text-sm">Agendamentos</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {rightSlot ? null : null}
           onClick={onBellClick}
           className="relative p-2 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors"
           aria-label="Notificações"
