@@ -204,5 +204,27 @@ export const KanbanCardComponent = memo(function KanbanCardComponent({
         </div>
       </CardContent>
     </Card>
+
+    <AlertDialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Excluir card do Kanban?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Esta ação remove permanentemente o card{card.cliente ? ` de ${card.cliente}` : ''} do CRM.
+            Esta operação não pode ser desfeita.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleConfirmDelete}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            Excluir
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 });
