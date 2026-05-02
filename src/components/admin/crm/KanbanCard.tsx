@@ -138,7 +138,7 @@ export const KanbanCardComponent = memo(function KanbanCardComponent({
               {canDelete && (
                 <>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleDelete} className="text-destructive">
+                  <DropdownMenuItem onClick={handleAskDelete} className="text-destructive">
                     <Trash2 className="h-4 w-4 mr-2" /> Excluir
                   </DropdownMenuItem>
                 </>
