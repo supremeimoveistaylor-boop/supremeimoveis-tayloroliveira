@@ -1,10 +1,17 @@
-import { Bell, Menu, LogOut, User } from "lucide-react";
+import { Bell, Menu, LogOut, Zap, Users, MessageSquare, Building2, Plus, BarChart3, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface AdminTopbarProps {
   title?: string;
