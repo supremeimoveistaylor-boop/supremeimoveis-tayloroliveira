@@ -76,6 +76,7 @@ export const KanbanCardComponent = memo(function KanbanCardComponent({
   }, [card.last_interaction_at, card.created_at]);
 
   return (
+    <>
     <Card className={`mb-3 shadow-sm hover:shadow-md transition-all cursor-pointer border ${
       isSemInteresse ? 'bg-muted/50 opacity-70 border-muted'
         : isQuente ? 'bg-card border-red-400/60 ring-2 ring-red-400/30 shadow-red-500/10 shadow-lg'
