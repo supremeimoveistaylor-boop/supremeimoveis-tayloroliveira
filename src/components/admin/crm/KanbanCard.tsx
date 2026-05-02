@@ -10,6 +10,10 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuTrigger, DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { CRMCard, KanbanColumn, KANBAN_COLUMNS, ALERT_THRESHOLD_DAYS, CLASSIFICACAO_CONFIG } from './types';
 
 interface KanbanCardProps {
@@ -27,11 +31,16 @@ export const KanbanCardComponent = memo(function KanbanCardComponent({
   card, column, onEdit, onDelete, onMove, onAnalyze, canDelete = false, isAnalyzing = false,
 }: KanbanCardProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   const handleEdit = useCallback(() => { setIsMenuOpen(false); onEdit?.(card); }, [card, onEdit]);
-  const handleDelete = useCallback(() => {
+  const handleAskDelete = useCallback(() => {
     setIsMenuOpen(false);
-    if (confirm('Tem certeza que deseja excluir este card?')) onDelete?.(card?.id ?? '');
+    setConfirmDeleteOpen(true);
+  }, []);
+  const handleConfirmDelete = useCallback(() => {
+    setConfirmDeleteOpen(false);
+    onDelete?.(card?.id ?? '');
   }, [card?.id, onDelete]);
   const handleMove = useCallback((toColumn: KanbanColumn) => { setIsMenuOpen(false); onMove?.(toColumn); }, [onMove]);
 
@@ -67,6 +76,7 @@ export const KanbanCardComponent = memo(function KanbanCardComponent({
   }, [card.last_interaction_at, card.created_at]);
 
   return (
+    <>
     <Card className={`mb-3 shadow-sm hover:shadow-md transition-all cursor-pointer border ${
       isSemInteresse ? 'bg-muted/50 opacity-70 border-muted'
         : isQuente ? 'bg-card border-red-400/60 ring-2 ring-red-400/30 shadow-red-500/10 shadow-lg'
@@ -129,7 +139,7 @@ export const KanbanCardComponent = memo(function KanbanCardComponent({
               {canDelete && (
                 <>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleDelete} className="text-destructive">
+                  <DropdownMenuItem onClick={handleAskDelete} className="text-destructive">
                     <Trash2 className="h-4 w-4 mr-2" /> Excluir
                   </DropdownMenuItem>
                 </>
@@ -194,5 +204,27 @@ export const KanbanCardComponent = memo(function KanbanCardComponent({
         </div>
       </CardContent>
     </Card>
+
+    <AlertDialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Excluir card do Kanban?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Esta ação remove permanentemente o card{card.cliente ? ` de ${card.cliente}` : ''} do CRM.
+            Esta operação não pode ser desfeita.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleConfirmDelete}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            Excluir
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 });
