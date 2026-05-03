@@ -497,12 +497,12 @@ serve(async (req) => {
                       const displayName = bestName || sanitizedPhone;
                       const contactLink = `https://wa.me/${sanitizedPhone}`;
                       
-                      const brokerMsg = `🚨 *Novo Lead WhatsApp*\n\n` +
+                      const brokerMsg = `🚨 NOVO LEAD QUALIFICADO\n\n` +
                         `👤 Nome: ${displayName}\n` +
-                        `📱 Telefone: ${sanitizedPhone}\n` +
-                        `📍 Origem: ${adSource}${adCampaign ? ` (${adCampaign})` : ''}\n` +
-                        `💬 Mensagem: ${messageText.substring(0, 200)}\n\n` +
-                        `📲 Responder: ${contactLink}`;
+                        `📞 Telefone: ${sanitizedPhone}\n` +
+                        `📍 Origem: WhatsApp${adCampaign ? ` (${adCampaign})` : ''}\n` +
+                        `💬 Mensagem: ${messageText.substring(0, 300)}\n\n` +
+                        `👉 Abrir conversa:\n${contactLink}`;
 
                       console.log(`📤 ENVIANDO LEAD PARA CORRETOR: ${displayName} / ${sanitizedPhone}`);
 

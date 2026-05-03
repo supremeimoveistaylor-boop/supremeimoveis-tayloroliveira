@@ -1603,13 +1603,12 @@ Entre em contato imediatamente.`;
             const lastUserMsg = messages.filter((m: ChatMessage) => m.role === 'user').pop();
             const lastMsgText = typeof lastUserMsg?.content === 'string' ? lastUserMsg.content : '';
 
-            const brokerMessage = `🚨 *Novo Lead Chat do Site*\n\n` +
+            const brokerMessage = `🚨 NOVO LEAD QUALIFICADO\n\n` +
               `👤 Nome: ${leadForNotify.name}\n` +
-              `📱 Telefone: ${leadForNotify.phone}\n` +
+              `📞 Telefone: ${leadForNotify.phone}\n` +
               `📍 Origem: Chat do Site\n` +
-              `💬 Mensagem: ${lastMsgText.substring(0, 200) || '(primeira interação)'}\n` +
-              `📊 Score: ${leadScoreNum}/100 (${leadScore})\n\n` +
-              `📲 Responder: ${contactLink}`;
+              `💬 Mensagem: ${lastMsgText.substring(0, 300) || '(primeira interação)'}\n\n` +
+              `👉 Abrir conversa:\n${contactLink}`;
 
             console.log('📤 ENVIANDO LEAD PARA CORRETOR (Chat - nome+telefone confirmados):', leadForNotify.name);
             const sendWhatsappUrl = `${SUPABASE_URL}/functions/v1/send-whatsapp`;
