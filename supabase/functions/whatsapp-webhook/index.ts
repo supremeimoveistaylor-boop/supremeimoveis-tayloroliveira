@@ -497,12 +497,12 @@ serve(async (req) => {
                       const displayName = bestName || sanitizedPhone;
                       const contactLink = `https://wa.me/${sanitizedPhone}`;
                       
-                      const brokerMsg = `🚨 *Novo Lead WhatsApp*\n\n` +
+                      const brokerMsg = `🚨 NOVO LEAD QUALIFICADO\n\n` +
                         `👤 Nome: ${displayName}\n` +
-                        `📱 Telefone: ${sanitizedPhone}\n` +
-                        `📍 Origem: ${adSource}${adCampaign ? ` (${adCampaign})` : ''}\n` +
-                        `💬 Mensagem: ${messageText.substring(0, 200)}\n\n` +
-                        `📲 Responder: ${contactLink}`;
+                        `📞 Telefone: ${sanitizedPhone}\n` +
+                        `📍 Origem: WhatsApp${adCampaign ? ` (${adCampaign})` : ''}\n` +
+                        `💬 Mensagem: ${messageText.substring(0, 300)}\n\n` +
+                        `👉 Abrir conversa:\n${contactLink}`;
 
                       console.log(`📤 ENVIANDO LEAD PARA CORRETOR: ${displayName} / ${sanitizedPhone}`);
 
@@ -583,14 +583,14 @@ serve(async (req) => {
                       const welcomeInteractive = {
                         type: 'cta_url',
                         body: {
-                          text: '✨ *Seja bem-vindo(a) à Supreme Empreendimentos!*\n\nPara um atendimento ainda mais rápido e exclusivo, fale agora mesmo direto com *Taylor Oliveira*, nosso especialista em imóveis de alto padrão em Goiânia.\n\nEm instantes nossa equipe também responderá por aqui. 🏡',
+                          text: 'Olá, recebi sua mensagem 👇\n\nSe for urgente, clique no botão abaixo para falar agora com um especialista.\nCaso não seja urgente, pode me dizer o que você procura que já te ajudo aqui 😊',
                         },
                         footer: { text: 'Supreme Empreendimentos • CRECI 20.316' },
                         action: {
                           name: 'cta_url',
                           parameters: {
-                            display_text: '💬 Falar com Taylor Oliveira',
-                            url: 'https://wa.me/message/4EYVDAV2VZELG1',
+                            display_text: '🚨 Falar urgente agora',
+                            url: 'https://wa.me/5562999918353?text=Ol%C3%A1%2C%20preciso%20de%20atendimento%20urgente',
                           },
                         },
                       };
@@ -614,7 +614,7 @@ serve(async (req) => {
                           conversation_id: convId,
                           sender_type: 'bot',
                           channel: 'whatsapp',
-                          content: '✨ Seja bem-vindo(a)! Para atendimento mais rápido, fale direto com Taylor Oliveira: https://wa.me/message/4EYVDAV2VZELG1',
+                          content: 'Olá, recebi sua mensagem 👇 Se for urgente clique aqui: https://wa.me/5562999918353?text=Ol%C3%A1%2C%20preciso%20de%20atendimento%20urgente',
                           status: 'sent',
                           meta_message_id: welcomeResult.messageId || null,
                         });
@@ -627,7 +627,7 @@ serve(async (req) => {
                       } else {
                         // Fallback: se interactive falhar (ex: cta_url não suportado), envia texto simples com link
                         console.warn('[WhatsApp Webhook] ⚠️ Interactive falhou, fallback texto:', welcomeResult);
-                        const fallbackText = '✨ *Seja bem-vindo(a) à Supreme Empreendimentos!*\n\nPara um atendimento mais rápido, clique aqui e fale direto com *Taylor Oliveira*:\n\n👉 https://wa.me/message/4EYVDAV2VZELG1\n\nEm instantes nossa equipe também responderá por aqui. 🏡';
+                        const fallbackText = 'Olá, recebi sua mensagem 👇\n\nSe for urgente, clique no link abaixo para falar agora com um especialista:\n\n👉 https://wa.me/5562999918353?text=Ol%C3%A1%2C%20preciso%20de%20atendimento%20urgente\n\nCaso não seja urgente, pode me dizer o que você procura que já te ajudo aqui 😊';
                         const fbRes = await fetch(`${SUPABASE_URL_ENV}/functions/v1/send-whatsapp`, {
                           method: 'POST',
                           headers: {
