@@ -41,10 +41,16 @@ import ShareTarget from "./pages/ShareTarget";
 import Parcerias from "./pages/Parcerias";
 import ParceriasImovel from "./pages/ParceriasImovel";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 // Chat agora é injetado via script no <head> (index.html), não via React
 
 const queryClient = new QueryClient();
+
+const PushBootstrap = () => {
+  usePushNotifications();
+  return null;
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -52,6 +58,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        <PushBootstrap />
         {/* Error boundary to avoid blank screens */}
           <ErrorBoundary>
             <BrowserRouter>
