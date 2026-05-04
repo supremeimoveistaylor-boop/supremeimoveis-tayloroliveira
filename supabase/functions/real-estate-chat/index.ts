@@ -624,14 +624,15 @@ serve(async (req) => {
 
             const whatsappResponseData = await whatsappResponse.json().catch(() => null);
 
-            if (whatsappResponse.ok && whatsappResponseData?.ok) {
-              console.log(`✅ WhatsApp enviado para corretor - Lead: ${leadName} (${leadPhone})`);
+            const sentOk = whatsappResponse.ok && whatsappResponseData?.ok === true && !!whatsappResponseData?.messageId;
+            if (sentOk) {
+              console.log(`✅ WhatsApp enviado para corretor - Lead: ${leadName} (${leadPhone}) msgId=${whatsappResponseData.messageId}`);
               await supabase.from("leads").update({
                 whatsapp_sent: true,
                 whatsapp_sent_at: new Date().toISOString()
               }).eq("id", currentLeadId);
             } else {
-              console.error("Erro ao enviar WhatsApp:", whatsappResponseData);
+              console.error("❌ Envio ao corretor NÃO confirmado (sem messageId / erro):", whatsappResponseData);
             }
           } catch (whatsappError) {
             console.error("Erro ao processar envio de WhatsApp:", whatsappError);
@@ -1202,14 +1203,15 @@ Acesse o CRM para atendimento imediato.`;
 
               const whatsappResData = await whatsappRes.json().catch(() => null);
 
-              if (whatsappRes.ok && whatsappResData?.ok) {
-                // Marcar como enviado para não duplicar
+              const sentOk = whatsappRes.ok && whatsappResData?.ok === true && !!whatsappResData?.messageId;
+              if (sentOk) {
+                // Marcar como enviado SOMENTE quando WhatsApp confirma messageId
                 await supabase.from("leads").update({
                   whatsapp_sent: true,
                   whatsapp_sent_at: new Date().toISOString()
                 }).eq("id", currentLeadId);
 
-                console.log(`✅ WhatsApp ENVIADO para corretor ${BROKER_PHONE} - Lead: ${fullLead.name}`);
+                console.log(`✅ WhatsApp ENVIADO para corretor ${BROKER_PHONE} - Lead: ${fullLead.name} msgId=${whatsappResData.messageId}`);
 
                 // Log de auditoria
                 await supabase.from("security_logs").insert({
@@ -1622,11 +1624,12 @@ Entre em contato imediatamente.`;
             }).then(async (r) => {
               const notifyData = await r.json().catch(() => null);
 
-              if (r.ok && notifyData?.ok) {
-                console.log(`✅ Corretor notificado - Lead Chat: ${leadForNotify.name} (${leadForNotify.phone})`);
+              const sentOk = r.ok && notifyData?.ok === true && !!notifyData?.messageId;
+              if (sentOk) {
+                console.log(`✅ Corretor notificado - Lead Chat: ${leadForNotify.name} (${leadForNotify.phone}) msgId=${notifyData.messageId}`);
                 await supabase.from("leads").update({ whatsapp_sent: true, whatsapp_sent_at: new Date().toISOString() }).eq("id", currentLeadId);
               } else {
-                console.error(`❌ Falha notificação corretor`);
+                console.error(`❌ Falha notificação corretor (sem messageId)`, notifyData);
               }
               // 📒 Registra no histórico admin (broker_lead_notifications)
               try {
@@ -1637,8 +1640,9 @@ Entre em contato imediatamente.`;
                   lead_phone: leadForNotify.phone || 'Não informado',
                   lead_interest: lastMsgText.substring(0, 200) || null,
                   origin: 'chat:site',
-                  status: r.ok && notifyData?.ok ? 'sent' : 'failed',
-                  error_message: r.ok && notifyData?.ok ? null : JSON.stringify(notifyData ?? { status: r.status }).slice(0, 500),
+                  whatsapp_message_id: sentOk ? notifyData.messageId : null,
+                  status: sentOk ? 'sent' : 'failed',
+                  error_message: sentOk ? null : JSON.stringify(notifyData ?? { status: r.status }).slice(0, 500),
                 });
               } catch (logErr) {
                 console.warn('[real-estate-chat] Notification log error (non-blocking):', logErr);

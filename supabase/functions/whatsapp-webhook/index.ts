@@ -516,12 +516,16 @@ serve(async (req) => {
                       });
 
                       const notifyResult = await notifyRes.json().catch(() => null);
+                      const sentOk = notifyRes.ok && notifyResult?.ok === true && !!notifyResult?.messageId;
 
-                      if (notifyRes.ok && notifyResult?.ok) {
+                      if (sentOk) {
                         await supabase.from('leads').update({ 
                           whatsapp_sent: true, 
                           whatsapp_sent_at: nowIso 
                         }).eq('id', leadId);
+                        console.log('[WhatsApp Webhook] ✅ Broker notified successfully msgId=', notifyResult.messageId);
+                      } else {
+                        console.error('[WhatsApp Webhook] ❌ Notificação ao corretor NÃO confirmada:', notifyResult);
                       }
 
                       // 📒 Registra no histórico admin (broker_lead_notifications)
@@ -533,14 +537,13 @@ serve(async (req) => {
                           lead_phone: sanitizedPhone,
                           lead_interest: messageText.substring(0, 200) || null,
                           origin: `whatsapp:${adSource}`,
-                          status: notifyRes.ok && notifyResult?.ok ? 'sent' : 'failed',
-                          error_message: notifyRes.ok && notifyResult?.ok ? null : JSON.stringify(notifyResult ?? { status: notifyRes.status }).slice(0, 500),
+                          whatsapp_message_id: sentOk ? notifyResult.messageId : null,
+                          status: sentOk ? 'sent' : 'failed',
+                          error_message: sentOk ? null : JSON.stringify(notifyResult ?? { status: notifyRes.status }).slice(0, 500),
                         });
                       } catch (logErr) {
                         console.warn('[WhatsApp Webhook] Notification log error (non-blocking):', logErr);
                       }
-
-                      console.log('[WhatsApp Webhook] ✅ Broker notified successfully');
                     }
 
                     // Score
@@ -580,17 +583,17 @@ serve(async (req) => {
                   if (shouldSendWelcome) {
                     try {
                       const SUPABASE_URL_ENV = Deno.env.get('SUPABASE_URL')!;
+                      const WELCOME_TEXT = 'Olá, que bom ter você por aqui! Clique no botão abaixo e fale direto com nosso especialista.';
+                      const SPECIALIST_URL = 'https://wa.me/5562999918353';
                       const welcomeInteractive = {
                         type: 'cta_url',
-                        body: {
-                          text: 'Olá, recebi sua mensagem 👇\n\nSe for urgente, clique no botão abaixo para falar agora com um especialista.\nCaso não seja urgente, pode me dizer o que você procura que já te ajudo aqui 😊',
-                        },
+                        body: { text: WELCOME_TEXT },
                         footer: { text: 'Supreme Empreendimentos • CRECI 20.316' },
                         action: {
                           name: 'cta_url',
                           parameters: {
-                            display_text: '🚨 Falar urgente agora',
-                            url: 'https://wa.me/5562999918353?text=Ol%C3%A1%2C%20preciso%20de%20atendimento%20urgente',
+                            display_text: '✨ Falar com especialista',
+                            url: SPECIALIST_URL,
                           },
                         },
                       };
@@ -614,7 +617,7 @@ serve(async (req) => {
                           conversation_id: convId,
                           sender_type: 'bot',
                           channel: 'whatsapp',
-                          content: 'Olá, recebi sua mensagem 👇 Se for urgente clique aqui: https://wa.me/5562999918353?text=Ol%C3%A1%2C%20preciso%20de%20atendimento%20urgente',
+                          content: `${WELCOME_TEXT} ${SPECIALIST_URL}`,
                           status: 'sent',
                           meta_message_id: welcomeResult.messageId || null,
                         });
@@ -627,7 +630,7 @@ serve(async (req) => {
                       } else {
                         // Fallback: se interactive falhar (ex: cta_url não suportado), envia texto simples com link
                         console.warn('[WhatsApp Webhook] ⚠️ Interactive falhou, fallback texto:', welcomeResult);
-                        const fallbackText = 'Olá, recebi sua mensagem 👇\n\nSe for urgente, clique no link abaixo para falar agora com um especialista:\n\n👉 https://wa.me/5562999918353?text=Ol%C3%A1%2C%20preciso%20de%20atendimento%20urgente\n\nCaso não seja urgente, pode me dizer o que você procura que já te ajudo aqui 😊';
+                        const fallbackText = `${WELCOME_TEXT}\n\n👉 ${SPECIALIST_URL}`;
                         const fbRes = await fetch(`${SUPABASE_URL_ENV}/functions/v1/send-whatsapp`, {
                           method: 'POST',
                           headers: {
