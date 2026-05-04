@@ -624,14 +624,15 @@ serve(async (req) => {
 
             const whatsappResponseData = await whatsappResponse.json().catch(() => null);
 
-            if (whatsappResponse.ok && whatsappResponseData?.ok) {
-              console.log(`✅ WhatsApp enviado para corretor - Lead: ${leadName} (${leadPhone})`);
+            const sentOk = whatsappResponse.ok && whatsappResponseData?.ok === true && !!whatsappResponseData?.messageId;
+            if (sentOk) {
+              console.log(`✅ WhatsApp enviado para corretor - Lead: ${leadName} (${leadPhone}) msgId=${whatsappResponseData.messageId}`);
               await supabase.from("leads").update({
                 whatsapp_sent: true,
                 whatsapp_sent_at: new Date().toISOString()
               }).eq("id", currentLeadId);
             } else {
-              console.error("Erro ao enviar WhatsApp:", whatsappResponseData);
+              console.error("❌ Envio ao corretor NÃO confirmado (sem messageId / erro):", whatsappResponseData);
             }
           } catch (whatsappError) {
             console.error("Erro ao processar envio de WhatsApp:", whatsappError);
