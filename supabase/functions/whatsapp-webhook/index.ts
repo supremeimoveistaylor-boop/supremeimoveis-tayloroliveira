@@ -580,17 +580,17 @@ serve(async (req) => {
                   if (shouldSendWelcome) {
                     try {
                       const SUPABASE_URL_ENV = Deno.env.get('SUPABASE_URL')!;
+                      const WELCOME_TEXT = 'Olá, que bom ter você por aqui! Clique no botão abaixo e fale direto com nosso especialista.';
+                      const SPECIALIST_URL = 'https://wa.me/5562999918353';
                       const welcomeInteractive = {
                         type: 'cta_url',
-                        body: {
-                          text: 'Olá, recebi sua mensagem 👇\n\nSe for urgente, clique no botão abaixo para falar agora com um especialista.\nCaso não seja urgente, pode me dizer o que você procura que já te ajudo aqui 😊',
-                        },
+                        body: { text: WELCOME_TEXT },
                         footer: { text: 'Supreme Empreendimentos • CRECI 20.316' },
                         action: {
                           name: 'cta_url',
                           parameters: {
-                            display_text: '🚨 Falar urgente agora',
-                            url: 'https://wa.me/5562999918353?text=Ol%C3%A1%2C%20preciso%20de%20atendimento%20urgente',
+                            display_text: '✨ Falar com especialista',
+                            url: SPECIALIST_URL,
                           },
                         },
                       };
