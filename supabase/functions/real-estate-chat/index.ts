@@ -1203,14 +1203,15 @@ Acesse o CRM para atendimento imediato.`;
 
               const whatsappResData = await whatsappRes.json().catch(() => null);
 
-              if (whatsappRes.ok && whatsappResData?.ok) {
-                // Marcar como enviado para não duplicar
+              const sentOk = whatsappRes.ok && whatsappResData?.ok === true && !!whatsappResData?.messageId;
+              if (sentOk) {
+                // Marcar como enviado SOMENTE quando WhatsApp confirma messageId
                 await supabase.from("leads").update({
                   whatsapp_sent: true,
                   whatsapp_sent_at: new Date().toISOString()
                 }).eq("id", currentLeadId);
 
-                console.log(`✅ WhatsApp ENVIADO para corretor ${BROKER_PHONE} - Lead: ${fullLead.name}`);
+                console.log(`✅ WhatsApp ENVIADO para corretor ${BROKER_PHONE} - Lead: ${fullLead.name} msgId=${whatsappResData.messageId}`);
 
                 // Log de auditoria
                 await supabase.from("security_logs").insert({
