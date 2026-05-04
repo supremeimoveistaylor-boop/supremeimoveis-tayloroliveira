@@ -614,7 +614,7 @@ serve(async (req) => {
                           conversation_id: convId,
                           sender_type: 'bot',
                           channel: 'whatsapp',
-                          content: 'Olá, recebi sua mensagem 👇 Se for urgente clique aqui: https://wa.me/5562999918353?text=Ol%C3%A1%2C%20preciso%20de%20atendimento%20urgente',
+                          content: `${WELCOME_TEXT} ${SPECIALIST_URL}`,
                           status: 'sent',
                           meta_message_id: welcomeResult.messageId || null,
                         });
