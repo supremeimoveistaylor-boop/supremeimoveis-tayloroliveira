@@ -627,7 +627,7 @@ serve(async (req) => {
                       } else {
                         // Fallback: se interactive falhar (ex: cta_url não suportado), envia texto simples com link
                         console.warn('[WhatsApp Webhook] ⚠️ Interactive falhou, fallback texto:', welcomeResult);
-                        const fallbackText = 'Olá, recebi sua mensagem 👇\n\nSe for urgente, clique no link abaixo para falar agora com um especialista:\n\n👉 https://wa.me/5562999918353?text=Ol%C3%A1%2C%20preciso%20de%20atendimento%20urgente\n\nCaso não seja urgente, pode me dizer o que você procura que já te ajudo aqui 😊';
+                        const fallbackText = `${WELCOME_TEXT}\n\n👉 ${SPECIALIST_URL}`;
                         const fbRes = await fetch(`${SUPABASE_URL_ENV}/functions/v1/send-whatsapp`, {
                           method: 'POST',
                           headers: {
