@@ -430,10 +430,10 @@ export const OmnichatInboxPanel = () => {
       </div>
 
       {/* ═══ 3-Column Layout ═══ */}
-      <div className={`flex-1 ${isMobile ? 'flex flex-col' : 'grid grid-cols-12 gap-4'} min-h-0`}>
+      <div className={`flex-1 ${selectedConv ? 'flex' : (isMobile ? 'flex flex-col' : 'grid grid-cols-12 gap-4')} min-h-0 overflow-hidden`}>
 
         {/* ━━━ COLUMN 1: Conversation List ━━━ */}
-        <div className={`${isMobile ? (selectedConv ? 'hidden' : 'flex-1') : 'col-span-4 xl:col-span-3'} bg-white border border-slate-100 rounded-2xl overflow-hidden flex flex-col shadow-sm`}>
+        <div className={`${selectedConv ? 'hidden' : (isMobile ? 'flex-1' : 'col-span-4 xl:col-span-3')} bg-white border border-slate-100 rounded-2xl overflow-hidden flex flex-col shadow-sm min-h-0`}>
           {/* Search */}
           <div className="p-3 border-b border-slate-100">
             <div className="relative">
@@ -560,17 +560,15 @@ export const OmnichatInboxPanel = () => {
         </div>
 
         {/* ━━━ COLUMN 2: Active Chat ━━━ */}
-        <div className={`${isMobile ? (selectedConv ? 'flex-1' : 'hidden') : 'col-span-5 xl:col-span-6'} bg-white border border-slate-100 rounded-2xl flex flex-col overflow-hidden shadow-sm`}>
+        <div className={`${selectedConv ? 'flex-1' : 'hidden'} bg-white border border-slate-100 rounded-2xl flex flex-col overflow-hidden shadow-sm min-h-0`}>
           {selectedConv ? (
             <>
               {/* Chat header */}
               <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-white">
                 <div className="flex items-center gap-2">
-                  {isMobile && (
-                    <Button size="icon" variant="ghost" className="rounded-full h-8 w-8 text-muted-foreground" onClick={() => setSelectedConv(null)}>
-                      <ArrowLeft className="w-4 h-4" />
-                    </Button>
-                  )}
+                  <Button size="icon" variant="ghost" className="rounded-full h-8 w-8 text-muted-foreground" onClick={() => setSelectedConv(null)} title="Voltar para conversas">
+                    <ArrowLeft className="w-4 h-4" />
+                  </Button>
                   <Avatar className="w-9 h-9">
                     <AvatarFallback className={`text-xs font-semibold ${chCfg?.bgLight} ${chCfg?.textColor}`}>
                       {getInitials(selectedName)}
@@ -601,7 +599,7 @@ export const OmnichatInboxPanel = () => {
               </div>
 
               {/* Messages */}
-              <ScrollArea className="flex-1 bg-slate-50/50">
+              <ScrollArea className="flex-1 min-h-0 bg-slate-50/50">
                 <div className="p-4 space-y-3">
                   {messages.map(msg => {
                     const isClient = msg.sender_type === "client";
@@ -640,8 +638,8 @@ export const OmnichatInboxPanel = () => {
                 </div>
               </ScrollArea>
 
-              {/* Input area */}
-              <div className="p-3 border-t border-slate-100 bg-white">
+              {/* Input area — sticky no rodapé */}
+              <div className="p-3 border-t border-slate-100 bg-white shrink-0 sticky bottom-0 z-10">
                 <div className="flex gap-2 items-center">
                   <Input
                     value={newMessage}
@@ -678,7 +676,7 @@ export const OmnichatInboxPanel = () => {
         </div>
 
         {/* ━━━ COLUMN 3: Contact Details ━━━ */}
-        <div className={`${isMobile ? 'hidden' : 'col-span-3'} bg-white border border-slate-100 rounded-2xl overflow-auto shadow-sm`}>
+        <div className={`hidden bg-white border border-slate-100 rounded-2xl overflow-auto shadow-sm`}>
           {selectedConv ? (
             <div className="p-4 space-y-5">
               {/* Profile */}
