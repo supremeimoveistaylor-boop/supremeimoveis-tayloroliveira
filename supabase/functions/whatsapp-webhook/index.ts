@@ -657,6 +657,42 @@ serve(async (req) => {
                           }, { onConflict: 'phone' });
                         }
                       }
+
+                      // ============================================
+                      // 2ª MENSAGEM (após 20s) — convite a continuar pelo bot
+                      // ============================================
+                      const followupTask = (async () => {
+                        try {
+                          await new Promise((r) => setTimeout(r, 20000));
+                          const FOLLOWUP_TEXT = 'Se preferir, posso te auxiliar aqui mesmo 😊 Como posso te ajudar?';
+                          const fuRes = await fetch(`${SUPABASE_URL_ENV}/functions/v1/send-whatsapp`, {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                              'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+                              'apikey': SUPABASE_SERVICE_ROLE_KEY,
+                            },
+                            body: JSON.stringify({ to: senderPhone, message: FOLLOWUP_TEXT }),
+                          });
+                          const fuResult = await fuRes.json().catch(() => null);
+                          await supabase.from('omnichat_messages').insert({
+                            conversation_id: convId,
+                            sender_type: 'bot',
+                            channel: 'whatsapp',
+                            content: FOLLOWUP_TEXT,
+                            status: fuRes.ok && fuResult?.ok ? 'sent' : 'failed',
+                            meta_message_id: fuResult?.messageId || null,
+                          });
+                          console.log('[WhatsApp Webhook] ✅ Follow-up 20s enviado:', fuResult?.messageId);
+                        } catch (fuErr) {
+                          console.error('[WhatsApp Webhook] Follow-up 20s error:', fuErr);
+                        }
+                      })();
+                      // @ts-ignore - EdgeRuntime existe no Deno Deploy
+                      if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime?.waitUntil) {
+                        // @ts-ignore
+                        EdgeRuntime.waitUntil(followupTask);
+                      }
                     } catch (welcomeErr) {
                       console.error('[WhatsApp Webhook] Welcome message error:', welcomeErr);
                     }
