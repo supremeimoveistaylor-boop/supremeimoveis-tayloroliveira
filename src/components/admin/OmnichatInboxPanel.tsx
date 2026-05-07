@@ -596,6 +596,33 @@ export const OmnichatInboxPanel = () => {
                   )}
                   <Button size="icon" variant="ghost" className="rounded-full h-8 w-8 text-muted-foreground"><PhoneCall className="w-4 h-4" /></Button>
                   <Button size="icon" variant="ghost" className="rounded-full h-8 w-8 text-muted-foreground"><Video className="w-4 h-4" /></Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="rounded-full h-8 w-8 bg-destructive/10 hover:bg-destructive/20 text-destructive"
+                        title="Excluir conversa"
+                        aria-label="Excluir conversa"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Excluir conversa?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Todas as mensagens desta conversa serão permanentemente removidas.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDeleteConversation(selectedConv.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                          Excluir
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                   <Button size="icon" variant="ghost" className="rounded-full h-8 w-8 text-muted-foreground"><MoreVertical className="w-4 h-4" /></Button>
                 </div>
               </div>

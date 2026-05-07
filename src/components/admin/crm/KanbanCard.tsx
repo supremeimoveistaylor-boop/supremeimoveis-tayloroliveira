@@ -114,38 +114,52 @@ export const KanbanCardComponent = memo(function KanbanCardComponent({
               )}
             </div>
           </div>
-          <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-6 w-6 p-0 flex-shrink-0">
-                <MoreVertical className="h-4 w-4" />
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {canDelete && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 bg-destructive/10 hover:bg-destructive/20 text-destructive"
+                onClick={(e) => { e.stopPropagation(); setConfirmDeleteOpen(true); }}
+                title="Excluir card"
+                aria-label="Excluir card"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onClick={handleEdit}>
-                <Edit className="h-4 w-4 mr-2" /> Editar
-              </DropdownMenuItem>
-              {onAnalyze && (
-                <DropdownMenuItem onClick={() => { setIsMenuOpen(false); onAnalyze(card.id); }} disabled={isAnalyzing}>
-                  <Brain className="h-4 w-4 mr-2" /> {isAnalyzing ? 'Analisando...' : 'Analisar com IA'}
+            )}
+            <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={handleEdit}>
+                  <Edit className="h-4 w-4 mr-2" /> Editar
                 </DropdownMenuItem>
-              )}
-              <DropdownMenuSeparator />
-              <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">Mover para</div>
-              {KANBAN_COLUMNS.filter(col => col.key !== column).map(col => (
-                <DropdownMenuItem key={col.key} onClick={() => handleMove(col.key)}>
-                  <ArrowRight className="h-4 w-4 mr-2" /> {col.label}
-                </DropdownMenuItem>
-              ))}
-              {canDelete && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleAskDelete} className="text-destructive">
-                    <Trash2 className="h-4 w-4 mr-2" /> Excluir
+                {onAnalyze && (
+                  <DropdownMenuItem onClick={() => { setIsMenuOpen(false); onAnalyze(card.id); }} disabled={isAnalyzing}>
+                    <Brain className="h-4 w-4 mr-2" /> {isAnalyzing ? 'Analisando...' : 'Analisar com IA'}
                   </DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                )}
+                <DropdownMenuSeparator />
+                <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">Mover para</div>
+                {KANBAN_COLUMNS.filter(col => col.key !== column).map(col => (
+                  <DropdownMenuItem key={col.key} onClick={() => handleMove(col.key)}>
+                    <ArrowRight className="h-4 w-4 mr-2" /> {col.label}
+                  </DropdownMenuItem>
+                ))}
+                {canDelete && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleAskDelete} className="text-destructive">
+                      <Trash2 className="h-4 w-4 mr-2" /> Excluir
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="p-3 pt-0 space-y-1.5">
