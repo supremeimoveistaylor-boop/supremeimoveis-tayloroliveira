@@ -663,18 +663,20 @@ serve(async (req) => {
                   }
 
                   // ============================================
-                  // AI RESPONSE — generate + send to WhatsApp
+                  // AI RESPONSE — DESATIVADA NO WHATSAPP API
+                  // Atendimento 100% manual pelo corretor.
+                  // Apenas mensagem oficial de saudação (acima) + botão "Falar com especialista".
                   // ============================================
+                  // Garante bot_active=false para esta conversa (evita IA em fluxos paralelos)
                   try {
-                    const { data: conv } = await supabase
-                      .from('omnichat_conversations')
-                      .select('bot_active, contact_name, lead_id')
-                      .eq('id', convId)
-                      .single();
+                    await supabase.from('omnichat_conversations')
+                      .update({ bot_active: false })
+                      .eq('id', convId);
+                  } catch (_) { /* non-blocking */ }
 
-                    console.log('[WhatsApp Webhook] 🤖 Bot status check:', { convId, bot_active: conv?.bot_active });
-
-                    if (conv?.bot_active) {
+                  // eslint-disable-next-line no-constant-condition
+                  try {
+                    if (false) {
                       const SUPABASE_URL_ENV = Deno.env.get('SUPABASE_URL')!;
 
                       console.log('[WhatsApp Webhook] 📤 Enviando para OpenAI/Gemini...');
