@@ -350,8 +350,8 @@ serve(async (req) => {
                       return !cs || cs.whatsapp !== false;
                     });
 
-                    const botActive = whatsappAgents.length === 0;
-                    console.log('[WhatsApp Webhook] 🤖 Bot active:', botActive, '(whatsapp agents online:', whatsappAgents.length, ')');
+                    const botActive = false; // IA desativada no WhatsApp — atendimento manual
+                    console.log('[WhatsApp Webhook] 🤖 Bot active:', botActive, '(IA desativada no WhatsApp)');
 
                     const { data: newConv } = await supabase
                       .from('omnichat_conversations')
@@ -663,103 +663,19 @@ serve(async (req) => {
                   }
 
                   // ============================================
-                  // AI RESPONSE — generate + send to WhatsApp
+                  // AI RESPONSE — DESATIVADA NO WHATSAPP API
+                  // Atendimento 100% manual pelo corretor.
+                  // Apenas mensagem oficial de saudação (acima) + botão "Falar com especialista".
                   // ============================================
+                  // Garante bot_active=false para esta conversa (evita IA em fluxos paralelos)
                   try {
-                    const { data: conv } = await supabase
-                      .from('omnichat_conversations')
-                      .select('bot_active, contact_name, lead_id')
-                      .eq('id', convId)
-                      .single();
+                    await supabase.from('omnichat_conversations')
+                      .update({ bot_active: false })
+                      .eq('id', convId);
+                  } catch (_) { /* non-blocking */ }
 
-                    console.log('[WhatsApp Webhook] 🤖 Bot status check:', { convId, bot_active: conv?.bot_active });
+                  console.log('[WhatsApp Webhook] 🤖 IA desativada no WhatsApp — atendimento manual pelo corretor');
 
-                    if (conv?.bot_active) {
-                      const SUPABASE_URL_ENV = Deno.env.get('SUPABASE_URL')!;
-
-                      console.log('[WhatsApp Webhook] 📤 Enviando para OpenAI/Gemini...');
-                      const aiResponse = await fetch(`${SUPABASE_URL_ENV}/functions/v1/whatsapp-ai-chat`, {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json',
-                          'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-                          'apikey': SUPABASE_SERVICE_ROLE_KEY,
-                        },
-                        body: JSON.stringify({
-                          message: messageText,
-                          senderPhone,
-                          conversationId: convId,
-                          contactName: conv.contact_name,
-                          connectionId: connection.id,
-                          userId: connection.user_id,
-                        }),
-                      });
-
-                      if (!aiResponse.ok) {
-                        const errText = await aiResponse.text().catch(() => '');
-                        console.error('[WhatsApp Webhook] ❌ AI call failed:', aiResponse.status, errText);
-                      } else {
-                        const aiResult = await aiResponse.json();
-                        console.log('[WhatsApp Webhook] ✅ Resposta gerada pela IA:', {
-                          hasReply: !!aiResult?.reply,
-                          escalate: aiResult?.escalate,
-                          replyPreview: aiResult?.reply?.substring(0, 80),
-                        });
-
-                        const replyText: string | null = aiResult?.reply?.trim() || null;
-
-                        if (replyText) {
-                          // 1. Send to client via WhatsApp API
-                          console.log('[WhatsApp Webhook] 📲 Enviando resposta para WhatsApp do cliente:', senderPhone);
-                          const sendRes = await fetch(`${SUPABASE_URL_ENV}/functions/v1/send-whatsapp`, {
-                            method: 'POST',
-                            headers: {
-                              'Content-Type': 'application/json',
-                              'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-                              'apikey': SUPABASE_SERVICE_ROLE_KEY,
-                            },
-                            body: JSON.stringify({ to: senderPhone, message: replyText }),
-                          });
-
-                          const sendResult = await sendRes.json().catch(() => null);
-
-                          if (sendRes.ok && sendResult?.ok) {
-                            console.log('[WhatsApp Webhook] ✅ Mensagem enviada com sucesso ao cliente. msgId:', sendResult.messageId);
-
-                            // 2. Save bot reply to omnichat (so it shows in inbox)
-                            await supabase.from('omnichat_messages').insert({
-                              conversation_id: convId,
-                              sender_type: 'bot',
-                              channel: 'whatsapp',
-                              content: replyText,
-                              status: 'sent',
-                              meta_message_id: sendResult.messageId || null,
-                            });
-
-                            await supabase.from('omnichat_conversations').update({
-                              last_message_at: new Date().toISOString(),
-                              last_message_preview: replyText.substring(0, 100),
-                            }).eq('id', convId);
-                          } else {
-                            console.error('[WhatsApp Webhook] ❌ Erro ao enviar resposta IA ao WhatsApp:', sendResult);
-                            await supabase.from('omnichat_messages').insert({
-                              conversation_id: convId,
-                              sender_type: 'bot',
-                              channel: 'whatsapp',
-                              content: replyText,
-                              status: 'failed',
-                            });
-                          }
-                        } else {
-                          console.warn('[WhatsApp Webhook] ⚠️ IA retornou reply vazio — nada a enviar');
-                        }
-                      }
-                    } else {
-                      console.log('[WhatsApp Webhook] 🤖 Bot inativo nesta conversa — IA não responde');
-                    }
-                  } catch (aiErr) {
-                    console.error('[WhatsApp Webhook] AI response error:', aiErr);
-                  }
                   } // end whatsappChannelEnabled
                 } // end if connection
               } // end for messages
