@@ -531,7 +531,9 @@ export const OmnichatInboxPanel = () => {
                         <AlertDialogTrigger asChild>
                           <button
                             onClick={e => e.stopPropagation()}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full hover:bg-red-50 text-muted-foreground hover:text-red-500 shrink-0"
+                            title="Excluir conversa"
+                            aria-label="Excluir conversa"
+                            className="p-1.5 rounded-full bg-destructive/10 hover:bg-destructive/20 text-destructive shrink-0 transition-colors"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
