@@ -350,8 +350,8 @@ serve(async (req) => {
                       return !cs || cs.whatsapp !== false;
                     });
 
-                    const botActive = whatsappAgents.length === 0;
-                    console.log('[WhatsApp Webhook] 🤖 Bot active:', botActive, '(whatsapp agents online:', whatsappAgents.length, ')');
+                    const botActive = false; // IA desativada no WhatsApp — atendimento manual
+                    console.log('[WhatsApp Webhook] 🤖 Bot active:', botActive, '(IA desativada no WhatsApp)');
 
                     const { data: newConv } = await supabase
                       .from('omnichat_conversations')
