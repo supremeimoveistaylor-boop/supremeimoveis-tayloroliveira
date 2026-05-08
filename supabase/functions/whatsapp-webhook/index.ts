@@ -583,8 +583,8 @@ serve(async (req) => {
                   if (shouldSendWelcome) {
                     try {
                       const SUPABASE_URL_ENV = Deno.env.get('SUPABASE_URL')!;
-                      const WELCOME_TEXT = 'Olá, que bom ter você por aqui! Clique no botão abaixo e fale direto com nosso especialista.';
-                      const SPECIALIST_URL = 'https://wa.me/5562999918353';
+                      const WELCOME_TEXT = 'Olá! Fale agora com nosso corretor especialista. Clique no botão abaixo para abrir uma conversa direta no WhatsApp dele.';
+                      const SPECIALIST_URL = 'https://wa.me/5562999918353?text=' + encodeURIComponent('Olá, preciso de atendimento urgente');
                       const welcomeInteractive = {
                         type: 'cta_url',
                         body: { text: WELCOME_TEXT },
@@ -592,7 +592,7 @@ serve(async (req) => {
                         action: {
                           name: 'cta_url',
                           parameters: {
-                            display_text: '✨ Falar com especialista',
+                            display_text: '✨ Falar com corretor agora',
                             url: SPECIALIST_URL,
                           },
                         },
