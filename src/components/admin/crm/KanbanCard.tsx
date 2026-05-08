@@ -114,17 +114,18 @@ export const KanbanCardComponent = memo(function KanbanCardComponent({
               )}
             </div>
           </div>
-          <div className="flex items-center gap-1 flex-shrink-0">
+          <div className="flex items-center gap-1 flex-shrink-0 self-start">
             {canDelete && (
               <Button
-                variant="ghost"
+                variant="destructive"
                 size="sm"
-                className="h-6 w-6 p-0 bg-destructive/10 hover:bg-destructive/20 text-destructive"
+                className="h-7 px-2 text-[11px] font-medium"
                 onClick={(e) => { e.stopPropagation(); setConfirmDeleteOpen(true); }}
-                title="Excluir card"
-                aria-label="Excluir card"
+                title="Excluir lead"
+                aria-label="Excluir lead"
               >
                 <Trash2 className="h-3.5 w-3.5" />
+                Excluir
               </Button>
             )}
             <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
@@ -216,6 +217,20 @@ export const KanbanCardComponent = memo(function KanbanCardComponent({
             <Badge variant="outline" className="text-[10px] px-1.5 py-0">{card.origem_lead}</Badge>
           )}
         </div>
+
+        {canDelete && (
+          <div className="pt-1.5">
+            <Button
+              variant="destructive"
+              size="sm"
+              className="h-7 w-full justify-center text-[11px] font-medium"
+              onClick={(e) => { e.stopPropagation(); setConfirmDeleteOpen(true); }}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Excluir lead
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
 
