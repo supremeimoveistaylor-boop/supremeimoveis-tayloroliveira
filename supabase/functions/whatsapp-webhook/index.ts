@@ -308,7 +308,50 @@ serve(async (req) => {
                 const adSource = referral ? `meta_ads` : 'whatsapp';
                 const adCampaign = referral?.headline || referral?.body || null;
 
-                console.log('[WhatsApp Webhook] Message:', { from: senderPhone, text: messageText, contact: contactName, hasReferral: isFromMetaAds });
+                // ============================================
+                // PROPERTY DETECTION — descobre de qual imóvel o lead veio
+                // Fontes: 1) referral.source_url (Meta Ads),
+                //         2) link /property/<uuid> dentro da mensagem,
+                //         3) padrão "interesse no imóvel: <title>"
+                // ============================================
+                let detectedPropertyId: string | null = null;
+                let detectedPropertyTitle: string | null = null;
+                let detectedPropertyUrl: string | null = referral?.source_url || null;
+                try {
+                  const haystack = `${messageText} ${detectedPropertyUrl || ''}`;
+                  const uuidRe = /\/property\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i;
+                  const uuidMatch = haystack.match(uuidRe);
+                  if (uuidMatch) {
+                    detectedPropertyId = uuidMatch[1];
+                    if (!detectedPropertyUrl) {
+                      const fullMatch = haystack.match(/https?:\/\/[^\s]+\/property\/[0-9a-f-]{36}[^\s]*/i);
+                      if (fullMatch) detectedPropertyUrl = fullMatch[0];
+                    }
+                  }
+                  const titleMatch = messageText.match(/interesse\s+no\s+im[óo]vel:\s*([^\-\n\r.]+?)(?:\s*-\s*R\$|\s*\(|\s*Link:|\s*$)/i);
+                  if (titleMatch) {
+                    detectedPropertyTitle = titleMatch[1].trim().slice(0, 200);
+                  }
+                  if (detectedPropertyId) {
+                    const { data: prop } = await supabase
+                      .from('properties')
+                      .select('id, title, location, price, property_code')
+                      .eq('id', detectedPropertyId)
+                      .maybeSingle();
+                    if (prop) {
+                      detectedPropertyTitle = detectedPropertyTitle || prop.title;
+                      console.log('[WhatsApp Webhook] 🏠 Property detected:', { id: prop.id, title: prop.title, code: prop.property_code });
+                    } else {
+                      detectedPropertyId = null; // invalid uuid
+                    }
+                  } else if (detectedPropertyTitle) {
+                    console.log('[WhatsApp Webhook] 🏠 Property title detected (no id):', detectedPropertyTitle);
+                  }
+                } catch (propErr) {
+                  console.warn('[WhatsApp Webhook] property detection error:', propErr);
+                }
+
+                console.log('[WhatsApp Webhook] Message:', { from: senderPhone, text: messageText, contact: contactName, hasReferral: isFromMetaAds, propertyId: detectedPropertyId });
 
                 if (connection) {
                   const { data: existingConv } = await supabase
