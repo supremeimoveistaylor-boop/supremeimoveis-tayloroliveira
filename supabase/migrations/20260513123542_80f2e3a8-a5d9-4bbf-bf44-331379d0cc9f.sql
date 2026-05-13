@@ -1,0 +1,1 @@
+TRUNCATE TABLE public.whatsapp_welcome_sent;
