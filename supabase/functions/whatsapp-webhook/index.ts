@@ -475,6 +475,9 @@ serve(async (req) => {
                         leadUpdate.source_detail = adCampaign;
                         leadUpdate.medium = 'cpc';
                       }
+                      if (detectedPropertyId) leadUpdate.property_id = detectedPropertyId;
+                      if (detectedPropertyTitle) leadUpdate.intent = `Imóvel: ${detectedPropertyTitle}`.substring(0, 200);
+                      if (detectedPropertyUrl) leadUpdate.page_url = detectedPropertyUrl;
                       await supabase.from('leads').update(leadUpdate).eq('id', leadId);
                       console.log('[WhatsApp Webhook] ✅ Lead updated:', leadId);
                       shouldNotify = !existingLead.whatsapp_sent;
@@ -484,8 +487,10 @@ serve(async (req) => {
                         phone: sanitizedPhone,
                         origin: adSource,
                         status: 'novo',
-                        intent: messageText.substring(0, 200),
-                        lead_temperature: isFromMetaAds ? 'quente' : 'morno',
+                        intent: detectedPropertyTitle ? `Imóvel: ${detectedPropertyTitle}`.substring(0, 200) : messageText.substring(0, 200),
+                        property_id: detectedPropertyId,
+                        page_url: detectedPropertyUrl,
+                        lead_temperature: (isFromMetaAds || detectedPropertyId) ? 'quente' : 'morno',
                         source: isFromMetaAds ? 'meta_ads' : 'whatsapp',
                         source_detail: adCampaign,
                         medium: isFromMetaAds ? 'cpc' : 'organic',
@@ -510,27 +515,35 @@ serve(async (req) => {
                     // CRM Card
                     const { data: existingCard } = await supabase
                       .from('crm_cards')
-                      .select('id')
+                      .select('id, notas')
                       .eq('lead_id', leadId)
                       .maybeSingle();
+
+                    const propertyNote = detectedPropertyTitle
+                      ? `🏠 Imóvel de interesse: ${detectedPropertyTitle}${detectedPropertyUrl ? `\n🔗 ${detectedPropertyUrl}` : ''}`
+                      : null;
 
                     if (!existingCard) {
                       const displayName = bestName || `WhatsApp ${sanitizedPhone}`;
                       await supabase.from('crm_cards').insert({
                         lead_id: leadId,
-                        titulo: `Lead WhatsApp - ${displayName}`,
+                        titulo: detectedPropertyTitle ? `Lead WhatsApp - ${displayName} (${detectedPropertyTitle.slice(0, 40)})` : `Lead WhatsApp - ${displayName}`,
                         cliente: displayName,
                         telefone: sanitizedPhone,
                         coluna: 'leads',
                         origem_lead: adSource,
-                        classificacao: isFromMetaAds ? 'quente' : 'morno',
+                        classificacao: (isFromMetaAds || detectedPropertyId) ? 'quente' : 'morno',
                         source: isFromMetaAds ? 'meta_ads' : 'whatsapp',
                         source_detail: adCampaign,
                         medium: isFromMetaAds ? 'cpc' : 'organic',
                         campaign: adCampaign,
+                        notas: propertyNote,
                         last_interaction_at: nowIso,
                       });
                       console.log('[WhatsApp Webhook] ✅ CRM card created for lead:', leadId);
+                    } else if (propertyNote && (!existingCard.notas || !existingCard.notas.includes(detectedPropertyTitle!))) {
+                      const merged = existingCard.notas ? `${existingCard.notas}\n\n${propertyNote}` : propertyNote;
+                      await supabase.from('crm_cards').update({ notas: merged, last_interaction_at: nowIso, updated_at: nowIso }).eq('id', existingCard.id);
                     }
 
                     // Notify broker
@@ -539,11 +552,15 @@ serve(async (req) => {
                       const BROKER_WHATSAPP = '5562999918353';
                       const displayName = bestName || sanitizedPhone;
                       const contactLink = `https://wa.me/${sanitizedPhone}`;
-                      
+                      const propertyBlock = detectedPropertyTitle
+                        ? `🏠 Imóvel de interesse: ${detectedPropertyTitle}\n${detectedPropertyUrl ? `🔗 ${detectedPropertyUrl}\n` : ''}`
+                        : (detectedPropertyUrl ? `🔗 Página de origem: ${detectedPropertyUrl}\n` : '');
+
                       const brokerMsg = `🚨 NOVO LEAD QUALIFICADO\n\n` +
                         `👤 Nome: ${displayName}\n` +
                         `📞 Telefone: ${sanitizedPhone}\n` +
                         `📍 Origem: WhatsApp${adCampaign ? ` (${adCampaign})` : ''}\n` +
+                        (propertyBlock ? `${propertyBlock}` : '') +
                         `💬 Mensagem: ${messageText.substring(0, 300)}\n\n` +
                         `👉 Abrir conversa:\n${contactLink}`;
 
