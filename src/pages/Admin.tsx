@@ -429,7 +429,10 @@ const Admin = () => {
 
         {/* Dashboard Tab */}
         {activeTab === 'dashboard' && (
-          <AdminDashboardPanel />
+          <>
+            <OnboardingChecklist />
+            <AdminDashboardPanel />
+          </>
         )}
 
         {/* CRM Kanban Tab */}
