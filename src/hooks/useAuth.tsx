@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
 // Admin emails used only for signup gating — actual role comes from database
-const SIGNUP_WHITELIST = ['crv.taylor@gmail.com', 'supremeimoveis.taylor@gmail.com'];
+const SIGNUP_WHITELIST = ['crv.taylor@gmail.com', 'supremeimoveis.taylor@gmail.com', 'sheylasiq@icloud.com'];
 
 interface AuthContextType {
   user: User | null;
