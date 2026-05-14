@@ -27,6 +27,7 @@ import { BlogAdminPanel } from '@/components/admin/BlogAdminPanel';
 import { SourceAnalyticsPanel } from '@/components/admin/SourceAnalyticsPanel';
 import { OmnichatInboxPanel } from '@/components/admin/OmnichatInboxPanel';
 import { AdminLayout } from '@/components/admin/layout/AdminLayout';
+import { OnboardingChecklist } from '@/components/admin/OnboardingChecklist';
 
 interface Property {
   id: string;
@@ -428,7 +429,10 @@ const Admin = () => {
 
         {/* Dashboard Tab */}
         {activeTab === 'dashboard' && (
-          <AdminDashboardPanel />
+          <>
+            <OnboardingChecklist />
+            <AdminDashboardPanel />
+          </>
         )}
 
         {/* CRM Kanban Tab */}
