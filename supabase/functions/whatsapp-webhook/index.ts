@@ -652,7 +652,7 @@ serve(async (req) => {
                         action: {
                           name: 'cta_url',
                           parameters: {
-                            display_text: '💬 Falar com especialista agora',
+                            display_text: 'Falar com corretor',
                             url: SPECIALIST_URL,
                           },
                         },
