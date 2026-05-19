@@ -643,54 +643,57 @@ serve(async (req) => {
                   if (shouldSendWelcome) {
                     try {
                       const SUPABASE_URL_ENV = Deno.env.get('SUPABASE_URL')!;
-                      const WELCOME_TEXT = '🚨 *Atendimento prioritário*\n\nFale agora diretamente com nosso corretor especialista.\n\nClique no botão abaixo para abrir atendimento imediato no WhatsApp.';
-                      const SPECIALIST_URL = 'https://wa.me/5562999918353?text=' + encodeURIComponent('Olá, preciso de atendimento urgente');
-                      const welcomeInteractive = {
-                        type: 'cta_url',
-                        body: { text: WELCOME_TEXT },
-                        footer: { text: 'Supreme Empreendimentos • CRECI 20.316' },
-                        action: {
-                          name: 'cta_url',
-                          parameters: {
-                            display_text: 'Falar com corretor',
-                            url: SPECIALIST_URL,
+                      // Link curto e limpo — WhatsApp renderiza wa.me como card clicável (preview_url:true em send-whatsapp)
+                      const SPECIALIST_URL = 'https://wa.me/5562999918353';
+                      const WELCOME_TEXT =
+                        '🚨 *Atendimento Prioritário Supreme*\n\n' +
+                        'Fale agora diretamente com nosso corretor especialista 👇\n\n' +
+                        '👉 ' + SPECIALIST_URL + '\n\n' +
+                        '_Toque no link acima para abrir o WhatsApp do corretor._';
+
+                      console.log('[WhatsApp Webhook] 👋 Enviando boas-vindas para:', senderPhone);
+
+                      let sentOk = false;
+                      let sentMsgId: string | null = null;
+                      let sentContent = WELCOME_TEXT;
+
+                      // 1ª tentativa: botão interativo CTA (premium, se a conta permitir)
+                      try {
+                        const welcomeInteractive = {
+                          type: 'cta_url',
+                          body: { text: 'Fale agora diretamente com nosso corretor especialista.' },
+                          action: {
+                            name: 'cta_url',
+                            parameters: {
+                              display_text: 'Falar com corretor',
+                              url: SPECIALIST_URL,
+                            },
                           },
-                        },
-                      };
-
-                      console.log('[WhatsApp Webhook] 👋 Enviando boas-vindas com botão CTA para:', senderPhone);
-                      const welcomeRes = await fetch(`${SUPABASE_URL_ENV}/functions/v1/send-whatsapp`, {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json',
-                          'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-                          'apikey': SUPABASE_SERVICE_ROLE_KEY,
-                        },
-                        body: JSON.stringify({ to: senderPhone, interactive: welcomeInteractive }),
-                      });
-
-                      const welcomeResult = await welcomeRes.json().catch(() => null);
-
-                      if (welcomeRes.ok && welcomeResult?.ok) {
-                        console.log('[WhatsApp Webhook] ✅ Boas-vindas enviadas. msgId:', welcomeResult.messageId);
-                        await supabase.from('omnichat_messages').insert({
-                          conversation_id: convId,
-                          sender_type: 'bot',
-                          channel: 'whatsapp',
-                          content: `${WELCOME_TEXT} ${SPECIALIST_URL}`,
-                          status: 'sent',
-                          meta_message_id: welcomeResult.messageId || null,
+                        };
+                        const ctaRes = await fetch(`${SUPABASE_URL_ENV}/functions/v1/send-whatsapp`, {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+                            'apikey': SUPABASE_SERVICE_ROLE_KEY,
+                          },
+                          body: JSON.stringify({ to: senderPhone, interactive: welcomeInteractive }),
                         });
-                        await supabase.from('whatsapp_welcome_sent').upsert({
-                          phone: senderPhone,
-                          conversation_id: convId,
-                          message_id: welcomeResult.messageId || null,
-                          sent_at: new Date().toISOString(),
-                        }, { onConflict: 'phone' });
-                      } else {
-                        // Fallback: se interactive falhar (ex: cta_url não suportado), envia texto simples com link
-                        console.warn('[WhatsApp Webhook] ⚠️ Interactive falhou, fallback texto:', welcomeResult);
-                        const fallbackText = `${WELCOME_TEXT}\n\n👉 ${SPECIALIST_URL}`;
+                        const ctaResult = await ctaRes.json().catch(() => null);
+                        if (ctaRes.ok && ctaResult?.ok) {
+                          sentOk = true;
+                          sentMsgId = ctaResult.messageId || null;
+                          sentContent = `Fale agora com nosso corretor: ${SPECIALIST_URL}`;
+                          console.log('[WhatsApp Webhook] ✅ Botão CTA enviado. msgId:', sentMsgId);
+                        } else {
+                          console.warn('[WhatsApp Webhook] ⚠️ CTA falhou, fallback texto com link:', ctaResult);
+                        }
+                      } catch (ctaErr) {
+                        console.warn('[WhatsApp Webhook] ⚠️ Erro CTA, fallback texto com link:', ctaErr);
+                      }
+
+                      // Fallback garantido: texto com link curto wa.me (sempre clicável no WhatsApp)
+                      if (!sentOk) {
                         const fbRes = await fetch(`${SUPABASE_URL_ENV}/functions/v1/send-whatsapp`, {
                           method: 'POST',
                           headers: {
@@ -698,24 +701,34 @@ serve(async (req) => {
                             'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
                             'apikey': SUPABASE_SERVICE_ROLE_KEY,
                           },
-                          body: JSON.stringify({ to: senderPhone, message: fallbackText }),
+                          body: JSON.stringify({ to: senderPhone, message: WELCOME_TEXT }),
                         });
                         const fbResult = await fbRes.json().catch(() => null);
-                        await supabase.from('omnichat_messages').insert({
-                          conversation_id: convId,
-                          sender_type: 'bot',
-                          channel: 'whatsapp',
-                          content: fallbackText,
-                          status: fbRes.ok && fbResult?.ok ? 'sent' : 'failed',
-                        });
                         if (fbRes.ok && fbResult?.ok) {
-                          await supabase.from('whatsapp_welcome_sent').upsert({
-                            phone: senderPhone,
-                            conversation_id: convId,
-                            message_id: fbResult.messageId || null,
-                            sent_at: new Date().toISOString(),
-                          }, { onConflict: 'phone' });
+                          sentOk = true;
+                          sentMsgId = fbResult.messageId || null;
+                          console.log('[WhatsApp Webhook] ✅ Fallback texto+link enviado. msgId:', sentMsgId);
+                        } else {
+                          console.error('[WhatsApp Webhook] ❌ Fallback texto também falhou:', fbResult);
                         }
+                      }
+
+                      await supabase.from('omnichat_messages').insert({
+                        conversation_id: convId,
+                        sender_type: 'bot',
+                        channel: 'whatsapp',
+                        content: sentContent,
+                        status: sentOk ? 'sent' : 'failed',
+                        meta_message_id: sentMsgId,
+                      });
+
+                      if (sentOk) {
+                        await supabase.from('whatsapp_welcome_sent').upsert({
+                          phone: senderPhone,
+                          conversation_id: convId,
+                          message_id: sentMsgId,
+                          sent_at: new Date().toISOString(),
+                        }, { onConflict: 'phone' });
                       }
                     } catch (welcomeErr) {
                       console.error('[WhatsApp Webhook] Welcome message error:', welcomeErr);
