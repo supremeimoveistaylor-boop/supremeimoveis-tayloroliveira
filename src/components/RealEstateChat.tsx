@@ -1256,7 +1256,71 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
     );
   }
 
+  if (CHAT_DISABLED) {
+    return (
+      <div
+        className="fixed bottom-6 right-6 w-[380px] max-w-[calc(100vw-48px)] rounded-[20px] flex flex-col z-[9999] animate-[chatSlideUp_0.4s_cubic-bezier(0.16,1,0.3,1)_forwards] overflow-hidden"
+        style={{ background: '#111111', boxShadow: '0 24px 80px rgba(0,0,0,0.55)', border: '1px solid rgba(198,165,91,0.4)' }}
+      >
+        {/* Header */}
+        <div className="p-4 flex items-center justify-between" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.04), transparent)', borderBottom: '1px solid #C6A85B' }}>
+          <div className="flex items-center gap-3">
+            <div className="relative w-10 h-10 rounded-full overflow-hidden flex items-center justify-center" style={{ background: '#0f172a' }}>
+              <img src="/images/chat-avatar.png" alt="Supreme" className="w-full h-full object-cover scale-[1.8] object-[center_25%]" />
+              <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full animate-pulse" style={{ background: '#22c55e', border: '2px solid #C6A85B' }} />
+            </div>
+            <div>
+              <p className="text-sm font-semibold" style={{ color: '#f5f5f5' }}>Supreme Empreendimentos</p>
+              <p className="text-xs" style={{ color: 'rgba(255,255,255,0.6)' }}>Atendimento via WhatsApp</p>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 hover:bg-white/10"
+            style={{ color: '#f5f5f5' }}
+            onClick={() => setIsOpen(false)}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {/* Welcome + CTA */}
+        <div className="p-6 flex flex-col items-center text-center gap-5" style={{ background: '#0b0b0c' }}>
+          <div
+            className="p-4 rounded-[14px] text-sm leading-relaxed w-full"
+            style={{ background: '#1C1C1C', color: '#f0f0f0', borderBottomLeftRadius: '6px' }}
+          >
+            <p className="whitespace-pre-line">
+              {`Olá 😊 Seja bem-vindo(a)!\nÉ um prazer te atender.\n\nPara falar com um especialista, clique no botão abaixo 👇`}
+            </p>
+          </div>
+
+          <a
+            href={WHATSAPP_CTA_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full flex items-center justify-center gap-2 py-3 px-5 rounded-[14px] font-semibold text-sm transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+            style={{
+              background: 'linear-gradient(135deg, #C6A85B, #D4B86A)',
+              color: '#111',
+              boxShadow: '0 8px 24px rgba(198,165,91,0.35)',
+            }}
+          >
+            <MessageCircle className="h-4 w-4" />
+            Falar com especialista no WhatsApp
+          </a>
+
+          <p className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
+            Resposta direta com nosso corretor • +55 62 99991-8353
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
+
     <div className="fixed bottom-6 right-6 w-[380px] max-w-[calc(100vw-48px)] h-[520px] max-h-[calc(100vh-40px)] rounded-[20px] flex flex-col z-[9999] animate-[chatSlideUp_0.4s_cubic-bezier(0.16,1,0.3,1)_forwards]" style={{ background: '#111111', boxShadow: '0 24px 80px rgba(0,0,0,0.55)', border: '1px solid rgba(255,255,255,0.08)' }}>
       {/* Header */}
       <div className="p-4 rounded-t-[20px] flex items-center justify-between" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.04), transparent)', borderBottom: '1px solid #C6A85B' }}>
