@@ -22,6 +22,11 @@ import { trackChatOpened, trackChatFirstMessage, trackChatNameCaptured, trackCha
 import { getStoredUTMData } from "@/lib/utm-capture";
 // Lead capture removido - extração silenciosa ativa
 
+// Chat temporariamente desabilitado - exibe apenas CTA para WhatsApp
+const CHAT_DISABLED = true;
+const WHATSAPP_CTA_URL = "https://wa.me/5562999918353";
+
+
 // Notification sound using Web Audio API
 const playNotificationSound = () => {
   try {
