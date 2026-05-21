@@ -557,9 +557,11 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
   useEffect(() => {
     if (isOpen && !hasStarted) {
       trackChatOpened('react_component');
+      if (CHAT_DISABLED) return;
       startConversation();
     }
   }, [isOpen, hasStarted, startConversation]);
+
   const processStream = async (response: Response, currentLeadId: string | null) => {
     const reader = response.body?.getReader();
     if (!reader) return;
