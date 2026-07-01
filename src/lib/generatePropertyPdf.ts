@@ -344,7 +344,7 @@ export async function generatePropertyPdf(rawProperty: PropertyPdfData) {
 
   // Section eyebrow
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(7.5);
+  doc.setFontSize(12);
   doc.setTextColor(...GOLD);
   doc.setCharSpace(1.2);
   doc.text("FICHA DO IMÓVEL", margin, y);
