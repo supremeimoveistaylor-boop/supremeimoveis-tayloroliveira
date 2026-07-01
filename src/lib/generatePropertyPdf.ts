@@ -31,11 +31,9 @@ const GOLD = [180, 142, 68] as const;      // discreet gold
 const PETROL = [22, 52, 66] as const;      // deep petrol
 
 const BRAND = {
-  name: "SUPREME EMPREENDIMENTOS",
-  tagline: "Portfólio Imobiliário · Corretores Parceiros",
-  creci: "CRECI 20.316",
-  site: "supremeempreendimentos.com",
+  label: "Material Corretor Parceiro",
 };
+
 
 const formatCurrency = (v: number) =>
   new Intl.NumberFormat("pt-BR", {
