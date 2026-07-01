@@ -198,7 +198,7 @@ function drawFooter(
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7.5);
   doc.setTextColor(...MUTED);
-  doc.text(`${BRAND.site}  ·  ${BRAND.creci}`, margin, pageH - 8);
+  doc.text(BRAND.label, margin, pageH - 8);
   doc.text(date, pageW / 2, pageH - 8, { align: "center" });
   doc.text(`${page} / ${total}`, pageW - margin, pageH - 8, { align: "right" });
 }
