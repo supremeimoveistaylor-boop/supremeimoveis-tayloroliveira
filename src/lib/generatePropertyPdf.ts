@@ -170,20 +170,17 @@ function icon(doc: jsPDF, name: string, cx: number, cy: number, size = 3.2) {
 }
 
 function drawHeader(doc: jsPDF, pageW: number, margin: number) {
-  doc.setTextColor(...INK);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8.5);
-  doc.setCharSpace(0.6);
-  doc.text(BRAND.name, margin, 12);
-  doc.setCharSpace(0);
+  doc.setTextColor(...MUTED);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7.5);
-  doc.setTextColor(...MUTED);
-  doc.text(BRAND.tagline, pageW - margin, 12, { align: "right" });
+  doc.setCharSpace(1.2);
+  doc.text(BRAND.label.toUpperCase(), margin, 12);
+  doc.setCharSpace(0);
   doc.setDrawColor(...HAIRLINE);
   doc.setLineWidth(0.2);
   doc.line(margin, 15, pageW - margin, 15);
 }
+
 
 function drawFooter(
   doc: jsPDF,
