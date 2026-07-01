@@ -361,7 +361,7 @@ export async function generatePropertyPdf(rawProperty: PropertyPdfData) {
 
   // Location w/ pin
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
+  doc.setFontSize(12);
   doc.setTextColor(...MUTED);
   icon(doc, "pin", margin + 1.5, y - 1.4, 2.2);
   doc.text(`${typeLabel}${SEP}${property.location}`, margin + 6, y);
