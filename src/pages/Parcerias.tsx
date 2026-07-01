@@ -221,6 +221,24 @@ export default function Parcerias() {
                       {p.area && <span>{p.area}m²</span>}
                     </div>
                   )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3 w-full"
+                    onClick={(e) => handleCopyLink(e, p.id)}
+                  >
+                    {copiedId === p.id ? (
+                      <>
+                        <Check className="h-4 w-4 mr-2 text-green-600" />
+                        Link copiado!
+                      </>
+                    ) : (
+                      <>
+                        <Link className="h-4 w-4 mr-2" />
+                        Copiar link
+                      </>
+                    )}
+                  </Button>
                 </CardContent>
               </Card>
             ))}
