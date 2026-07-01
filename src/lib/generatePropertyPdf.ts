@@ -31,11 +31,9 @@ const GOLD = [180, 142, 68] as const;      // discreet gold
 const PETROL = [22, 52, 66] as const;      // deep petrol
 
 const BRAND = {
-  name: "SUPREME EMPREENDIMENTOS",
-  tagline: "Portfólio Imobiliário · Corretores Parceiros",
-  creci: "CRECI 20.316",
-  site: "supremeempreendimentos.com",
+  label: "Material Corretor Parceiro",
 };
+
 
 const formatCurrency = (v: number) =>
   new Intl.NumberFormat("pt-BR", {
@@ -172,20 +170,17 @@ function icon(doc: jsPDF, name: string, cx: number, cy: number, size = 3.2) {
 }
 
 function drawHeader(doc: jsPDF, pageW: number, margin: number) {
-  doc.setTextColor(...INK);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8.5);
-  doc.setCharSpace(0.6);
-  doc.text(BRAND.name, margin, 12);
-  doc.setCharSpace(0);
+  doc.setTextColor(...MUTED);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7.5);
-  doc.setTextColor(...MUTED);
-  doc.text(BRAND.tagline, pageW - margin, 12, { align: "right" });
+  doc.setCharSpace(1.2);
+  doc.text(BRAND.label.toUpperCase(), margin, 12);
+  doc.setCharSpace(0);
   doc.setDrawColor(...HAIRLINE);
   doc.setLineWidth(0.2);
   doc.line(margin, 15, pageW - margin, 15);
 }
+
 
 function drawFooter(
   doc: jsPDF,
@@ -203,7 +198,7 @@ function drawFooter(
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7.5);
   doc.setTextColor(...MUTED);
-  doc.text(`${BRAND.site}  ·  ${BRAND.creci}`, margin, pageH - 8);
+  doc.text(BRAND.label, margin, pageH - 8);
   doc.text(date, pageW / 2, pageH - 8, { align: "center" });
   doc.text(`${page} / ${total}`, pageW - margin, pageH - 8, { align: "right" });
 }
@@ -291,11 +286,11 @@ export async function generatePropertyPdf(property: PropertyPdfData) {
   doc.setDrawColor(...HAIRLINE);
   doc.setLineWidth(0.2);
   doc.line(margin, pageH - 20, pageW - margin, pageH - 20);
-  doc.setFont("helvetica", "bold");
+  doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
-  doc.setTextColor(...INK);
+  doc.setTextColor(...MUTED);
   doc.setCharSpace(0.8);
-  doc.text(BRAND.name, margin, pageH - 13);
+  doc.text(BRAND.label.toUpperCase(), margin, pageH - 13);
   doc.setCharSpace(0);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
