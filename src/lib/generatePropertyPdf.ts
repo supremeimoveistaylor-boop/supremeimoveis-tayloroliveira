@@ -424,58 +424,61 @@ export async function generatePropertyPdf(rawProperty: PropertyPdfData) {
     y += rows * cellH + (rows - 1) * gap + 10;
   }
 
+  // Standardized typography for sections
+  const EYEBROW_SIZE = 9;
+  const BODY_SIZE = 11;
+  const LINE_H = 6;
+
   // Description
   if (property.description) {
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(7.5);
+    doc.setFontSize(EYEBROW_SIZE);
     doc.setTextColor(...GOLD);
-    doc.setCharSpace(1.2);
+    doc.setCharSpace(1.4);
     doc.text("SOBRE O IMÓVEL", margin, y);
     doc.setCharSpace(0);
-    y += 6;
+    y += 8;
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(10.5);
+    doc.setFontSize(BODY_SIZE);
     doc.setTextColor(...INK);
     const descLines = doc.splitTextToSize(property.description, contentW);
-    const lineH = 5.2;
     let i = 0;
     while (i < descLines.length) {
-      if (y + lineH > pageH - 22) {
-        drawFooter(doc, pageW, pageH, margin, 0, 0, date); // placeholder, rewritten later
+      if (y + LINE_H > pageH - 22) {
         doc.addPage();
         drawHeader(doc, pageW, margin);
         y = 30;
       }
       doc.text(descLines[i], margin, y);
-      y += lineH;
+      y += LINE_H;
       i++;
     }
-    y += 4;
+    y += 6;
   }
 
   // Amenities
   if (property.amenities && property.amenities.length > 0) {
-    if (y + 20 > pageH - 22) {
+    if (y + 24 > pageH - 22) {
       doc.addPage();
       drawHeader(doc, pageW, margin);
       y = 30;
     }
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(7.5);
+    doc.setFontSize(EYEBROW_SIZE);
     doc.setTextColor(...GOLD);
-    doc.setCharSpace(1.2);
+    doc.setCharSpace(1.4);
     doc.text("COMODIDADES", margin, y);
     doc.setCharSpace(0);
-    y += 6;
+    y += 8;
 
-    // pill chips
+    // pill chips — padronizado com o corpo do texto
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
+    doc.setFontSize(BODY_SIZE);
     let cx = margin;
-    const chipH = 7;
-    const gap = 3;
+    const chipH = 9;
+    const gap = 4;
     for (const a of property.amenities) {
-      const w = doc.getTextWidth(a) + 8;
+      const w = doc.getTextWidth(a) + 10;
       if (cx + w > pageW - margin) {
         cx = margin;
         y += chipH + gap;
@@ -487,13 +490,15 @@ export async function generatePropertyPdf(rawProperty: PropertyPdfData) {
       }
       doc.setDrawColor(...HAIRLINE);
       doc.setFillColor(...CANVAS);
-      doc.roundedRect(cx, y, w, chipH, 3.5, 3.5, "FD");
+      doc.roundedRect(cx, y, w, chipH, 4.5, 4.5, "FD");
       doc.setTextColor(...INK);
-      doc.text(a, cx + w / 2, y + 5, { align: "center" });
+      doc.text(a, cx + w / 2, y + 6.2, { align: "center" });
       cx += w + gap;
     }
     y += chipH + 6;
   }
+
+
 
   // ============ GALERIA (editorial luxury layout) ============
   if (loaded.length > 1) {
