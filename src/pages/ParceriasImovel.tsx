@@ -79,6 +79,7 @@ export default function ParceriasImovel() {
   const [interestPhone, setInterestPhone] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   useEffect(() => {
     if (!id) return;
