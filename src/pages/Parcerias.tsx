@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, Home, Building2, TreePine, Search, Filter, X } from "lucide-react";
+import { MapPin, Home, Building2, TreePine, Search, Filter, X, Link, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface PartnerProperty {
