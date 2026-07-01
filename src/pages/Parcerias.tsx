@@ -108,6 +108,15 @@ export default function Parcerias() {
 
   const clearFilters = () => setSearchParams({});
 
+  const handleCopyLink = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    const url = `${window.location.origin}/parcerias/imovel/${id}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    });
+  };
+
   const hasFilters = tipo || cidade || precoMin || precoMax;
 
   return (
