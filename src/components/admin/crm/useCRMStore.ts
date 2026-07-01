@@ -162,7 +162,7 @@ export function useCRMStore(currentUserId?: string, currentUserRole: Collaborato
 
       // If card has a linked lead, use cascade delete function
       if (card?.lead_id) {
-        const { data, error } = await supabase.rpc('cascade_delete_lead', { p_lead_id: card.lead_id });
+        const { data, error } = await supabase.functions.invoke('admin-cascade-delete-lead', { body: { lead_id: card.lead_id } });
         if (error) {
           console.error('Error cascade deleting lead:', error);
           // Fallback: try deleting just the card
