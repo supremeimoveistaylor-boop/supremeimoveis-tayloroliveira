@@ -47,6 +47,9 @@ const GeoLanding = () => {
     document.title = title;
     const meta = document.querySelector('meta[name="description"]');
     if (meta) meta.setAttribute('content', description);
+    let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+    if (!link) { link = document.createElement('link'); link.rel = 'canonical'; document.head.appendChild(link); }
+    link.href = `https://supremeempreendimentos.com${window.location.pathname}`;
 
     window.scrollTo(0, 0);
   }, [locationData, slug]);

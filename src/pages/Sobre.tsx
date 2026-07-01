@@ -10,9 +10,12 @@ import taylorPhoto from "@/assets/taylor-photo.png";
 
 const Sobre = () => {
   useEffect(() => {
-    document.title = "Sobre a Supreme: Especialistas em Imóveis de Luxo em Goiânia";
+    document.title = "Sobre a Supreme | Imóveis de Luxo em Goiânia";
     const meta = document.querySelector('meta[name="description"]');
     if (meta) meta.setAttribute("content", "Supreme Negócios Imobiliários: mais de 15 anos de experiência em imóveis de alto padrão em Goiânia. Casas em condomínio fechado, coberturas e apartamentos de luxo.");
+    let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+    if (!link) { link = document.createElement("link"); link.rel = "canonical"; document.head.appendChild(link); }
+    link.href = "https://supremeempreendimentos.com/sobre";
   }, []);
 
   const features = [

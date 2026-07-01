@@ -148,6 +148,12 @@ const SEOLanding = () => {
     setMeta("twitter:description", page.metaDescription, "name");
     setMeta("twitter:card", "summary_large_image", "name");
 
+    const canonicalHref = `https://supremeempreendimentos.com${window.location.pathname}`;
+    let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+    if (!link) { link = document.createElement("link"); link.rel = "canonical"; document.head.appendChild(link); }
+    link.href = canonicalHref;
+    setMeta("og:url", canonicalHref, "property");
+
     // Inject JSON-LD Schema
     const existingSchema = document.getElementById("seo-landing-schema");
     if (existingSchema) existingSchema.remove();
