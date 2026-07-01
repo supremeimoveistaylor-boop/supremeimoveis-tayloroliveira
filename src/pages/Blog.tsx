@@ -25,12 +25,24 @@ const Blog = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    document.title = 'Blog Supreme | Imóveis de Luxo em Goiânia';
-    const meta = document.querySelector('meta[name="description"]');
-    if (meta) meta.setAttribute('content', 'Artigos exclusivos sobre imóveis de luxo, investimento imobiliário e bairros nobres de Goiânia. Tendências e dicas do mercado de alto padrão.');
+    const title = 'Blog Supreme | Imóveis de Luxo em Goiânia';
+    const description = 'Artigos exclusivos sobre imóveis de luxo, investimento imobiliário e bairros nobres de Goiânia. Tendências e dicas do mercado de alto padrão.';
+    const url = 'https://supremeempreendimentos.com/blog';
+    document.title = title;
+    const setMeta = (sel: string, attr: string, name: string, content: string) => {
+      let el = document.querySelector(sel);
+      if (!el) { el = document.createElement('meta'); el.setAttribute(attr, name); document.head.appendChild(el); }
+      el.setAttribute('content', content);
+    };
+    setMeta('meta[name="description"]', 'name', 'description', description);
+    setMeta('meta[property="og:title"]', 'property', 'og:title', title);
+    setMeta('meta[property="og:description"]', 'property', 'og:description', description);
+    setMeta('meta[property="og:url"]', 'property', 'og:url', url);
+    setMeta('meta[name="twitter:title"]', 'name', 'twitter:title', title);
+    setMeta('meta[name="twitter:description"]', 'name', 'twitter:description', description);
     let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
     if (!link) { link = document.createElement('link'); link.rel = 'canonical'; document.head.appendChild(link); }
-    link.href = 'https://supremeempreendimentos.com/blog';
+    link.href = url;
 
     fetchPosts();
   }, []);
