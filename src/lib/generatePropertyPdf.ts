@@ -232,13 +232,23 @@ function drawFooter(
   doc.text(`${page} / ${total}`, pageW - margin, pageH - 8, { align: "right" });
 }
 
-export async function generatePropertyPdf(property: PropertyPdfData) {
+export async function generatePropertyPdf(rawProperty: PropertyPdfData) {
+  // Normalize/sanitize all text fields to avoid Helvetica/WinAnsi rendering artifacts
+  const property: PropertyPdfData = {
+    ...rawProperty,
+    title: sanitize(rawProperty.title) || "Imóvel",
+    description: sanitize(rawProperty.description),
+    location: sanitize(rawProperty.location),
+    amenities: (rawProperty.amenities || []).map((a) => sanitize(a)).filter(Boolean),
+  };
+
   const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
   const margin = 18;
   const contentW = pageW - margin * 2;
   const date = formatDate();
+
 
   const images = (property.images || []).filter(Boolean);
   const loaded = (
