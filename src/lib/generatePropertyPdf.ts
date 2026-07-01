@@ -344,7 +344,7 @@ export async function generatePropertyPdf(rawProperty: PropertyPdfData) {
 
   // Section eyebrow
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(7.5);
+  doc.setFontSize(12);
   doc.setTextColor(...GOLD);
   doc.setCharSpace(1.2);
   doc.text("FICHA DO IMÓVEL", margin, y);
@@ -361,7 +361,7 @@ export async function generatePropertyPdf(rawProperty: PropertyPdfData) {
 
   // Location w/ pin
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
+  doc.setFontSize(12);
   doc.setTextColor(...MUTED);
   icon(doc, "pin", margin + 1.5, y - 1.4, 2.2);
   doc.text(`${typeLabel}${SEP}${property.location}`, margin + 6, y);
@@ -373,7 +373,7 @@ export async function generatePropertyPdf(rawProperty: PropertyPdfData) {
   doc.setLineWidth(0.2);
   doc.roundedRect(margin, y, contentW, 22, 2, 2, "FD");
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
+  doc.setFontSize(12);
   doc.setTextColor(...MUTED);
   doc.setCharSpace(0.8);
   doc.text("VALOR", margin + 6, y + 8);
@@ -411,7 +411,7 @@ export async function generatePropertyPdf(rawProperty: PropertyPdfData) {
       doc.roundedRect(cx, cy, cellW, cellH, 1.5, 1.5, "FD");
       icon(doc, feats[i].icon, cx + 6, cy + 8, 2.6);
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(7.5);
+      doc.setFontSize(12);
       doc.setTextColor(...MUTED);
       doc.setCharSpace(0.6);
       doc.text(feats[i].label.toUpperCase(), cx + 12, cy + 9);
@@ -425,9 +425,9 @@ export async function generatePropertyPdf(rawProperty: PropertyPdfData) {
   }
 
   // Standardized typography for sections
-  const EYEBROW_SIZE = 9;
-  const BODY_SIZE = 11;
-  const LINE_H = 6;
+  const EYEBROW_SIZE = 12;
+  const BODY_SIZE = 12;
+  const LINE_H = 6.5;
 
   // Description
   if (property.description) {
@@ -475,10 +475,10 @@ export async function generatePropertyPdf(rawProperty: PropertyPdfData) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(BODY_SIZE);
     let cx = margin;
-    const chipH = 9;
+    const chipH = 11;
     const gap = 4;
     for (const a of property.amenities) {
-      const w = doc.getTextWidth(a) + 10;
+      const w = doc.getTextWidth(a) + 12;
       if (cx + w > pageW - margin) {
         cx = margin;
         y += chipH + gap;
@@ -492,7 +492,7 @@ export async function generatePropertyPdf(rawProperty: PropertyPdfData) {
       doc.setFillColor(...CANVAS);
       doc.roundedRect(cx, y, w, chipH, 4.5, 4.5, "FD");
       doc.setTextColor(...INK);
-      doc.text(a, cx + w / 2, y + 6.2, { align: "center" });
+      doc.text(a, cx + w / 2, y + 7.5, { align: "center" });
       cx += w + gap;
     }
     y += chipH + 6;
@@ -510,7 +510,7 @@ export async function generatePropertyPdf(rawProperty: PropertyPdfData) {
 
     const drawGalleryHeader = (yy: number) => {
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(7.5);
+      doc.setFontSize(12);
       doc.setTextColor(...GOLD);
       doc.setCharSpace(1.2);
       doc.text("GALERIA", margin, yy);
