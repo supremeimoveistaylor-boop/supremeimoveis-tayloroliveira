@@ -35,6 +35,35 @@ const BRAND = {
 };
 
 
+// Sanitize text for jsPDF Helvetica (WinAnsi). Strips emojis/symbols that render
+// as garbage ("Ø=Üí", "%ªþ") and normalizes bullets, dashes and smart quotes.
+function sanitize(input: string | null | undefined): string {
+  if (!input) return "";
+  let s = String(input).normalize("NFC");
+  // Remove emoji / pictographs / symbols / dingbats / variation selectors
+  s = s.replace(
+    /[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{2300}-\u{23FF}\u{2B00}-\u{2BFF}\u{FE00}-\u{FE0F}\u{200D}]/gu,
+    ""
+  );
+  // Normalize common punctuation
+  s = s
+    .replace(/[•●◦▪■□▶►]/g, "-")
+    .replace(/[–—]/g, "-")
+    .replace(/[‘’‚‛]/g, "'")
+    .replace(/[“”„‟]/g, '"')
+    .replace(/…/g, "...")
+    .replace(/·/g, "-");
+  // Drop any remaining non-WinAnsi characters (keep basic latin + latin-1 supplement)
+  s = s.replace(/[^\x09\x0A\x0D\x20-\x7E\xA0-\xFF]/g, "");
+  // Collapse excess spaces
+  s = s.replace(/[ \t]+/g, " ").replace(/ ?\n ?/g, "\n").trim();
+  return s;
+}
+
+// Replace the middle-dot separator "·" (used only for display) with a safe dash
+const SEP = " - ";
+
+
 const formatCurrency = (v: number) =>
   new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -203,13 +232,23 @@ function drawFooter(
   doc.text(`${page} / ${total}`, pageW - margin, pageH - 8, { align: "right" });
 }
 
-export async function generatePropertyPdf(property: PropertyPdfData) {
+export async function generatePropertyPdf(rawProperty: PropertyPdfData) {
+  // Normalize/sanitize all text fields to avoid Helvetica/WinAnsi rendering artifacts
+  const property: PropertyPdfData = {
+    ...rawProperty,
+    title: sanitize(rawProperty.title) || "Imóvel",
+    description: sanitize(rawProperty.description),
+    location: sanitize(rawProperty.location),
+    amenities: (rawProperty.amenities || []).map((a) => sanitize(a)).filter(Boolean),
+  };
+
   const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
   const margin = 18;
   const contentW = pageW - margin * 2;
   const date = formatDate();
+
 
   const images = (property.images || []).filter(Boolean);
   const loaded = (
@@ -268,7 +307,7 @@ export async function generatePropertyPdf(property: PropertyPdfData) {
   doc.setFontSize(11);
   doc.setTextColor(...MUTED);
   const typeLabel = TYPE_LABELS[property.property_type] || property.property_type;
-  doc.text(`${typeLabel} · ${property.location}`, margin, heroH + 30 + coverTitle.slice(0, 2).length * 8 + 2);
+  doc.text(`${typeLabel}${SEP}${property.location}`, margin, heroH + 30 + coverTitle.slice(0, 2).length * 8 + 2);
 
   // Price card (right-aligned pill)
   const priceStr = formatCurrency(property.price);
@@ -325,7 +364,7 @@ export async function generatePropertyPdf(property: PropertyPdfData) {
   doc.setFontSize(10);
   doc.setTextColor(...MUTED);
   icon(doc, "pin", margin + 1.5, y - 1.4, 2.2);
-  doc.text(`${typeLabel} · ${property.location}`, margin + 6, y);
+  doc.text(`${typeLabel}${SEP}${property.location}`, margin + 6, y);
   y += 8;
 
   // Price card wide
