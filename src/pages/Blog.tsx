@@ -63,7 +63,7 @@ const Blog = () => {
       <main className="container mx-auto px-4 py-12">
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-            Blog <span className="text-accent">Supreme</span>
+            Blog <span className="text-accent">Supreme</span>: Tendências e Dicas de Imóveis de Luxo em Goiânia
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Artigos exclusivos sobre o mercado imobiliário de luxo em Goiânia. 
