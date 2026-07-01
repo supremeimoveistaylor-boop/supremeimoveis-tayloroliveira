@@ -261,6 +261,19 @@ export default function Parcerias() {
                       </>
                     )}
                   </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="mt-2 w-full"
+                    disabled={downloadingId === p.id}
+                    onClick={(e) => handleDownloadPdf(e, p.id)}
+                  >
+                    {downloadingId === p.id ? (
+                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Gerando PDF...</>
+                    ) : (
+                      <><FileDown className="h-4 w-4 mr-2" /> Baixar PDF</>
+                    )}
+                  </Button>
                 </CardContent>
               </Card>
             ))}
