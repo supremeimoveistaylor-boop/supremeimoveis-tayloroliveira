@@ -25,9 +25,12 @@ const Blog = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    document.title = 'Blog | Imóveis de Luxo em Goiânia - Supreme Empreendimentos';
+    document.title = 'Blog Supreme | Imóveis de Luxo em Goiânia';
     const meta = document.querySelector('meta[name="description"]');
     if (meta) meta.setAttribute('content', 'Artigos exclusivos sobre imóveis de luxo, investimento imobiliário e bairros nobres de Goiânia. Tendências e dicas do mercado de alto padrão.');
+    let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+    if (!link) { link = document.createElement('link'); link.rel = 'canonical'; document.head.appendChild(link); }
+    link.href = 'https://supremeempreendimentos.com/blog';
 
     fetchPosts();
   }, []);

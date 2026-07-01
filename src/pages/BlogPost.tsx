@@ -46,6 +46,9 @@ const BlogPost = () => {
       document.title = data.meta_title || data.title;
       const meta = document.querySelector('meta[name="description"]');
       if (meta) meta.setAttribute('content', data.meta_description || data.excerpt || '');
+      let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+      if (!link) { link = document.createElement('link'); link.rel = 'canonical'; document.head.appendChild(link); }
+      link.href = `https://supremeempreendimentos.com/blog/${data.slug}`;
 
       // Increment view count
       await supabase.from('blog_posts').update({ view_count: (data.view_count || 0) + 1 }).eq('id', data.id);
