@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, Home, Building2, TreePine, Search, Filter, X } from "lucide-react";
+import { MapPin, Home, Building2, TreePine, Search, Filter, X, Link, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface PartnerProperty {
@@ -44,6 +44,7 @@ export default function Parcerias() {
   const [properties, setProperties] = useState<PartnerProperty[]>([]);
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Filter state from URL
   const tipo = searchParams.get("tipo") || "";
@@ -106,6 +107,15 @@ export default function Parcerias() {
   };
 
   const clearFilters = () => setSearchParams({});
+
+  const handleCopyLink = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    const url = `${window.location.origin}/parcerias/imovel/${id}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    });
+  };
 
   const hasFilters = tipo || cidade || precoMin || precoMax;
 
@@ -211,6 +221,24 @@ export default function Parcerias() {
                       {p.area && <span>{p.area}m²</span>}
                     </div>
                   )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3 w-full"
+                    onClick={(e) => handleCopyLink(e, p.id)}
+                  >
+                    {copiedId === p.id ? (
+                      <>
+                        <Check className="h-4 w-4 mr-2 text-green-600" />
+                        Link copiado!
+                      </>
+                    ) : (
+                      <>
+                        <Link className="h-4 w-4 mr-2" />
+                        Copiar link
+                      </>
+                    )}
+                  </Button>
                 </CardContent>
               </Card>
             ))}
