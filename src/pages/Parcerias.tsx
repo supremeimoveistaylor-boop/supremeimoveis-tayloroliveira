@@ -120,6 +120,25 @@ export default function Parcerias() {
     });
   };
 
+  const handleDownloadPdf = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setDownloadingId(id);
+    try {
+      const { data, error } = await supabase.functions.invoke("get_public_properties", {
+        body: { id, is_public: true },
+      });
+      const full = data?.data?.[0];
+      if (error || !full) throw new Error("Não foi possível carregar o imóvel");
+      await generatePropertyPdf(full);
+      toast({ title: "PDF gerado com sucesso!" });
+    } catch (err) {
+      console.error(err);
+      toast({ title: "Erro ao gerar PDF", variant: "destructive" });
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
   const hasFilters = tipo || cidade || precoMin || precoMax;
 
   return (
