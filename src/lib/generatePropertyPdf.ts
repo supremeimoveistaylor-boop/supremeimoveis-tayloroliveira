@@ -286,11 +286,11 @@ export async function generatePropertyPdf(property: PropertyPdfData) {
   doc.setDrawColor(...HAIRLINE);
   doc.setLineWidth(0.2);
   doc.line(margin, pageH - 20, pageW - margin, pageH - 20);
-  doc.setFont("helvetica", "bold");
+  doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
-  doc.setTextColor(...INK);
+  doc.setTextColor(...MUTED);
   doc.setCharSpace(0.8);
-  doc.text(BRAND.name, margin, pageH - 13);
+  doc.text(BRAND.label.toUpperCase(), margin, pageH - 13);
   doc.setCharSpace(0);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
