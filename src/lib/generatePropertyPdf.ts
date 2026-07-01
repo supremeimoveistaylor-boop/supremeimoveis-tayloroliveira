@@ -373,7 +373,7 @@ export async function generatePropertyPdf(rawProperty: PropertyPdfData) {
   doc.setLineWidth(0.2);
   doc.roundedRect(margin, y, contentW, 22, 2, 2, "FD");
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
+  doc.setFontSize(12);
   doc.setTextColor(...MUTED);
   doc.setCharSpace(0.8);
   doc.text("VALOR", margin + 6, y + 8);
