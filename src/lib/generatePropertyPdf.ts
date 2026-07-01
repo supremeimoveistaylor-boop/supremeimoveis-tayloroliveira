@@ -429,6 +429,13 @@ export async function generatePropertyPdf(rawProperty: PropertyPdfData) {
   const BODY_SIZE = 12;
   const LINE_H = 6.5;
 
+  const setBodyTextStyle = () => {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(BODY_SIZE);
+    doc.setTextColor(...INK);
+    doc.setCharSpace(0);
+  };
+
   // Description
   if (property.description) {
     doc.setFont("helvetica", "normal");
@@ -438,15 +445,14 @@ export async function generatePropertyPdf(rawProperty: PropertyPdfData) {
     doc.text("SOBRE O IMÓVEL", margin, y);
     doc.setCharSpace(0);
     y += 8;
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(BODY_SIZE);
-    doc.setTextColor(...INK);
+    setBodyTextStyle();
     const descLines = doc.splitTextToSize(property.description, contentW);
     let i = 0;
     while (i < descLines.length) {
       if (y + LINE_H > pageH - 22) {
         doc.addPage();
         drawHeader(doc, pageW, margin);
+        setBodyTextStyle();
         y = 30;
       }
       doc.text(descLines[i], margin, y);
@@ -472,8 +478,7 @@ export async function generatePropertyPdf(rawProperty: PropertyPdfData) {
     y += 8;
 
     // pill chips — padronizado com o corpo do texto
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(BODY_SIZE);
+    setBodyTextStyle();
     let cx = margin;
     const chipH = 11;
     const gap = 4;
@@ -485,6 +490,7 @@ export async function generatePropertyPdf(rawProperty: PropertyPdfData) {
         if (y + chipH > pageH - 22) {
           doc.addPage();
           drawHeader(doc, pageW, margin);
+          setBodyTextStyle();
           y = 30;
         }
       }
