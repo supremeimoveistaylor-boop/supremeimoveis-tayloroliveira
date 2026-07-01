@@ -475,10 +475,10 @@ export async function generatePropertyPdf(rawProperty: PropertyPdfData) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(BODY_SIZE);
     let cx = margin;
-    const chipH = 9;
+    const chipH = 11;
     const gap = 4;
     for (const a of property.amenities) {
-      const w = doc.getTextWidth(a) + 10;
+      const w = doc.getTextWidth(a) + 12;
       if (cx + w > pageW - margin) {
         cx = margin;
         y += chipH + gap;
@@ -492,7 +492,7 @@ export async function generatePropertyPdf(rawProperty: PropertyPdfData) {
       doc.setFillColor(...CANVAS);
       doc.roundedRect(cx, y, w, chipH, 4.5, 4.5, "FD");
       doc.setTextColor(...INK);
-      doc.text(a, cx + w / 2, y + 6.2, { align: "center" });
+      doc.text(a, cx + w / 2, y + 7.5, { align: "center" });
       cx += w + gap;
     }
     y += chipH + 6;
