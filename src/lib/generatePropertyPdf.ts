@@ -495,69 +495,82 @@ export async function generatePropertyPdf(rawProperty: PropertyPdfData) {
     y += chipH + 6;
   }
 
-  // ============ GALERIA ============
+  // ============ GALERIA (editorial luxury layout) ============
   if (loaded.length > 1) {
+    const rest = loaded.slice(1); // hero already on cover
+    const gap = 3;
+    const galleryTop = 30;
+    const galleryBottom = pageH - 22;
+    const availH = galleryBottom - galleryTop;
+
+    const drawGalleryHeader = (yy: number) => {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.5);
+      doc.setTextColor(...GOLD);
+      doc.setCharSpace(1.2);
+      doc.text("GALERIA", margin, yy);
+      doc.setCharSpace(0);
+    };
+
+    const drawTile = (
+      img: { dataUrl: string; width: number; height: number },
+      x: number,
+      yy: number,
+      w: number,
+      h: number
+    ) => {
+      // Dark inset for editorial framing (no white bars if aspect differs)
+      doc.setFillColor(...INK);
+      doc.rect(x, yy, w, h, "F");
+      drawFittedImage(doc, img.dataUrl, img.width, img.height, x, yy, w, h, "contain");
+      // subtle hairline frame
+      doc.setDrawColor(...HAIRLINE);
+      doc.setLineWidth(0.15);
+      doc.rect(x, yy, w, h, "S");
+    };
+
+    // ---- Page A: 1 hero + 2x2 grid (5 photos)
     doc.addPage();
     drawHeader(doc, pageW, margin);
-    y = 30;
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(7.5);
-    doc.setTextColor(...GOLD);
-    doc.setCharSpace(1.2);
-    doc.text("GALERIA", margin, y);
-    doc.setCharSpace(0);
-    y += 8;
+    drawGalleryHeader(galleryTop);
+    let gy = galleryTop + 6;
 
-    const rest = loaded.slice(1);
-    // Layout: 1 big (full width) then 2-column grid of remaining
-    const bigH = 85;
-    if (rest[0]) {
-      doc.setFillColor(...CANVAS);
-      doc.roundedRect(margin, y, contentW, bigH, 2, 2, "F");
-      drawFittedImage(
-        doc,
-        rest[0].dataUrl,
-        rest[0].width,
-        rest[0].height,
-        margin,
-        y,
-        contentW,
-        bigH,
-        "contain"
-      );
-      y += bigH + 4;
+    // Hero band (~44% of gallery height)
+    const heroBand = Math.floor(availH * 0.44);
+    if (rest[0]) drawTile(rest[0], margin, gy, contentW, heroBand);
+    gy += heroBand + gap;
+
+    // Remaining height split into 2x2
+    const remH = galleryBottom - gy;
+    const rowH = (remH - gap) / 2;
+    const halfW = (contentW - gap) / 2;
+    const tiles = rest.slice(1, 5);
+    for (let i = 0; i < tiles.length; i++) {
+      const r = Math.floor(i / 2);
+      const c = i % 2;
+      drawTile(tiles[i], margin + c * (halfW + gap), gy + r * (rowH + gap), halfW, rowH);
     }
-    const grid = rest.slice(1);
-    const cols = 2;
-    const gap = 4;
-    const cellW = (contentW - gap * (cols - 1)) / cols;
-    const cellH = 55;
-    for (let i = 0; i < grid.length; i++) {
-      const c = i % cols;
-      const cx = margin + c * (cellW + gap);
-      if (c === 0 && y + cellH > pageH - 22) {
-        doc.addPage();
-        drawHeader(doc, pageW, margin);
-        y = 30;
-      }
-      doc.setFillColor(...CANVAS);
-      doc.roundedRect(cx, y, cellW, cellH, 2, 2, "F");
-      drawFittedImage(
-        doc,
-        grid[i].dataUrl,
-        grid[i].width,
-        grid[i].height,
-        cx,
-        y,
-        cellW,
-        cellH,
-        "contain"
-      );
-      if (c === cols - 1 || i === grid.length - 1) {
-        y += cellH + gap;
+
+    // ---- Overflow: 6 per page in 3x2 grid (magazine spread)
+    let idx = 5;
+    while (idx < rest.length) {
+      doc.addPage();
+      drawHeader(doc, pageW, margin);
+      drawGalleryHeader(galleryTop);
+      const gy2 = galleryTop + 6;
+      const gAvail = galleryBottom - gy2;
+      const rows = 3;
+      const cols = 2;
+      const tW = (contentW - gap * (cols - 1)) / cols;
+      const tH = (gAvail - gap * (rows - 1)) / rows;
+      for (let i = 0; i < rows * cols && idx < rest.length; i++, idx++) {
+        const r = Math.floor(i / cols);
+        const c = i % cols;
+        drawTile(rest[idx], margin + c * (tW + gap), gy2 + r * (tH + gap), tW, tH);
       }
     }
   }
+
 
   // ============ FOOTERS (all pages except cover) ============
   const totalPages = doc.getNumberOfPages();
