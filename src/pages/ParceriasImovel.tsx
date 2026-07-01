@@ -14,9 +14,10 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { ArrowLeft, MapPin, Bed, Bath, Car, Maximize, MessageCircle, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, MapPin, Bed, Bath, Car, Maximize, MessageCircle, CheckCircle2, FileDown, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { generatePropertyPdf } from "@/lib/generatePropertyPdf";
 
 interface PropertyDetail {
   id: string;
