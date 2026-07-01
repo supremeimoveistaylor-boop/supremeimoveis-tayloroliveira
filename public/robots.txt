@@ -3,9 +3,19 @@ Sitemap: https://supremeempreendimentos.com/sitemap.xml
 
 User-agent: Googlebot
 Allow: /
+Disallow: /chat
+Disallow: /auth
+Disallow: /reset-password
+Disallow: /dashboard
+Disallow: /add-property
 
 User-agent: Bingbot
 Allow: /
+Disallow: /chat
+Disallow: /auth
+Disallow: /reset-password
+Disallow: /dashboard
+Disallow: /add-property
 
 User-agent: Twitterbot
 Allow: /
@@ -15,3 +25,8 @@ Allow: /
 
 User-agent: *
 Allow: /
+Disallow: /chat
+Disallow: /auth
+Disallow: /reset-password
+Disallow: /dashboard
+Disallow: /add-property
