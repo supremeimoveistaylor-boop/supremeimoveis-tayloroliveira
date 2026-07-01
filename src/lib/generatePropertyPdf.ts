@@ -411,7 +411,7 @@ export async function generatePropertyPdf(rawProperty: PropertyPdfData) {
       doc.roundedRect(cx, cy, cellW, cellH, 1.5, 1.5, "FD");
       icon(doc, feats[i].icon, cx + 6, cy + 8, 2.6);
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(7.5);
+      doc.setFontSize(12);
       doc.setTextColor(...MUTED);
       doc.setCharSpace(0.6);
       doc.text(feats[i].label.toUpperCase(), cx + 12, cy + 9);
