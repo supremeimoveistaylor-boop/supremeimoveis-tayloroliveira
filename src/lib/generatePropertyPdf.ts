@@ -35,6 +35,35 @@ const BRAND = {
 };
 
 
+// Sanitize text for jsPDF Helvetica (WinAnsi). Strips emojis/symbols that render
+// as garbage ("Ø=Üí", "%ªþ") and normalizes bullets, dashes and smart quotes.
+function sanitize(input: string | null | undefined): string {
+  if (!input) return "";
+  let s = String(input).normalize("NFC");
+  // Remove emoji / pictographs / symbols / dingbats / variation selectors
+  s = s.replace(
+    /[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{2300}-\u{23FF}\u{2B00}-\u{2BFF}\u{FE00}-\u{FE0F}\u{200D}]/gu,
+    ""
+  );
+  // Normalize common punctuation
+  s = s
+    .replace(/[•●◦▪■□▶►]/g, "-")
+    .replace(/[–—]/g, "-")
+    .replace(/[‘’‚‛]/g, "'")
+    .replace(/[“”„‟]/g, '"')
+    .replace(/…/g, "...")
+    .replace(/·/g, "-");
+  // Drop any remaining non-WinAnsi characters (keep basic latin + latin-1 supplement)
+  s = s.replace(/[^\x09\x0A\x0D\x20-\x7E\xA0-\xFF]/g, "");
+  // Collapse excess spaces
+  s = s.replace(/[ \t]+/g, " ").replace(/ ?\n ?/g, "\n").trim();
+  return s;
+}
+
+// Replace the middle-dot separator "·" (used only for display) with a safe dash
+const SEP = " - ";
+
+
 const formatCurrency = (v: number) =>
   new Intl.NumberFormat("pt-BR", {
     style: "currency",
