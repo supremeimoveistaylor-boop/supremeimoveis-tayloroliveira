@@ -425,9 +425,9 @@ export async function generatePropertyPdf(rawProperty: PropertyPdfData) {
   }
 
   // Standardized typography for sections
-  const EYEBROW_SIZE = 9;
-  const BODY_SIZE = 11;
-  const LINE_H = 6;
+  const EYEBROW_SIZE = 12;
+  const BODY_SIZE = 12;
+  const LINE_H = 6.5;
 
   // Description
   if (property.description) {
