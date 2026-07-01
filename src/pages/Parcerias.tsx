@@ -47,6 +47,7 @@ export default function Parcerias() {
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   // Filter state from URL
   const tipo = searchParams.get("tipo") || "";
