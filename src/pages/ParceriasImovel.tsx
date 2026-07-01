@@ -14,9 +14,10 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { ArrowLeft, MapPin, Bed, Bath, Car, Maximize, MessageCircle, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, MapPin, Bed, Bath, Car, Maximize, MessageCircle, CheckCircle2, FileDown, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { generatePropertyPdf } from "@/lib/generatePropertyPdf";
 
 interface PropertyDetail {
   id: string;
@@ -78,6 +79,7 @@ export default function ParceriasImovel() {
   const [interestPhone, setInterestPhone] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -281,11 +283,39 @@ export default function ParceriasImovel() {
           )}
 
           {/* CTA */}
-          <div className="pt-4">
-            <Button onClick={handleInterest} size="lg" className="w-full sm:w-auto">
+          <div className="pt-4 flex flex-wrap gap-3">
+            <Button onClick={handleInterest} size="lg">
               <MessageCircle className="h-5 w-5 mr-2" /> Tenho Interesse
             </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              disabled={downloadingPdf}
+              onClick={async () => {
+                if (!property) return;
+                setDownloadingPdf(true);
+                try {
+                  await generatePropertyPdf(property);
+                  toast({ title: "PDF gerado com sucesso!" });
+                } catch (e) {
+                  console.error(e);
+                  toast({ title: "Erro ao gerar PDF", variant: "destructive" });
+                } finally {
+                  setDownloadingPdf(false);
+                }
+              }}
+            >
+              {downloadingPdf ? (
+                <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> Gerando PDF...</>
+              ) : (
+                <><FileDown className="h-5 w-5 mr-2" /> Baixar PDF do Imóvel</>
+              )}
+            </Button>
           </div>
+          <p className="text-xs text-muted-foreground">
+            📄 O PDF contém todas as informações e fotos do imóvel — sem exibir o contato direto da imobiliária, protegendo a relação corretor–cliente.
+          </p>
+
         </div>
       </div>
 

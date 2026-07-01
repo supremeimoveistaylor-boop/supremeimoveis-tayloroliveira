@@ -6,8 +6,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, Home, Building2, TreePine, Search, Filter, X, Link, Check } from "lucide-react";
+import { MapPin, Home, Building2, TreePine, Search, Filter, X, Link, Check, FileDown, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { generatePropertyPdf } from "@/lib/generatePropertyPdf";
+import { toast } from "@/hooks/use-toast";
 
 interface PartnerProperty {
   id: string;
@@ -45,6 +47,7 @@ export default function Parcerias() {
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   // Filter state from URL
   const tipo = searchParams.get("tipo") || "";
@@ -115,6 +118,25 @@ export default function Parcerias() {
       setCopiedId(id);
       setTimeout(() => setCopiedId(null), 2000);
     });
+  };
+
+  const handleDownloadPdf = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setDownloadingId(id);
+    try {
+      const { data, error } = await supabase.functions.invoke("get_public_properties", {
+        body: { id, is_public: true },
+      });
+      const full = data?.data?.[0];
+      if (error || !full) throw new Error("Não foi possível carregar o imóvel");
+      await generatePropertyPdf(full);
+      toast({ title: "PDF gerado com sucesso!" });
+    } catch (err) {
+      console.error(err);
+      toast({ title: "Erro ao gerar PDF", variant: "destructive" });
+    } finally {
+      setDownloadingId(null);
+    }
   };
 
   const hasFilters = tipo || cidade || precoMin || precoMax;
@@ -237,6 +259,19 @@ export default function Parcerias() {
                         <Link className="h-4 w-4 mr-2" />
                         Copiar link
                       </>
+                    )}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="mt-2 w-full"
+                    disabled={downloadingId === p.id}
+                    onClick={(e) => handleDownloadPdf(e, p.id)}
+                  >
+                    {downloadingId === p.id ? (
+                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Gerando PDF...</>
+                    ) : (
+                      <><FileDown className="h-4 w-4 mr-2" /> Baixar PDF</>
                     )}
                   </Button>
                 </CardContent>
