@@ -307,7 +307,7 @@ export async function generatePropertyPdf(rawProperty: PropertyPdfData) {
   doc.setFontSize(11);
   doc.setTextColor(...MUTED);
   const typeLabel = TYPE_LABELS[property.property_type] || property.property_type;
-  doc.text(`${typeLabel} · ${property.location}`, margin, heroH + 30 + coverTitle.slice(0, 2).length * 8 + 2);
+  doc.text(`${typeLabel}${SEP}${property.location}`, margin, heroH + 30 + coverTitle.slice(0, 2).length * 8 + 2);
 
   // Price card (right-aligned pill)
   const priceStr = formatCurrency(property.price);
@@ -364,7 +364,7 @@ export async function generatePropertyPdf(rawProperty: PropertyPdfData) {
   doc.setFontSize(10);
   doc.setTextColor(...MUTED);
   icon(doc, "pin", margin + 1.5, y - 1.4, 2.2);
-  doc.text(`${typeLabel} · ${property.location}`, margin + 6, y);
+  doc.text(`${typeLabel}${SEP}${property.location}`, margin + 6, y);
   y += 8;
 
   // Price card wide
