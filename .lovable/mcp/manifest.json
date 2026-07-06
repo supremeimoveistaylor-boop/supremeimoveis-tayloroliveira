@@ -1,0 +1,115 @@
+{
+  "version": 1,
+  "sdk_version": "0.20.0",
+  "path": "/mcp",
+  "auth": {
+    "type": "none"
+  },
+  "mcp": {
+    "server": {
+      "name": "supreme-empreendimentos-mcp",
+      "version": "0.1.0",
+      "title": "Supreme Empreendimentos MCP"
+    },
+    "tools": [
+      {
+        "name": "search_properties",
+        "title": "Search properties",
+        "description": "Search Supreme Empreendimentos' public real-estate catalog in Goiânia. Filter by purpose (venda/aluguel), property type, bedrooms, price range, or location text.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "purpose": {
+              "type": "string",
+              "enum": [
+                "venda",
+                "aluguel"
+              ],
+              "description": "Buy (venda) or rent (aluguel)."
+            },
+            "property_type": {
+              "type": "string",
+              "description": "e.g. casa, apartamento, terreno, rural."
+            },
+            "min_bedrooms": {
+              "type": "integer"
+            },
+            "min_price": {
+              "type": "number"
+            },
+            "max_price": {
+              "type": "number"
+            },
+            "location_contains": {
+              "type": "string",
+              "description": "Substring match on location/neighborhood."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "description": "Max results (default 10)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_featured_properties",
+        "title": "List featured properties",
+        "description": "Return highlighted (featured) properties from Supreme Empreendimentos.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20,
+              "description": "Max results (default 6)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_property",
+        "title": "Get property details",
+        "description": "Fetch full public details for a single property by its ID.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Property UUID."
+            }
+          },
+          "required": [
+            "id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
