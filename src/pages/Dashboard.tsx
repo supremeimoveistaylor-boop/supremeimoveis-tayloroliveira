@@ -302,6 +302,16 @@ const Dashboard = () => {
           )}
         </div>
       </div>
+
+      {/* Mobile FAB - Adicionar Imóvel */}
+      <Button
+        onClick={() => navigate('/add-property')}
+        size="lg"
+        className="sm:hidden fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-2xl z-50 p-0"
+        aria-label="Adicionar Imóvel"
+      >
+        <Plus className="h-6 w-6" />
+      </Button>
     </AdminLayout>
   );
 };
