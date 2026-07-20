@@ -198,14 +198,23 @@ const Admin = () => {
 
   const updatePropertyStatus = async (id: string, status: string) => {
     try {
+      // Mantém 'status' e 'listing_status' sincronizados para refletir no site público
+      const listingMap: Record<string, 'available' | 'sold' | 'rented'> = {
+        active: 'available',
+        sold: 'sold',
+        rented: 'rented',
+        inactive: 'available',
+      };
+      const listing_status = listingMap[status] ?? 'available';
+
       const { error } = await supabase
         .from('properties')
-        .update({ status })
+        .update({ status, listing_status })
         .eq('id', id);
 
       if (error) throw error;
 
-      setProperties(properties.map(p => p.id === id ? { ...p, status } : p));
+      setProperties(properties.map(p => p.id === id ? { ...p, status, listing_status } : p));
       toast({
         title: "Status atualizado",
         description: "O status do imóvel foi atualizado com sucesso.",
