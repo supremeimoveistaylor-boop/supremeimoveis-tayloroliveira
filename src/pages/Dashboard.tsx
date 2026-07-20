@@ -121,13 +121,15 @@ const Dashboard = () => {
       rightSlot={
         <>
           {isAdmin && (
-            <Button variant="secondary" size="sm" onClick={() => navigate('/admin')} className="hidden sm:inline-flex">
-              Painel do Admin
+            <Button variant="secondary" size="sm" onClick={() => navigate('/admin')}>
+              <span className="hidden sm:inline">Painel do Admin</span>
+              <span className="sm:hidden">Admin</span>
             </Button>
           )}
-          <Button size="sm" onClick={() => navigate('/add-property')} className="hidden sm:inline-flex">
-            <Plus className="mr-2 h-4 w-4" />
-            Adicionar Imóvel
+          <Button size="sm" onClick={() => navigate('/add-property')}>
+            <Plus className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Adicionar Imóvel</span>
+            <span className="sm:hidden">Novo</span>
           </Button>
         </>
       }
