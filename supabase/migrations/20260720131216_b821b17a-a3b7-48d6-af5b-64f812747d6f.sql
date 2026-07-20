@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Authenticated users can insert own messages" ON public.general_chat_messages;
