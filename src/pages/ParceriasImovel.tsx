@@ -87,7 +87,7 @@ export default function ParceriasImovel() {
       setLoading(true);
       try {
         const { data, error } = await supabase.functions.invoke("get_public_properties", {
-          body: { id, is_public: true },
+          body: { id },
         });
         if (!error && data?.data?.[0]) {
           setProperty(data.data[0]);

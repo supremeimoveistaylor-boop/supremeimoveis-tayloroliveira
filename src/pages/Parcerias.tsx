@@ -60,7 +60,7 @@ export default function Parcerias() {
       setLoading(true);
       try {
         const { data, error } = await supabase.functions.invoke("get_public_properties", {
-          body: { is_public: true, limit: 200 },
+          body: { limit: 200, status: "active" },
         });
         if (!error && data?.data) {
           setProperties(data.data);
@@ -125,7 +125,7 @@ export default function Parcerias() {
     setDownloadingId(id);
     try {
       const { data, error } = await supabase.functions.invoke("get_public_properties", {
-        body: { id, is_public: true },
+        body: { id },
       });
       const full = data?.data?.[0];
       if (error || !full) throw new Error("Não foi possível carregar o imóvel");
