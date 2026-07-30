@@ -280,7 +280,13 @@ export default function Parcerias() {
                   <Badge className="absolute top-2 left-2 bg-primary/90 text-primary-foreground text-xs">
                     {PROPERTY_TYPE_ICONS[p.property_type]} {PROPERTY_TYPE_LABELS[p.property_type] || p.property_type}
                   </Badge>
+                  {normalizeListingStatus(p) !== "available" && (
+                    <Badge variant="destructive" className="absolute top-2 right-2 text-xs">
+                      {STATUS_LABELS[normalizeListingStatus(p)]}
+                    </Badge>
+                  )}
                 </div>
+
                 <CardContent className="p-4">
                   <h3 className="font-semibold text-foreground line-clamp-1 text-sm">{p.title}</h3>
                   <p className="text-primary font-bold text-lg mt-1">{formatCurrency(p.price)}</p>
