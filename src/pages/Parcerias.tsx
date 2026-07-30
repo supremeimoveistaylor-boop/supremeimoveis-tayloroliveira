@@ -21,7 +21,29 @@ interface PartnerProperty {
   images: string[] | null;
   area: number | null;
   bedrooms: number | null;
+  status?: string | null;
+  listing_status?: string | null;
 }
+
+// Mesma regra de visibilidade usada no site público (FeaturedProperties)
+type ListingStatus = "available" | "sold" | "rented" | "inactive";
+const normalizeListingStatus = (p: PartnerProperty): ListingStatus => {
+  const raw = p.listing_status || p.status || "";
+  if (!raw) return "available";
+  const s = String(raw).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  if (s.includes("vend") || s === "sold") return "sold";
+  if (s.includes("alug") || s.includes("loca") || s === "rented") return "rented";
+  if (s.includes("inativ") || s === "inactive") return "inactive";
+  return "available";
+};
+
+const STATUS_LABELS: Record<ListingStatus, string> = {
+  available: "Disponível",
+  sold: "Vendido",
+  rented: "Alugado",
+  inactive: "Inativo",
+};
+
 
 const PROPERTY_TYPE_LABELS: Record<string, string> = {
   house: "Casa",
