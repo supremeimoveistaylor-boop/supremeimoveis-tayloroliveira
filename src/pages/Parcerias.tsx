@@ -78,32 +78,61 @@ export default function Parcerias() {
   const precoMax = searchParams.get("preco_max") || "";
 
   useEffect(() => {
-    const fetchProperties = async () => {
-      setLoading(true);
+    let cancelled = false;
+
+    const fetchProperties = async (silent = false) => {
+      if (!silent) setLoading(true);
       try {
+        // Mesma origem/regra do site público: traz todos os imóveis anunciados
         const { data, error } = await supabase.functions.invoke("get_public_properties", {
-          body: { limit: 200, status: "active" },
+          body: { limit: 200, include_all_statuses: true },
         });
-        if (!error && data?.data) {
-          setProperties(data.data);
+        if (!cancelled && !error && data?.data) {
+          setProperties(data.data as PartnerProperty[]);
         }
       } catch (e) {
         console.error("Error fetching partner properties:", e);
       } finally {
-        setLoading(false);
+        if (!cancelled && !silent) setLoading(false);
       }
     };
+
     fetchProperties();
+
+    // Sincronização automática: realtime + refresh ao voltar para a aba
+    const channel = supabase
+      .channel("parcerias-properties-sync")
+      .on("postgres_changes", { event: "*", schema: "public", table: "properties" }, () => {
+        fetchProperties(true);
+      })
+      .subscribe();
+
+    const onFocus = () => {
+      if (document.visibilityState === "visible") fetchProperties(true);
+    };
+    document.addEventListener("visibilitychange", onFocus);
+    window.addEventListener("focus", onFocus);
+    const interval = window.setInterval(() => fetchProperties(true), 60000);
+
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(channel);
+      document.removeEventListener("visibilitychange", onFocus);
+      window.removeEventListener("focus", onFocus);
+      window.clearInterval(interval);
+    };
   }, []);
 
   const filtered = useMemo(() => {
-    let result = properties;
+    // Regra de visibilidade do site: oculta apenas imóveis inativos
+    let result = properties.filter((p) => normalizeListingStatus(p) !== "inactive");
     if (tipo) result = result.filter((p) => p.property_type === tipo);
     if (cidade) result = result.filter((p) => p.location.toLowerCase().includes(cidade.toLowerCase()));
     if (precoMin) result = result.filter((p) => p.price >= Number(precoMin));
     if (precoMax) result = result.filter((p) => p.price <= Number(precoMax));
     return result;
   }, [properties, tipo, cidade, precoMin, precoMax]);
+
 
   // Dynamic SEO
   useEffect(() => {
