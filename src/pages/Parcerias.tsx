@@ -21,7 +21,29 @@ interface PartnerProperty {
   images: string[] | null;
   area: number | null;
   bedrooms: number | null;
+  status?: string | null;
+  listing_status?: string | null;
 }
+
+// Mesma regra de visibilidade usada no site público (FeaturedProperties)
+type ListingStatus = "available" | "sold" | "rented" | "inactive";
+const normalizeListingStatus = (p: PartnerProperty): ListingStatus => {
+  const raw = p.listing_status || p.status || "";
+  if (!raw) return "available";
+  const s = String(raw).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  if (s.includes("vend") || s === "sold") return "sold";
+  if (s.includes("alug") || s.includes("loca") || s === "rented") return "rented";
+  if (s.includes("inativ") || s === "inactive") return "inactive";
+  return "available";
+};
+
+const STATUS_LABELS: Record<ListingStatus, string> = {
+  available: "Disponível",
+  sold: "Vendido",
+  rented: "Alugado",
+  inactive: "Inativo",
+};
+
 
 const PROPERTY_TYPE_LABELS: Record<string, string> = {
   house: "Casa",
@@ -56,32 +78,61 @@ export default function Parcerias() {
   const precoMax = searchParams.get("preco_max") || "";
 
   useEffect(() => {
-    const fetchProperties = async () => {
-      setLoading(true);
+    let cancelled = false;
+
+    const fetchProperties = async (silent = false) => {
+      if (!silent) setLoading(true);
       try {
+        // Mesma origem/regra do site público: traz todos os imóveis anunciados
         const { data, error } = await supabase.functions.invoke("get_public_properties", {
-          body: { limit: 200, status: "active" },
+          body: { limit: 200, include_all_statuses: true },
         });
-        if (!error && data?.data) {
-          setProperties(data.data);
+        if (!cancelled && !error && data?.data) {
+          setProperties(data.data as PartnerProperty[]);
         }
       } catch (e) {
         console.error("Error fetching partner properties:", e);
       } finally {
-        setLoading(false);
+        if (!cancelled && !silent) setLoading(false);
       }
     };
+
     fetchProperties();
+
+    // Sincronização automática: realtime + refresh ao voltar para a aba
+    const channel = supabase
+      .channel("parcerias-properties-sync")
+      .on("postgres_changes", { event: "*", schema: "public", table: "properties" }, () => {
+        fetchProperties(true);
+      })
+      .subscribe();
+
+    const onFocus = () => {
+      if (document.visibilityState === "visible") fetchProperties(true);
+    };
+    document.addEventListener("visibilitychange", onFocus);
+    window.addEventListener("focus", onFocus);
+    const interval = window.setInterval(() => fetchProperties(true), 60000);
+
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(channel);
+      document.removeEventListener("visibilitychange", onFocus);
+      window.removeEventListener("focus", onFocus);
+      window.clearInterval(interval);
+    };
   }, []);
 
   const filtered = useMemo(() => {
-    let result = properties;
+    // Regra de visibilidade do site: oculta apenas imóveis inativos
+    let result = properties.filter((p) => normalizeListingStatus(p) !== "inactive");
     if (tipo) result = result.filter((p) => p.property_type === tipo);
     if (cidade) result = result.filter((p) => p.location.toLowerCase().includes(cidade.toLowerCase()));
     if (precoMin) result = result.filter((p) => p.price >= Number(precoMin));
     if (precoMax) result = result.filter((p) => p.price <= Number(precoMax));
     return result;
   }, [properties, tipo, cidade, precoMin, precoMax]);
+
 
   // Dynamic SEO
   useEffect(() => {
@@ -229,7 +280,13 @@ export default function Parcerias() {
                   <Badge className="absolute top-2 left-2 bg-primary/90 text-primary-foreground text-xs">
                     {PROPERTY_TYPE_ICONS[p.property_type]} {PROPERTY_TYPE_LABELS[p.property_type] || p.property_type}
                   </Badge>
+                  {normalizeListingStatus(p) !== "available" && (
+                    <Badge variant="destructive" className="absolute top-2 right-2 text-xs">
+                      {STATUS_LABELS[normalizeListingStatus(p)]}
+                    </Badge>
+                  )}
                 </div>
+
                 <CardContent className="p-4">
                   <h3 className="font-semibold text-foreground line-clamp-1 text-sm">{p.title}</h3>
                   <p className="text-primary font-bold text-lg mt-1">{formatCurrency(p.price)}</p>
