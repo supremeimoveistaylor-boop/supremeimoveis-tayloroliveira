@@ -44,8 +44,11 @@ export const FeaturedProperties = ({ filterPurpose }: { filterPurpose?: 'sale' |
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [selectedPropertyTitle, setSelectedPropertyTitle] = useState<string>("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [aiResults, setAiResults] = useState<Property[] | null>(null);
+  const [aiMeta, setAiMeta] = useState<{ total: number; message: string | null; isSuggestion: boolean } | null>(null);
 
   // Rate limiting for property queries to prevent scraping
+
 
   const openImageModal = (images: string[], title: string) => {
     setSelectedImages(images);
