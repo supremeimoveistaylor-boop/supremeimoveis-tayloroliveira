@@ -216,6 +216,10 @@ export const FeaturedProperties = ({ filterPurpose }: { filterPurpose?: 'sale' |
     );
   }
 
+  const displayedProperties: Property[] = aiResults
+    ? aiResults.filter((p) => !filterPurpose || p.purpose === filterPurpose)
+    : properties;
+
   return (
     <section className="py-16 bg-white-soft">
       <div className="container mx-auto px-4">
