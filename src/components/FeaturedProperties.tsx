@@ -10,6 +10,7 @@ import { toast } from "@/hooks/use-toast";
 import { trackWhatsAppClick, trackViewDetails } from "@/lib/analytics";
 
 import { ImageModal } from "@/components/ImageModal";
+import { AiPropertySearch } from "@/components/AiPropertySearch";
 
 interface Property {
   id: string;
