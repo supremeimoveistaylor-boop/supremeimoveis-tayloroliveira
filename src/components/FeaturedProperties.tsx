@@ -219,22 +219,36 @@ export const FeaturedProperties = ({ filterPurpose }: { filterPurpose?: 'sale' |
   return (
     <section className="py-16 bg-white-soft">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
+        <div className="text-center mb-8">
           <h2 className="text-3xl md:text-4xl font-bold text-primary mb-4">
             Imóveis <span className="text-accent">Disponíveis</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            {properties.length > 0 
-              ? `${properties.length} imóveis disponíveis em Goiânia - Goiás`
-              : "Nenhum imóvel cadastrado no momento"
+            {aiResults
+              ? (aiMeta?.isSuggestion
+                  ? `Encontramos ${displayedProperties.length} imóveis semelhantes ao que você procura.`
+                  : `Encontramos ${displayedProperties.length} ${displayedProperties.length === 1 ? 'imóvel' : 'imóveis'} para sua busca.`)
+              : properties.length > 0
+                ? `${properties.length} imóveis disponíveis em Goiânia - Goiás`
+                : "Nenhum imóvel cadastrado no momento"
             }
           </p>
         </div>
 
-        {properties.length === 0 ? (
+        <AiPropertySearch
+          origin="vitrine"
+          onResults={(results, meta) => {
+            setAiResults(results as Property[] | null);
+            setAiMeta(meta);
+          }}
+        />
+
+        {displayedProperties.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-lg text-muted-foreground mb-4">Nenhum imóvel cadastrado ainda.</p>
-            {user && (
+            <p className="text-lg text-muted-foreground mb-4">
+              {aiResults ? "Nenhum imóvel encontrado para esses critérios. Ajuste os filtros acima." : "Nenhum imóvel cadastrado ainda."}
+            </p>
+            {!aiResults && user && (
               <Button onClick={() => navigate('/add-property')}>
                 Cadastrar Primeiro Imóvel
               </Button>
@@ -242,7 +256,8 @@ export const FeaturedProperties = ({ filterPurpose }: { filterPurpose?: 'sale' |
           </div>
         ) : (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
-        {properties.map((property) => (
+        {displayedProperties.map((property) => (
+
           <Card key={property.id} className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-card border-0 shadow-lg flex flex-col min-h-[580px]">
                 <CardHeader className="p-0 flex-shrink-0">
                   <div className="relative overflow-hidden rounded-t-lg">
