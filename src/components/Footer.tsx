@@ -6,8 +6,9 @@ export const Footer = () => {
     "@context": "https://schema.org",
     "@type": "RealEstateAgent",
     "name": "Supreme Negócios Imobiliários",
-    "telephone": "+55 62 99999-9999",
+    "telephone": "+556299918353",
     "url": "https://supremeempreendimentos.com",
+    "@id": "https://supremeempreendimentos.com/#organization",
     "address": {
       "@type": "PostalAddress",
       "addressLocality": "Goiânia",
@@ -17,6 +18,12 @@ export const Footer = () => {
     "areaServed": {
       "@type": "City",
       "name": "Goiânia"
+    },
+    "knowsLanguage": "pt-BR",
+    "identifier": {
+      "@type": "PropertyValue",
+      "name": "CRECI",
+      "value": "20.316"
     },
     "description": "Imobiliária especializada em imóveis de alto padrão em Goiânia. Casas em condomínio fechado, apartamentos e coberturas.",
     "priceRange": "$$$$"

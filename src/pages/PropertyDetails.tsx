@@ -142,20 +142,37 @@ const PropertyDetails = () => {
         document.head.appendChild(jsonLdScript);
       }
       
+      const isUnavailable =
+        property.listing_status === 'sold' ||
+        property.listing_status === 'rented' ||
+        String(property.status || '').toLowerCase() === 'inactive';
+
       const schemaData = {
         "@context": "https://schema.org",
         "@type": "RealEstateListing",
         "name": property.title,
         "description": property.description || seoDescription,
         "url": canonicalUrl,
+        "mainEntityOfPage": canonicalUrl,
+        "inLanguage": "pt-BR",
+        ...(property.property_code ? { "identifier": property.property_code, "sku": property.property_code } : {}),
         "image": property.images && property.images.length > 0 ? property.images : undefined,
         "offers": {
           "@type": "Offer",
           "price": property.price,
           "priceCurrency": "BRL",
-          "availability": property.listing_status === 'sold' || property.listing_status === 'rented' 
-            ? "https://schema.org/SoldOut" 
-            : "https://schema.org/InStock"
+          "url": canonicalUrl,
+          "businessFunction": property.purpose === 'rent'
+            ? "http://purl.org/goodrelations/v1#LeaseOut"
+            : "http://purl.org/goodrelations/v1#Sell",
+          "availability": isUnavailable
+            ? "https://schema.org/SoldOut"
+            : "https://schema.org/InStock",
+          "seller": {
+            "@type": "RealEstateAgent",
+            "name": "Supreme Negócios Imobiliários",
+            "url": "https://supremeempreendimentos.com"
+          }
         },
         "address": {
           "@type": "PostalAddress",
@@ -171,16 +188,29 @@ const PropertyDetails = () => {
           }
         } : {}),
         "numberOfRooms": property.bedrooms || undefined,
+        "numberOfBedrooms": property.bedrooms || undefined,
         "numberOfBathroomsTotal": property.bathrooms || undefined,
         "floorSize": property.area ? {
           "@type": "QuantitativeValue",
           "value": property.area,
+          "unitName": "m²",
           "unitCode": "MTK"
         } : undefined,
         "amenityFeature": property.amenities?.map(amenity => ({
           "@type": "LocationFeatureSpecification",
-          "name": amenity
+          "name": amenity,
+          "value": true
         })),
+        "additionalProperty": [
+          ...(property.parking_spaces
+            ? [{ "@type": "PropertyValue", "name": "Vagas de garagem", "value": property.parking_spaces }]
+            : []),
+          { "@type": "PropertyValue", "name": "Tipo de imóvel", "value": propertyTypeTranslated },
+          { "@type": "PropertyValue", "name": "Finalidade", "value": purposeTranslated },
+          ...(property.property_code
+            ? [{ "@type": "PropertyValue", "name": "Código do imóvel", "value": property.property_code }]
+            : []),
+        ],
         "seller": {
           "@type": "RealEstateAgent",
           "name": "Supreme Negócios Imobiliários",
@@ -189,6 +219,7 @@ const PropertyDetails = () => {
       };
       
       jsonLdScript.textContent = JSON.stringify(schemaData);
+      
       
       // Atualizar URL visível sem recarregar (para PWA/WebView)
       if (window.history && window.history.replaceState) {

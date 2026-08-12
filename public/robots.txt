@@ -30,3 +30,39 @@ Disallow: /auth
 Disallow: /reset-password
 Disallow: /dashboard
 Disallow: /add-property
+
+# --- AI Search / GEO crawlers (aditivo) ---
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /chat
+Disallow: /auth
+Disallow: /reset-password
+Disallow: /dashboard
+Disallow: /add-property
+
+User-agent: ChatGPT-User
+Allow: /
+Disallow: /auth
+Disallow: /dashboard
+Disallow: /add-property
+
+User-agent: GPTBot
+Allow: /
+Disallow: /auth
+Disallow: /dashboard
+Disallow: /add-property
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+# Sitemap adicional: páginas individuais de imóveis (gerado dinamicamente)
+Sitemap: https://ypkmorgcpooygsvhcpvo.supabase.co/functions/v1/sitemap-imoveis

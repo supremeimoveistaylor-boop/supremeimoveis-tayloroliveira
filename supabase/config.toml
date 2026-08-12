@@ -61,3 +61,6 @@ verify_jwt = false
 verify_jwt = false
 [functions.ai-property-search]
 verify_jwt = false
+
+[functions.sitemap-imoveis]
+verify_jwt = false
