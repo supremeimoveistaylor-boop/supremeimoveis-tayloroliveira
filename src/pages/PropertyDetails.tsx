@@ -734,6 +734,27 @@ const PropertyDetails = () => {
                     )}
                   </div>
 
+                  {/* Resumo rápido (resposta direta para buscadores e IAs) */}
+                  <div className="mb-6 p-4 rounded-lg border border-accent/30 bg-accent/5">
+                    <h2 className="text-lg font-bold text-primary mb-2">Resumo rápido</h2>
+                    <p className="text-foreground leading-relaxed">
+                      {translatePropertyType(property.property_type)} para {translatePurpose(property.purpose).toLowerCase()} em {property.location}, Goiânia (GO).
+                      {property.bedrooms > 0 ? ` ${property.bedrooms} quartos.` : ''}
+                      {property.bathrooms > 0 ? ` ${property.bathrooms} banheiros.` : ''}
+                      {property.parking_spaces > 0 ? ` ${property.parking_spaces} vagas.` : ''}
+                      {property.area > 0 ? ` ${property.area} m².` : ''}
+                      {' '}Valor: {formatPrice(property.price, property.purpose)}.
+                      {property.amenities && property.amenities.length > 0
+                        ? ` Diferenciais: ${property.amenities.slice(0, 5).join(', ')}.`
+                        : ''}
+                      {property.listing_status === 'sold'
+                        ? ' Situação: vendido.'
+                        : property.listing_status === 'rented'
+                        ? ' Situação: alugado.'
+                        : ' Situação: disponível.'}
+                    </p>
+                  </div>
+
                   {/* Description */}
                   <div className="mb-6">
                     <h2 className="text-xl font-bold text-primary mb-3">Descrição</h2>
@@ -741,6 +762,7 @@ const PropertyDetails = () => {
                       {property.description || "Sem descrição disponível."}
                     </p>
                   </div>
+
 
                   {/* Amenities */}
                   {property.amenities && property.amenities.length > 0 && (
