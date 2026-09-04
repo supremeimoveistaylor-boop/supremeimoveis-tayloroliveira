@@ -109,6 +109,16 @@ const GeoLanding = () => {
     })),
   };
 
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Início", "item": CANONICAL_BASE },
+      { "@type": "ListItem", "position": 2, "name": `Imóveis em ${CITY}`, "item": `${CANONICAL_BASE}/busca-mapa` },
+      { "@type": "ListItem", "position": 3, "name": locationName, "item": `${CANONICAL_BASE}/imoveis/${type}/${slug}` },
+    ],
+  };
+
   return (
     <div className="min-h-screen">
       <Header />
@@ -116,6 +126,8 @@ const GeoLanding = () => {
       {/* Schema */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+
 
       {/* Hero Section */}
       <section className="bg-primary text-primary-foreground py-16">
