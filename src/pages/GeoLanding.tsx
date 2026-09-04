@@ -109,6 +109,16 @@ const GeoLanding = () => {
     })),
   };
 
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Início", "item": CANONICAL_BASE },
+      { "@type": "ListItem", "position": 2, "name": `Imóveis em ${CITY}`, "item": `${CANONICAL_BASE}/busca-mapa` },
+      { "@type": "ListItem", "position": 3, "name": locationName, "item": `${CANONICAL_BASE}/imoveis/${type}/${slug}` },
+    ],
+  };
+
   return (
     <div className="min-h-screen">
       <Header />
@@ -116,6 +126,8 @@ const GeoLanding = () => {
       {/* Schema */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+
 
       {/* Hero Section */}
       <section className="bg-primary text-primary-foreground py-16">
@@ -142,7 +154,18 @@ const GeoLanding = () => {
             <span className="block text-xl md:text-2xl mt-2 font-normal text-muted-foreground">em {CITY}, GO</span>
           </h1>
 
+          {/* Resumo rápido (resposta direta) */}
+          <div className="max-w-3xl mb-6 p-4 rounded-lg border border-accent/40 bg-accent/10">
+            <h2 className="text-base font-bold text-accent mb-2">Resumo rápido</h2>
+            <p className="leading-relaxed">
+              {locationName} fica em {CITY}, GO{neighborhood ? ` (${neighborhood.region})` : ''}. Tipos de imóvel disponíveis: apartamentos, casas de alto padrão, condomínios fechados e terrenos.
+              Faixa de preço praticada na região: apartamentos a partir de R$ 250.000 e casas a partir de R$ 400.000, com opções de alto padrão acima de R$ 2 milhões.
+              Diferenciais: segurança 24h em condomínios fechados, áreas de lazer completas e proximidade de shoppings, escolas e parques.
+            </p>
+          </div>
+
           <p className="text-lg text-muted-foreground max-w-3xl leading-relaxed">{locationDesc}</p>
+
 
           <div className="flex flex-wrap gap-3 mt-6">
             <Button asChild className="bg-accent text-accent-foreground hover:bg-accent/90">
