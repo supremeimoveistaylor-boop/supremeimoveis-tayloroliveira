@@ -1,6 +1,3 @@
-# Sitemap for search engines
-Sitemap: https://supremeempreendimentos.com/sitemap.xml
-
 User-agent: Googlebot
 Allow: /
 Disallow: /chat
@@ -65,4 +62,7 @@ User-agent: Applebot-Extended
 Allow: /
 
 # Sitemap adicional: páginas individuais de imóveis (gerado dinamicamente)
+
+# Sitemaps
+Sitemap: https://supremeempreendimentos.com/sitemap.xml
 Sitemap: https://ypkmorgcpooygsvhcpvo.supabase.co/functions/v1/sitemap-imoveis
