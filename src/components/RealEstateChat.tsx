@@ -1625,7 +1625,7 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
             placeholder={pendingAttachment ? "Adicione uma legenda..." : "Digite sua mensagem..."}
             disabled={isLoading || isLoadingHistory || isRecording}
-            className="flex-1 rounded-[12px] px-3 py-2 text-sm outline-none"
+            className="flex-1 rounded-[12px] px-3 py-2 text-sm outline-hidden"
             style={{ background: '#0b0b0c', border: '1px solid rgba(198,165,91,0.3)', color: '#f5f5f5' }}
           />
           <button

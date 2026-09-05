@@ -107,7 +107,7 @@ export const About = () => {
             {/* Features Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {features.map((feature, index) => (
-              <Card key={index} className="bg-white-soft/10 backdrop-blur-sm border-white-soft/20 hover:bg-white-soft/20 transition-all duration-300">
+              <Card key={index} className="bg-white-soft/10 backdrop-blur-xs border-white-soft/20 hover:bg-white-soft/20 transition-all duration-300">
                 <CardContent className="p-6 text-center">
                   <div className="inline-flex items-center justify-center w-12 h-12 bg-accent rounded-lg mb-4">
                     <feature.icon className="h-6 w-6 text-accent-foreground" />

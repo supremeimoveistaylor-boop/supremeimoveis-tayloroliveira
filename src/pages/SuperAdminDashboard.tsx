@@ -407,7 +407,7 @@ const SuperAdminDashboard = () => {
       <div className="max-w-[1600px] mx-auto w-full">
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 lg:gap-4 mb-6">
-          <Card className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+          <Card className="bg-white border-slate-200 shadow-xs hover:shadow-md transition-shadow">
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
@@ -421,7 +421,7 @@ const SuperAdminDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+          <Card className="bg-white border-slate-200 shadow-xs hover:shadow-md transition-shadow">
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center">
@@ -437,7 +437,7 @@ const SuperAdminDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+          <Card className="bg-white border-slate-200 shadow-xs hover:shadow-md transition-shadow">
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center">
@@ -451,7 +451,7 @@ const SuperAdminDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+          <Card className="bg-white border-slate-200 shadow-xs hover:shadow-md transition-shadow">
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center">
@@ -468,76 +468,76 @@ const SuperAdminDashboard = () => {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="bg-white border border-slate-200 shadow-sm flex-wrap h-auto gap-1 p-1.5 rounded-xl">
-            <TabsTrigger value="overview" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
+          <TabsList className="bg-white border border-slate-200 shadow-xs flex-wrap h-auto gap-1 p-1.5 rounded-xl">
+            <TabsTrigger value="overview" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-xs rounded-lg text-slate-600">
               <Database className="w-4 h-4 mr-2" />
               Visão Geral
             </TabsTrigger>
-            <TabsTrigger value="admin-dashboard" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
+            <TabsTrigger value="admin-dashboard" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-xs rounded-lg text-slate-600">
               <LayoutDashboard className="w-4 h-4 mr-2" />
               Dashboard
             </TabsTrigger>
-            <TabsTrigger value="crm" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
+            <TabsTrigger value="crm" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-xs rounded-lg text-slate-600">
               <Kanban className="w-4 h-4 mr-2" />
               CRM Kanban
             </TabsTrigger>
-            <TabsTrigger value="leads" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
+            <TabsTrigger value="leads" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-xs rounded-lg text-slate-600">
               <MessageSquare className="w-4 h-4 mr-2" />
               Leads
             </TabsTrigger>
-            <TabsTrigger value="attendants" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
+            <TabsTrigger value="attendants" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-xs rounded-lg text-slate-600">
               <Headphones className="w-4 h-4 mr-2" />
               Atendentes
             </TabsTrigger>
-            <TabsTrigger value="sessions" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
+            <TabsTrigger value="sessions" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-xs rounded-lg text-slate-600">
               <MessageCircle className="w-4 h-4 mr-2" />
               Sessões
             </TabsTrigger>
-            <TabsTrigger value="metrics" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
+            <TabsTrigger value="metrics" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-xs rounded-lg text-slate-600">
               <BarChart3 className="w-4 h-4 mr-2" />
               Métricas
             </TabsTrigger>
-            <TabsTrigger value="conversions" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
+            <TabsTrigger value="conversions" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-xs rounded-lg text-slate-600">
               <TrendingUp className="w-4 h-4 mr-2" />
               Conversões
             </TabsTrigger>
-            <TabsTrigger value="visits" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
+            <TabsTrigger value="visits" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-xs rounded-lg text-slate-600">
               <CalendarCheck className="w-4 h-4 mr-2" />
               Agendamentos
             </TabsTrigger>
-            <TabsTrigger value="financial" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
+            <TabsTrigger value="financial" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-xs rounded-lg text-slate-600">
               <Wallet className="w-4 h-4 mr-2" />
               Financeiro
             </TabsTrigger>
-            <TabsTrigger value="omnichat" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
+            <TabsTrigger value="omnichat" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-xs rounded-lg text-slate-600">
               <MessageSquare className="w-4 h-4 mr-2" />
               💬 Omnichat
             </TabsTrigger>
-            <TabsTrigger value="followup-alerts" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
+            <TabsTrigger value="followup-alerts" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-xs rounded-lg text-slate-600">
               <BellRing className="w-4 h-4 mr-2" />
               Follow-ups
             </TabsTrigger>
-            <TabsTrigger value="chat-performance" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
+            <TabsTrigger value="chat-performance" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-xs rounded-lg text-slate-600">
               <Zap className="w-4 h-4 mr-2" />
               💰 Performance Chat
             </TabsTrigger>
-            <TabsTrigger value="users" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
+            <TabsTrigger value="users" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-xs rounded-lg text-slate-600">
               <UserCog className="w-4 h-4 mr-2" />
               Usuários
             </TabsTrigger>
-            <TabsTrigger value="seo" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
+            <TabsTrigger value="seo" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-xs rounded-lg text-slate-600">
               <Search className="w-4 h-4 mr-2" />
               🔎 SEO Inteligente
             </TabsTrigger>
-            <TabsTrigger value="connections" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
+            <TabsTrigger value="connections" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-xs rounded-lg text-slate-600">
               <MessageSquare className="w-4 h-4 mr-2" />
               Conexões Meta
             </TabsTrigger>
-            <TabsTrigger value="audit" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
+            <TabsTrigger value="audit" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-xs rounded-lg text-slate-600">
               <FileText className="w-4 h-4 mr-2" />
               Auditoria
             </TabsTrigger>
-            <TabsTrigger value="captacao" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg text-slate-600">
+            <TabsTrigger value="captacao" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-xs rounded-lg text-slate-600">
               <Home className="w-4 h-4 mr-2" />
               🏠 Captação
             </TabsTrigger>
@@ -545,7 +545,7 @@ const SuperAdminDashboard = () => {
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-4">
-            <Card className="bg-white border-slate-200 shadow-sm">
+            <Card className="bg-white border-slate-200 shadow-xs">
               <CardHeader>
                 <CardTitle className="text-slate-800">Últimas Atividades</CardTitle>
                 <CardDescription className="text-slate-500">
@@ -664,7 +664,7 @@ const SuperAdminDashboard = () => {
 
           {/* Connections Tab */}
           <TabsContent value="connections" className="space-y-4">
-            <Card className="bg-white border-slate-200 shadow-sm">
+            <Card className="bg-white border-slate-200 shadow-xs">
               <CardHeader>
                 <CardTitle className="text-slate-800">Conexões Meta (BYO)</CardTitle>
                 <CardDescription className="text-slate-500">
@@ -725,7 +725,7 @@ const SuperAdminDashboard = () => {
 
           {/* Audit Tab */}
           <TabsContent value="audit" className="space-y-4">
-            <Card className="bg-white border-slate-200 shadow-sm">
+            <Card className="bg-white border-slate-200 shadow-xs">
               <CardHeader>
                 <CardTitle className="text-slate-800">Logs de Auditoria Completos</CardTitle>
                 <CardDescription className="text-slate-500">

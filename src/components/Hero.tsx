@@ -111,7 +111,7 @@ export const Hero = () => {
 
           {/* Search Card */}
           <div className="flex justify-center mt-12 lg:mt-0">
-            <Card className="p-6 w-full max-w-md bg-white-soft/95 backdrop-blur-sm shadow-2xl">
+            <Card className="p-6 w-full max-w-md bg-white-soft/95 backdrop-blur-xs shadow-2xl">
               <div className="text-center mb-6">
                 <h3 className="text-2xl font-bold text-primary mb-2">Busque seu Imóvel</h3>
                 <p className="text-muted-foreground">Encontre a propriedade perfeita</p>
