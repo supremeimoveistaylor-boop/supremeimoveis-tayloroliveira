@@ -145,7 +145,7 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
         {/* Brand */}
         <div className="h-16 px-5 flex items-center justify-between border-b border-slate-100 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-sm shadow-amber-500/20">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-xs shadow-amber-500/20">
               <Shield className="w-4.5 h-4.5 text-white" />
             </div>
             <div className="leading-tight">
@@ -195,7 +195,7 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
                           className={cn(
                             "flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-all",
                             active
-                              ? "bg-amber-50 text-amber-700 shadow-sm"
+                              ? "bg-amber-50 text-amber-700 shadow-xs"
                               : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                           )}
                         >

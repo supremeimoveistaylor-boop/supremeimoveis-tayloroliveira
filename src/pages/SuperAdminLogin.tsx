@@ -180,7 +180,7 @@ const SuperAdminLogin = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+      <Card className="w-full max-w-md bg-slate-800/50 border-slate-700 backdrop-blur-xs">
         <CardHeader className="text-center space-y-4">
           <div className="mx-auto w-16 h-16 bg-amber-500/20 rounded-full flex items-center justify-center">
             {showRecovery ? (

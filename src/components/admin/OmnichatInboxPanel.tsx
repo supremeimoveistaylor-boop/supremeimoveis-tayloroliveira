@@ -358,14 +358,14 @@ export const OmnichatInboxPanel = () => {
   return (
     <div className="h-[calc(100dvh-140px)] min-h-[500px] flex flex-col gap-3 flex-1 overflow-hidden">
       {/* ═══ Top Bar ═══ */}
-      <div className="flex items-center justify-between flex-wrap gap-2 bg-white rounded-2xl px-5 py-3 shadow-sm border border-slate-100">
+      <div className="flex items-center justify-between flex-wrap gap-2 bg-white rounded-2xl px-5 py-3 shadow-xs border border-slate-100">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 bg-amber-50 rounded-xl flex items-center justify-center">
             <MessageSquare className="w-5 h-5 text-amber-600" />
           </div>
           <h2 className="text-lg font-bold text-slate-800">Omnichat</h2>
           {totalUnread > 0 && (
-            <span className="bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full animate-pulse shadow-sm shadow-red-500/30">
+            <span className="bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full animate-pulse shadow-xs shadow-red-500/30">
               {totalUnread} nova{totalUnread > 1 ? "s" : ""}
             </span>
           )}
@@ -433,7 +433,7 @@ export const OmnichatInboxPanel = () => {
       <div className={`flex-1 ${selectedConv ? 'flex' : (isMobile ? 'flex flex-col' : 'grid grid-cols-12 gap-4')} min-h-0 overflow-hidden`}>
 
         {/* ━━━ COLUMN 1: Conversation List ━━━ */}
-        <div className={`${selectedConv ? 'hidden' : (isMobile ? 'flex-1' : 'col-span-4 xl:col-span-3')} bg-white border border-slate-100 rounded-2xl overflow-hidden flex flex-col shadow-sm min-h-0`}>
+        <div className={`${selectedConv ? 'hidden' : (isMobile ? 'flex-1' : 'col-span-4 xl:col-span-3')} bg-white border border-slate-100 rounded-2xl overflow-hidden flex flex-col shadow-xs min-h-0`}>
           {/* Search */}
           <div className="p-3 border-b border-slate-100">
             <div className="relative">
@@ -451,7 +451,7 @@ export const OmnichatInboxPanel = () => {
           <div className="px-3 pt-2 pb-1">
             <Tabs value={channelFilter} onValueChange={(v) => setChannelFilter(v as any)}>
               <TabsList className="w-full bg-slate-50 h-8 rounded-lg p-0.5 border border-slate-100">
-                <TabsTrigger value="all" className="flex-1 text-xs h-7 rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-slate-800">
+                <TabsTrigger value="all" className="flex-1 text-xs h-7 rounded-md data-[state=active]:bg-white data-[state=active]:shadow-xs data-[state=active]:text-slate-800">
                   Todos ({conversations.length})
                 </TabsTrigger>
                 <TabsTrigger value="whatsapp" className="flex-1 text-xs h-7 rounded-md data-[state=active]:bg-green-50 data-[state=active]:text-green-600">
@@ -562,7 +562,7 @@ export const OmnichatInboxPanel = () => {
         </div>
 
         {/* ━━━ COLUMN 2: Active Chat ━━━ */}
-        <div className={`${selectedConv ? 'flex-1' : 'hidden'} bg-white border border-slate-100 rounded-2xl flex flex-col overflow-hidden shadow-sm min-h-0`}>
+        <div className={`${selectedConv ? 'flex-1' : 'hidden'} bg-white border border-slate-100 rounded-2xl flex flex-col overflow-hidden shadow-xs min-h-0`}>
           {selectedConv ? (
             <>
               {/* Chat header */}
@@ -635,7 +635,7 @@ export const OmnichatInboxPanel = () => {
                     const isBot = msg.sender_type === "bot";
                     return (
                       <div key={msg.id} className={`flex ${isClient ? "justify-start" : "justify-end"}`}>
-                        <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 shadow-sm ${
+                        <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 shadow-xs ${
                           isClient
                             ? "bg-white border border-slate-200 text-slate-800 rounded-bl-md"
                             : isBot
@@ -705,7 +705,7 @@ export const OmnichatInboxPanel = () => {
         </div>
 
         {/* ━━━ COLUMN 3: Contact Details ━━━ */}
-        <div className={`hidden bg-white border border-slate-100 rounded-2xl overflow-auto shadow-sm`}>
+        <div className={`hidden bg-white border border-slate-100 rounded-2xl overflow-auto shadow-xs`}>
           {selectedConv ? (
             <div className="p-4 space-y-5">
               {/* Profile */}
@@ -789,7 +789,7 @@ export const OmnichatInboxPanel = () => {
 
               {/* Actions */}
               <div className="space-y-2 pt-2 border-t border-border">
-                <Button size="sm" className="w-full rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm" onClick={handleMoveToCRM}>
+                <Button size="sm" className="w-full rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs" onClick={handleMoveToCRM}>
                   <LayoutGrid className="w-4 h-4 mr-2" /> Mover para CRM
                 </Button>
                 {!selectedConv.assigned_to && selectedConv.status === "open" && (
