@@ -63,8 +63,8 @@ export const CaptacaoImoveisPanel = () => {
 
       if (error) throw error;
 
-      setLeads(data || []);
-      calculateStats(data || []);
+      setLeads((data || []) as any);
+      calculateStats((data || []) as any);
     } catch (error: any) {
       console.error('Erro ao buscar leads de captação:', error);
       toast({

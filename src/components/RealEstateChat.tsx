@@ -535,7 +535,7 @@ export const RealEstateChat = ({ propertyId, propertyName, origin, pagePropertie
       }
 
       // Criar sessão de chat com atribuição automática de atendente
-      await createOrGetSession(effectiveLeadId);
+      await createOrGetSession(effectiveLeadId as string);
 
       await processStream(response, effectiveLeadId);
     } catch (error) {

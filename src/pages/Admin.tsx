@@ -130,7 +130,7 @@ const Admin = () => {
         role: rolesMap.get(profile.user_id) || 'user' as 'admin' | 'user' | 'super_admin'
       }));
 
-      setProfiles(profilesWithRoles);
+      setProfiles(profilesWithRoles as any);
     } catch (error: any) {
       console.error('Erro ao carregar usuários:', error);
     }

@@ -33,7 +33,7 @@ export const BlogAdminPanel = () => {
       .from('blog_posts')
       .select('id, title, slug, status, category, publish_date, word_count, view_count, ai_generated, created_at')
       .order('created_at', { ascending: false });
-    if (data) setPosts(data);
+    if (data) setPosts(data as any);
     setLoading(false);
   };
 

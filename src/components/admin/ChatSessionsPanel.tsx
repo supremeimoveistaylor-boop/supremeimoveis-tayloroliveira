@@ -49,7 +49,7 @@ export const ChatSessionsPanel = () => {
 
       if (error) throw error;
 
-      setSessions(data || []);
+      setSessions((data || []) as any);
     } catch (error) {
       console.error("Erro ao buscar sessões:", error);
       toast.error("Erro ao carregar sessões de chat");

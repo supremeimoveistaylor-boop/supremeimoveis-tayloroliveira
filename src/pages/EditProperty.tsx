@@ -119,7 +119,7 @@ const EditProperty = () => {
       let query: any = supabase
         .from('properties')
         .select('*')
-        .eq('id', id);
+        .eq("id", id as string);
 
       if (!isAdmin) {
         query = query.eq('user_id', user.id);
