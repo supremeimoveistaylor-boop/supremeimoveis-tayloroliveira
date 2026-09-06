@@ -15,6 +15,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AdminMasterLoginRouteImport } from './routes/admin-master-login'
 import { Route as AlugarRouteImport } from './routes/alugar'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as BuscaMapaRouteImport } from './routes/busca-mapa'
 import { Route as BuscarRouteImport } from './routes/buscar'
 import { Route as ChatRouteImport } from './routes/chat'
 import { Route as ComprarRouteImport } from './routes/comprar'
@@ -71,6 +72,11 @@ const AlugarRoute = AlugarRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BuscaMapaRoute = BuscaMapaRouteImport.update({
+  id: '/busca-mapa',
+  path: '/busca-mapa',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BuscarRoute = BuscarRouteImport.update({
@@ -216,6 +222,7 @@ export interface FileRoutesByFullPath {
   '/admin-master-login': typeof AdminMasterLoginRoute
   '/alugar': typeof AlugarRoute
   '/auth': typeof AuthRoute
+  '/busca-mapa': typeof BuscaMapaRoute
   '/buscar': typeof BuscarRoute
   '/chat': typeof ChatRoute
   '/comprar': typeof ComprarRoute
@@ -251,6 +258,7 @@ export interface FileRoutesByTo {
   '/admin-master-login': typeof AdminMasterLoginRoute
   '/alugar': typeof AlugarRoute
   '/auth': typeof AuthRoute
+  '/busca-mapa': typeof BuscaMapaRoute
   '/buscar': typeof BuscarRoute
   '/chat': typeof ChatRoute
   '/comprar': typeof ComprarRoute
@@ -287,6 +295,7 @@ export interface FileRoutesById {
   '/admin-master-login': typeof AdminMasterLoginRoute
   '/alugar': typeof AlugarRoute
   '/auth': typeof AuthRoute
+  '/busca-mapa': typeof BuscaMapaRoute
   '/buscar': typeof BuscarRoute
   '/chat': typeof ChatRoute
   '/comprar': typeof ComprarRoute
@@ -324,6 +333,7 @@ export interface FileRouteTypes {
     | '/admin-master-login'
     | '/alugar'
     | '/auth'
+    | '/busca-mapa'
     | '/buscar'
     | '/chat'
     | '/comprar'
@@ -359,6 +369,7 @@ export interface FileRouteTypes {
     | '/admin-master-login'
     | '/alugar'
     | '/auth'
+    | '/busca-mapa'
     | '/buscar'
     | '/chat'
     | '/comprar'
@@ -394,6 +405,7 @@ export interface FileRouteTypes {
     | '/admin-master-login'
     | '/alugar'
     | '/auth'
+    | '/busca-mapa'
     | '/buscar'
     | '/chat'
     | '/comprar'
@@ -430,6 +442,7 @@ export interface RootRouteChildren {
   AdminMasterLoginRoute: typeof AdminMasterLoginRoute
   AlugarRoute: typeof AlugarRoute
   AuthRoute: typeof AuthRoute
+  BuscaMapaRoute: typeof BuscaMapaRoute
   BuscarRoute: typeof BuscarRoute
   ChatRoute: typeof ChatRoute
   ComprarRoute: typeof ComprarRoute
@@ -501,6 +514,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/busca-mapa': {
+      id: '/busca-mapa'
+      path: '/busca-mapa'
+      fullPath: '/busca-mapa'
+      preLoaderRoute: typeof BuscaMapaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/buscar': {
@@ -702,6 +722,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminMasterLoginRoute: AdminMasterLoginRoute,
   AlugarRoute: AlugarRoute,
   AuthRoute: AuthRoute,
+  BuscaMapaRoute: BuscaMapaRoute,
   BuscarRoute: BuscarRoute,
   ChatRoute: ChatRoute,
   ComprarRoute: ComprarRoute,
