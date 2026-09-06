@@ -15,5 +15,10 @@ export default defineConfig({
   },
   vite: {
     plugins: [mcpPlugin()],
+    resolve: {
+      alias: [
+        { find: /^react-router-dom$/, replacement: new URL("./src/lib/router-compat.tsx", import.meta.url).pathname },
+      ],
+    },
   },
 });
