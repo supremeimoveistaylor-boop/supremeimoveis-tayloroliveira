@@ -241,7 +241,7 @@ const PropertyDetails = ({ initialProperty }: { initialProperty?: Property | nul
   }, [id, property]);
 
   useEffect(() => {
-    if (id) {
+    if (id && !initialProperty) {
       fetchProperty(id);
     }
   }, [id]);
