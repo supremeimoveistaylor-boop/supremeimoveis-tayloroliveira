@@ -61,11 +61,11 @@ const isWebView = (): boolean => {
   return false;
 };
 
-const PropertyDetails = () => {
+const PropertyDetails = ({ initialProperty }: { initialProperty?: Property | null } = {}) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [property, setProperty] = useState<Property | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [property, setProperty] = useState<Property | null>(initialProperty ?? null);
+  const [isLoading, setIsLoading] = useState(!initialProperty);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
