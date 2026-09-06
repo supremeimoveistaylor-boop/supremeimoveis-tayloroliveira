@@ -87,7 +87,7 @@ export const LeadsImobiliariosPanel = () => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setLeads(data || []);
+      setLeads((data || []) as any);
     } catch (error: any) {
       console.error("Error fetching leads:", error);
       toast({
