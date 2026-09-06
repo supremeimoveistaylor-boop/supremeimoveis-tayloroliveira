@@ -14,11 +14,11 @@ export class ErrorBoundary extends React.Component<Props, State> {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: any, info: any) {
+  override componentDidCatch(error: any, info: any) {
     console.error("App crashed:", error, info);
   }
 
-  render() {
+  override render() {
     if (this.state.hasError) {
       return (
         <div className="min-h-screen flex items-center justify-center p-6">

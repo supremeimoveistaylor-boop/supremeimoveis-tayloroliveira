@@ -56,7 +56,7 @@ const Blog = () => {
       .order('publish_date', { ascending: false })
       .limit(50);
 
-    if (!error && data) setPosts(data);
+    if (!error && data) setPosts(data as any);
     setLoading(false);
   };
 

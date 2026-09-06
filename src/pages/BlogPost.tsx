@@ -42,7 +42,7 @@ const BlogPost = () => {
       .single();
 
     if (!error && data) {
-      setPost(data);
+      setPost(data as any);
       document.title = data.meta_title || data.title;
       const meta = document.querySelector('meta[name="description"]');
       if (meta) meta.setAttribute('content', data.meta_description || data.excerpt || '');
@@ -59,7 +59,7 @@ const BlogPost = () => {
         .select('title, slug')
         .eq('status', 'published')
         .neq('id', data.id)
-        .eq('category', data.category)
+        .eq('category', data.category as string)
         .limit(3);
       if (related) setRelatedPosts(related);
     }
