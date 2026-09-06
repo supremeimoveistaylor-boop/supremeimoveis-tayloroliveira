@@ -9,27 +9,727 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as IndexRouteImport } from './routes/index'
+import { Route as AddPropertyRouteImport } from './routes/add-property'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AdminMasterLoginRouteImport } from './routes/admin-master-login'
+import { Route as AlugarRouteImport } from './routes/alugar'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as BuscarRouteImport } from './routes/buscar'
+import { Route as ChatRouteImport } from './routes/chat'
+import { Route as ComprarRouteImport } from './routes/comprar'
+import { Route as ContatoRouteImport } from './routes/contato'
+import { Route as ConversasRouteImport } from './routes/conversas'
+import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as FinancingAdminRouteImport } from './routes/financing-admin'
+import { Route as LeadsRouteImport } from './routes/leads'
+import { Route as PoliticaPrivacidadeRouteImport } from './routes/politica-privacidade'
+import { Route as QuantoValeMeuImovelRouteImport } from './routes/quanto-vale-meu-imovel'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as RuraisRouteImport } from './routes/rurais'
+import { Route as ShareRouteImport } from './routes/share'
+import { Route as SobreRouteImport } from './routes/sobre'
+import { Route as SuperAdminRouteImport } from './routes/super-admin'
+import { Route as TermosUsoRouteImport } from './routes/termos-uso'
+import { Route as AvaliarImovelIndexRouteImport } from './routes/avaliar-imovel.index'
+import { Route as AvaliarImovelCidadeRouteImport } from './routes/avaliar-imovel.$cidade'
+import { Route as BlogIndexRouteImport } from './routes/blog.index'
+import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
+import { Route as EditPropertyIdRouteImport } from './routes/edit-property.$id'
+import { Route as ImovelIdRouteImport } from './routes/imovel.$id'
+import { Route as ParceriasIndexRouteImport } from './routes/parcerias.index'
+import { Route as PropertyIdRouteImport } from './routes/property.$id'
+import { Route as SeoSlugRouteImport } from './routes/seo.$slug'
+import { Route as ImoveisTypeSlugRouteImport } from './routes/imoveis.$type.$slug'
+import { Route as ParceriasImovelIdRouteImport } from './routes/parcerias.imovel.$id'
 
-export interface FileRoutesByFullPath {}
-export interface FileRoutesByTo {}
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AddPropertyRoute = AddPropertyRouteImport.update({
+  id: '/add-property',
+  path: '/add-property',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminMasterLoginRoute = AdminMasterLoginRouteImport.update({
+  id: '/admin-master-login',
+  path: '/admin-master-login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AlugarRoute = AlugarRouteImport.update({
+  id: '/alugar',
+  path: '/alugar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BuscarRoute = BuscarRouteImport.update({
+  id: '/buscar',
+  path: '/buscar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChatRoute = ChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ComprarRoute = ComprarRouteImport.update({
+  id: '/comprar',
+  path: '/comprar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContatoRoute = ContatoRouteImport.update({
+  id: '/contato',
+  path: '/contato',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConversasRoute = ConversasRouteImport.update({
+  id: '/conversas',
+  path: '/conversas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FinancingAdminRoute = FinancingAdminRouteImport.update({
+  id: '/financing-admin',
+  path: '/financing-admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LeadsRoute = LeadsRouteImport.update({
+  id: '/leads',
+  path: '/leads',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PoliticaPrivacidadeRoute = PoliticaPrivacidadeRouteImport.update({
+  id: '/politica-privacidade',
+  path: '/politica-privacidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QuantoValeMeuImovelRoute = QuantoValeMeuImovelRouteImport.update({
+  id: '/quanto-vale-meu-imovel',
+  path: '/quanto-vale-meu-imovel',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RuraisRoute = RuraisRouteImport.update({
+  id: '/rurais',
+  path: '/rurais',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShareRoute = ShareRouteImport.update({
+  id: '/share',
+  path: '/share',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SobreRoute = SobreRouteImport.update({
+  id: '/sobre',
+  path: '/sobre',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SuperAdminRoute = SuperAdminRouteImport.update({
+  id: '/super-admin',
+  path: '/super-admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermosUsoRoute = TermosUsoRouteImport.update({
+  id: '/termos-uso',
+  path: '/termos-uso',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AvaliarImovelIndexRoute = AvaliarImovelIndexRouteImport.update({
+  id: '/avaliar-imovel/',
+  path: '/avaliar-imovel/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AvaliarImovelCidadeRoute = AvaliarImovelCidadeRouteImport.update({
+  id: '/avaliar-imovel/$cidade',
+  path: '/avaliar-imovel/$cidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BlogIndexRoute = BlogIndexRouteImport.update({
+  id: '/blog/',
+  path: '/blog/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BlogSlugRoute = BlogSlugRouteImport.update({
+  id: '/blog/$slug',
+  path: '/blog/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EditPropertyIdRoute = EditPropertyIdRouteImport.update({
+  id: '/edit-property/$id',
+  path: '/edit-property/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ImovelIdRoute = ImovelIdRouteImport.update({
+  id: '/imovel/$id',
+  path: '/imovel/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ParceriasIndexRoute = ParceriasIndexRouteImport.update({
+  id: '/parcerias/',
+  path: '/parcerias/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PropertyIdRoute = PropertyIdRouteImport.update({
+  id: '/property/$id',
+  path: '/property/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SeoSlugRoute = SeoSlugRouteImport.update({
+  id: '/seo/$slug',
+  path: '/seo/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ImoveisTypeSlugRoute = ImoveisTypeSlugRouteImport.update({
+  id: '/imoveis/$type/$slug',
+  path: '/imoveis/$type/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ParceriasImovelIdRoute = ParceriasImovelIdRouteImport.update({
+  id: '/parcerias/imovel/$id',
+  path: '/parcerias/imovel/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+
+export interface FileRoutesByFullPath {
+  '/': typeof IndexRoute
+  '/add-property': typeof AddPropertyRoute
+  '/admin': typeof AdminRoute
+  '/admin-master-login': typeof AdminMasterLoginRoute
+  '/alugar': typeof AlugarRoute
+  '/auth': typeof AuthRoute
+  '/buscar': typeof BuscarRoute
+  '/chat': typeof ChatRoute
+  '/comprar': typeof ComprarRoute
+  '/contato': typeof ContatoRoute
+  '/conversas': typeof ConversasRoute
+  '/dashboard': typeof DashboardRoute
+  '/financing-admin': typeof FinancingAdminRoute
+  '/leads': typeof LeadsRoute
+  '/politica-privacidade': typeof PoliticaPrivacidadeRoute
+  '/quanto-vale-meu-imovel': typeof QuantoValeMeuImovelRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/rurais': typeof RuraisRoute
+  '/share': typeof ShareRoute
+  '/sobre': typeof SobreRoute
+  '/super-admin': typeof SuperAdminRoute
+  '/termos-uso': typeof TermosUsoRoute
+  '/avaliar-imovel/$cidade': typeof AvaliarImovelCidadeRoute
+  '/blog/$slug': typeof BlogSlugRoute
+  '/edit-property/$id': typeof EditPropertyIdRoute
+  '/imovel/$id': typeof ImovelIdRoute
+  '/property/$id': typeof PropertyIdRoute
+  '/seo/$slug': typeof SeoSlugRoute
+  '/avaliar-imovel/': typeof AvaliarImovelIndexRoute
+  '/blog/': typeof BlogIndexRoute
+  '/parcerias/': typeof ParceriasIndexRoute
+  '/imoveis/$type/$slug': typeof ImoveisTypeSlugRoute
+  '/parcerias/imovel/$id': typeof ParceriasImovelIdRoute
+}
+export interface FileRoutesByTo {
+  '/': typeof IndexRoute
+  '/add-property': typeof AddPropertyRoute
+  '/admin': typeof AdminRoute
+  '/admin-master-login': typeof AdminMasterLoginRoute
+  '/alugar': typeof AlugarRoute
+  '/auth': typeof AuthRoute
+  '/buscar': typeof BuscarRoute
+  '/chat': typeof ChatRoute
+  '/comprar': typeof ComprarRoute
+  '/contato': typeof ContatoRoute
+  '/conversas': typeof ConversasRoute
+  '/dashboard': typeof DashboardRoute
+  '/financing-admin': typeof FinancingAdminRoute
+  '/leads': typeof LeadsRoute
+  '/politica-privacidade': typeof PoliticaPrivacidadeRoute
+  '/quanto-vale-meu-imovel': typeof QuantoValeMeuImovelRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/rurais': typeof RuraisRoute
+  '/share': typeof ShareRoute
+  '/sobre': typeof SobreRoute
+  '/super-admin': typeof SuperAdminRoute
+  '/termos-uso': typeof TermosUsoRoute
+  '/avaliar-imovel/$cidade': typeof AvaliarImovelCidadeRoute
+  '/blog/$slug': typeof BlogSlugRoute
+  '/edit-property/$id': typeof EditPropertyIdRoute
+  '/imovel/$id': typeof ImovelIdRoute
+  '/property/$id': typeof PropertyIdRoute
+  '/seo/$slug': typeof SeoSlugRoute
+  '/avaliar-imovel': typeof AvaliarImovelIndexRoute
+  '/blog': typeof BlogIndexRoute
+  '/parcerias': typeof ParceriasIndexRoute
+  '/imoveis/$type/$slug': typeof ImoveisTypeSlugRoute
+  '/parcerias/imovel/$id': typeof ParceriasImovelIdRoute
+}
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
+  '/add-property': typeof AddPropertyRoute
+  '/admin': typeof AdminRoute
+  '/admin-master-login': typeof AdminMasterLoginRoute
+  '/alugar': typeof AlugarRoute
+  '/auth': typeof AuthRoute
+  '/buscar': typeof BuscarRoute
+  '/chat': typeof ChatRoute
+  '/comprar': typeof ComprarRoute
+  '/contato': typeof ContatoRoute
+  '/conversas': typeof ConversasRoute
+  '/dashboard': typeof DashboardRoute
+  '/financing-admin': typeof FinancingAdminRoute
+  '/leads': typeof LeadsRoute
+  '/politica-privacidade': typeof PoliticaPrivacidadeRoute
+  '/quanto-vale-meu-imovel': typeof QuantoValeMeuImovelRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/rurais': typeof RuraisRoute
+  '/share': typeof ShareRoute
+  '/sobre': typeof SobreRoute
+  '/super-admin': typeof SuperAdminRoute
+  '/termos-uso': typeof TermosUsoRoute
+  '/avaliar-imovel/$cidade': typeof AvaliarImovelCidadeRoute
+  '/blog/$slug': typeof BlogSlugRoute
+  '/edit-property/$id': typeof EditPropertyIdRoute
+  '/imovel/$id': typeof ImovelIdRoute
+  '/property/$id': typeof PropertyIdRoute
+  '/seo/$slug': typeof SeoSlugRoute
+  '/avaliar-imovel/': typeof AvaliarImovelIndexRoute
+  '/blog/': typeof BlogIndexRoute
+  '/parcerias/': typeof ParceriasIndexRoute
+  '/imoveis/$type/$slug': typeof ImoveisTypeSlugRoute
+  '/parcerias/imovel/$id': typeof ParceriasImovelIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: never
+  fullPaths:
+    | '/'
+    | '/add-property'
+    | '/admin'
+    | '/admin-master-login'
+    | '/alugar'
+    | '/auth'
+    | '/buscar'
+    | '/chat'
+    | '/comprar'
+    | '/contato'
+    | '/conversas'
+    | '/dashboard'
+    | '/financing-admin'
+    | '/leads'
+    | '/politica-privacidade'
+    | '/quanto-vale-meu-imovel'
+    | '/reset-password'
+    | '/rurais'
+    | '/share'
+    | '/sobre'
+    | '/super-admin'
+    | '/termos-uso'
+    | '/avaliar-imovel/$cidade'
+    | '/blog/$slug'
+    | '/edit-property/$id'
+    | '/imovel/$id'
+    | '/property/$id'
+    | '/seo/$slug'
+    | '/avaliar-imovel/'
+    | '/blog/'
+    | '/parcerias/'
+    | '/imoveis/$type/$slug'
+    | '/parcerias/imovel/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: never
-  id: '__root__'
+  to:
+    | '/'
+    | '/add-property'
+    | '/admin'
+    | '/admin-master-login'
+    | '/alugar'
+    | '/auth'
+    | '/buscar'
+    | '/chat'
+    | '/comprar'
+    | '/contato'
+    | '/conversas'
+    | '/dashboard'
+    | '/financing-admin'
+    | '/leads'
+    | '/politica-privacidade'
+    | '/quanto-vale-meu-imovel'
+    | '/reset-password'
+    | '/rurais'
+    | '/share'
+    | '/sobre'
+    | '/super-admin'
+    | '/termos-uso'
+    | '/avaliar-imovel/$cidade'
+    | '/blog/$slug'
+    | '/edit-property/$id'
+    | '/imovel/$id'
+    | '/property/$id'
+    | '/seo/$slug'
+    | '/avaliar-imovel'
+    | '/blog'
+    | '/parcerias'
+    | '/imoveis/$type/$slug'
+    | '/parcerias/imovel/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/add-property'
+    | '/admin'
+    | '/admin-master-login'
+    | '/alugar'
+    | '/auth'
+    | '/buscar'
+    | '/chat'
+    | '/comprar'
+    | '/contato'
+    | '/conversas'
+    | '/dashboard'
+    | '/financing-admin'
+    | '/leads'
+    | '/politica-privacidade'
+    | '/quanto-vale-meu-imovel'
+    | '/reset-password'
+    | '/rurais'
+    | '/share'
+    | '/sobre'
+    | '/super-admin'
+    | '/termos-uso'
+    | '/avaliar-imovel/$cidade'
+    | '/blog/$slug'
+    | '/edit-property/$id'
+    | '/imovel/$id'
+    | '/property/$id'
+    | '/seo/$slug'
+    | '/avaliar-imovel/'
+    | '/blog/'
+    | '/parcerias/'
+    | '/imoveis/$type/$slug'
+    | '/parcerias/imovel/$id'
   fileRoutesById: FileRoutesById
 }
-export interface RootRouteChildren {}
-
-declare module '@tanstack/react-router' {
-  interface FileRoutesByPath {}
+export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
+  AddPropertyRoute: typeof AddPropertyRoute
+  AdminRoute: typeof AdminRoute
+  AdminMasterLoginRoute: typeof AdminMasterLoginRoute
+  AlugarRoute: typeof AlugarRoute
+  AuthRoute: typeof AuthRoute
+  BuscarRoute: typeof BuscarRoute
+  ChatRoute: typeof ChatRoute
+  ComprarRoute: typeof ComprarRoute
+  ContatoRoute: typeof ContatoRoute
+  ConversasRoute: typeof ConversasRoute
+  DashboardRoute: typeof DashboardRoute
+  FinancingAdminRoute: typeof FinancingAdminRoute
+  LeadsRoute: typeof LeadsRoute
+  PoliticaPrivacidadeRoute: typeof PoliticaPrivacidadeRoute
+  QuantoValeMeuImovelRoute: typeof QuantoValeMeuImovelRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
+  RuraisRoute: typeof RuraisRoute
+  ShareRoute: typeof ShareRoute
+  SobreRoute: typeof SobreRoute
+  SuperAdminRoute: typeof SuperAdminRoute
+  TermosUsoRoute: typeof TermosUsoRoute
+  AvaliarImovelCidadeRoute: typeof AvaliarImovelCidadeRoute
+  BlogSlugRoute: typeof BlogSlugRoute
+  EditPropertyIdRoute: typeof EditPropertyIdRoute
+  ImovelIdRoute: typeof ImovelIdRoute
+  PropertyIdRoute: typeof PropertyIdRoute
+  SeoSlugRoute: typeof SeoSlugRoute
+  AvaliarImovelIndexRoute: typeof AvaliarImovelIndexRoute
+  BlogIndexRoute: typeof BlogIndexRoute
+  ParceriasIndexRoute: typeof ParceriasIndexRoute
+  ImoveisTypeSlugRoute: typeof ImoveisTypeSlugRoute
+  ParceriasImovelIdRoute: typeof ParceriasImovelIdRoute
 }
 
-const rootRouteChildren: RootRouteChildren = {}
+declare module '@tanstack/react-router' {
+  interface FileRoutesByPath {
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/add-property': {
+      id: '/add-property'
+      path: '/add-property'
+      fullPath: '/add-property'
+      preLoaderRoute: typeof AddPropertyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin-master-login': {
+      id: '/admin-master-login'
+      path: '/admin-master-login'
+      fullPath: '/admin-master-login'
+      preLoaderRoute: typeof AdminMasterLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/alugar': {
+      id: '/alugar'
+      path: '/alugar'
+      fullPath: '/alugar'
+      preLoaderRoute: typeof AlugarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/buscar': {
+      id: '/buscar'
+      path: '/buscar'
+      fullPath: '/buscar'
+      preLoaderRoute: typeof BuscarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chat': {
+      id: '/chat'
+      path: '/chat'
+      fullPath: '/chat'
+      preLoaderRoute: typeof ChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/comprar': {
+      id: '/comprar'
+      path: '/comprar'
+      fullPath: '/comprar'
+      preLoaderRoute: typeof ComprarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contato': {
+      id: '/contato'
+      path: '/contato'
+      fullPath: '/contato'
+      preLoaderRoute: typeof ContatoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/conversas': {
+      id: '/conversas'
+      path: '/conversas'
+      fullPath: '/conversas'
+      preLoaderRoute: typeof ConversasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/financing-admin': {
+      id: '/financing-admin'
+      path: '/financing-admin'
+      fullPath: '/financing-admin'
+      preLoaderRoute: typeof FinancingAdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/leads': {
+      id: '/leads'
+      path: '/leads'
+      fullPath: '/leads'
+      preLoaderRoute: typeof LeadsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/politica-privacidade': {
+      id: '/politica-privacidade'
+      path: '/politica-privacidade'
+      fullPath: '/politica-privacidade'
+      preLoaderRoute: typeof PoliticaPrivacidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/quanto-vale-meu-imovel': {
+      id: '/quanto-vale-meu-imovel'
+      path: '/quanto-vale-meu-imovel'
+      fullPath: '/quanto-vale-meu-imovel'
+      preLoaderRoute: typeof QuantoValeMeuImovelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rurais': {
+      id: '/rurais'
+      path: '/rurais'
+      fullPath: '/rurais'
+      preLoaderRoute: typeof RuraisRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/share': {
+      id: '/share'
+      path: '/share'
+      fullPath: '/share'
+      preLoaderRoute: typeof ShareRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sobre': {
+      id: '/sobre'
+      path: '/sobre'
+      fullPath: '/sobre'
+      preLoaderRoute: typeof SobreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/super-admin': {
+      id: '/super-admin'
+      path: '/super-admin'
+      fullPath: '/super-admin'
+      preLoaderRoute: typeof SuperAdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/termos-uso': {
+      id: '/termos-uso'
+      path: '/termos-uso'
+      fullPath: '/termos-uso'
+      preLoaderRoute: typeof TermosUsoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/avaliar-imovel/': {
+      id: '/avaliar-imovel/'
+      path: '/avaliar-imovel'
+      fullPath: '/avaliar-imovel/'
+      preLoaderRoute: typeof AvaliarImovelIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/avaliar-imovel/$cidade': {
+      id: '/avaliar-imovel/$cidade'
+      path: '/avaliar-imovel/$cidade'
+      fullPath: '/avaliar-imovel/$cidade'
+      preLoaderRoute: typeof AvaliarImovelCidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blog/': {
+      id: '/blog/'
+      path: '/blog'
+      fullPath: '/blog/'
+      preLoaderRoute: typeof BlogIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blog/$slug': {
+      id: '/blog/$slug'
+      path: '/blog/$slug'
+      fullPath: '/blog/$slug'
+      preLoaderRoute: typeof BlogSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/edit-property/$id': {
+      id: '/edit-property/$id'
+      path: '/edit-property/$id'
+      fullPath: '/edit-property/$id'
+      preLoaderRoute: typeof EditPropertyIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/imovel/$id': {
+      id: '/imovel/$id'
+      path: '/imovel/$id'
+      fullPath: '/imovel/$id'
+      preLoaderRoute: typeof ImovelIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/parcerias/': {
+      id: '/parcerias/'
+      path: '/parcerias'
+      fullPath: '/parcerias/'
+      preLoaderRoute: typeof ParceriasIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/property/$id': {
+      id: '/property/$id'
+      path: '/property/$id'
+      fullPath: '/property/$id'
+      preLoaderRoute: typeof PropertyIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/seo/$slug': {
+      id: '/seo/$slug'
+      path: '/seo/$slug'
+      fullPath: '/seo/$slug'
+      preLoaderRoute: typeof SeoSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/imoveis/$type/$slug': {
+      id: '/imoveis/$type/$slug'
+      path: '/imoveis/$type/$slug'
+      fullPath: '/imoveis/$type/$slug'
+      preLoaderRoute: typeof ImoveisTypeSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/parcerias/imovel/$id': {
+      id: '/parcerias/imovel/$id'
+      path: '/parcerias/imovel/$id'
+      fullPath: '/parcerias/imovel/$id'
+      preLoaderRoute: typeof ParceriasImovelIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+  }
+}
+
+const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
+  AddPropertyRoute: AddPropertyRoute,
+  AdminRoute: AdminRoute,
+  AdminMasterLoginRoute: AdminMasterLoginRoute,
+  AlugarRoute: AlugarRoute,
+  AuthRoute: AuthRoute,
+  BuscarRoute: BuscarRoute,
+  ChatRoute: ChatRoute,
+  ComprarRoute: ComprarRoute,
+  ContatoRoute: ContatoRoute,
+  ConversasRoute: ConversasRoute,
+  DashboardRoute: DashboardRoute,
+  FinancingAdminRoute: FinancingAdminRoute,
+  LeadsRoute: LeadsRoute,
+  PoliticaPrivacidadeRoute: PoliticaPrivacidadeRoute,
+  QuantoValeMeuImovelRoute: QuantoValeMeuImovelRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
+  RuraisRoute: RuraisRoute,
+  ShareRoute: ShareRoute,
+  SobreRoute: SobreRoute,
+  SuperAdminRoute: SuperAdminRoute,
+  TermosUsoRoute: TermosUsoRoute,
+  AvaliarImovelCidadeRoute: AvaliarImovelCidadeRoute,
+  BlogSlugRoute: BlogSlugRoute,
+  EditPropertyIdRoute: EditPropertyIdRoute,
+  ImovelIdRoute: ImovelIdRoute,
+  PropertyIdRoute: PropertyIdRoute,
+  SeoSlugRoute: SeoSlugRoute,
+  AvaliarImovelIndexRoute: AvaliarImovelIndexRoute,
+  BlogIndexRoute: BlogIndexRoute,
+  ParceriasIndexRoute: ParceriasIndexRoute,
+  ImoveisTypeSlugRoute: ImoveisTypeSlugRoute,
+  ParceriasImovelIdRoute: ParceriasImovelIdRoute,
+}
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
