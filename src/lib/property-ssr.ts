@@ -153,7 +153,7 @@ export function buildPropertyHead(property: SsrProperty | null, path: string) {
       { name: "description", content: description },
       { property: "og:title", content: property.title },
       { property: "og:description", content: description },
-      { property: "og:type", content: "website" },
+      { property: "og:type", content: "product" },
       { property: "og:url", content: canonical },
       { property: "og:site_name", content: "Supreme Negócios Imobiliários" },
       { property: "og:locale", content: "pt_BR" },
