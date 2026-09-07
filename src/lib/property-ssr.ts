@@ -83,9 +83,17 @@ export function buildPropertyHead(property: SsrProperty | null, path: string) {
   const type = translateType(property.property_type);
   const purpose = translatePurposeLabel(property.purpose);
   const title = `${property.title} | ${type} para ${purpose} em ${property.location} - Supreme`;
-  const description = property.description
-    ? property.description.slice(0, 155)
+  const clean = (property.description || "")
+    .replace(/\s+/g, " ")
+    .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{25AA}\u{25AB}]/gu, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  const truncate = (text: string, max = 155) =>
+    text.length <= max ? text : `${text.slice(0, text.lastIndexOf(" ", max) > 60 ? text.lastIndexOf(" ", max) : max).trim()}…`;
+  const description = clean
+    ? truncate(clean)
     : `${type} para ${purpose.toLowerCase()} em ${property.location}. ${property.bedrooms || 0} quartos, ${property.bathrooms || 0} banheiros, ${property.area || 0}m². ${formatBRL(property.price)}.`;
+
   const image = property.images?.[0];
   const unavailable =
     property.listing_status === "sold" ||
@@ -145,7 +153,7 @@ export function buildPropertyHead(property: SsrProperty | null, path: string) {
       { name: "description", content: description },
       { property: "og:title", content: property.title },
       { property: "og:description", content: description },
-      { property: "og:type", content: "website" },
+      { property: "og:type", content: "product" },
       { property: "og:url", content: canonical },
       { property: "og:site_name", content: "Supreme Negócios Imobiliários" },
       { property: "og:locale", content: "pt_BR" },
