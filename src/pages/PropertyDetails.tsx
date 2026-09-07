@@ -68,6 +68,13 @@ const PropertyDetails = ({ initialProperty }: { initialProperty?: Property | nul
   const [isLoading, setIsLoading] = useState(!initialProperty);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [inWebView, setInWebView] = useState(false);
+
+  useEffect(() => {
+    setInWebView(isWebView());
+  }, []);
+
+
 
   // Atualizar meta tags dinâmicas para SEO completo
   useEffect(() => {
@@ -820,7 +827,7 @@ const PropertyDetails = ({ initialProperty }: { initialProperty?: Property | nul
                     </Button>
                     
                     {/* Botão para abrir no navegador (útil em WebView) */}
-                    {isWebView() && (
+                    {inWebView && (
                       <Button 
                         variant="outline"
                         className="w-full"
