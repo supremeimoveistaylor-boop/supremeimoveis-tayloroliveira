@@ -827,7 +827,7 @@ const PropertyDetails = ({ initialProperty }: { initialProperty?: Property | nul
                     </Button>
                     
                     {/* Botão para abrir no navegador (útil em WebView) */}
-                    {isWebView() && (
+                    {inWebView && (
                       <Button 
                         variant="outline"
                         className="w-full"
