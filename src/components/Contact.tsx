@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Phone, Mail, MapPin, Clock, MessageSquare, Instagram, Loader2, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { trackFormSubmit } from "@/lib/analytics";
 
 export const Contact = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -69,6 +70,10 @@ export const Contact = () => {
       if (error) throw error;
 
       setIsSuccess(true);
+      trackFormSubmit('contato', {
+        tipo_imovel: formData.tipo_imovel,
+        finalidade: formData.finalidade,
+      });
       setFormData({
         nome: "",
         telefone: "",
