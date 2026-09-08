@@ -25,6 +25,7 @@ import { CaptacaoImoveisPanel } from '@/components/admin/CaptacaoImoveisPanel';
 import { StorageCleanupPanel } from '@/components/admin/StorageCleanupPanel';
 import { BlogAdminPanel } from '@/components/admin/BlogAdminPanel';
 import { SourceAnalyticsPanel } from '@/components/admin/SourceAnalyticsPanel';
+import { PageConversionsPanel } from '@/components/admin/PageConversionsPanel';
 import { OmnichatInboxPanel } from '@/components/admin/OmnichatInboxPanel';
 import { AdminLayout } from '@/components/admin/layout/AdminLayout';
 import { OnboardingChecklist } from '@/components/admin/OnboardingChecklist';
