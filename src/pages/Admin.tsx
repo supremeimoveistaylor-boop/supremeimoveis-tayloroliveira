@@ -688,6 +688,12 @@ const Admin = () => {
           <SourceAnalyticsPanel />
         )}
 
+        {/* Conversões por página */}
+        {activeTab === 'pages' && (
+          <PageConversionsPanel />
+        )}
+
+
         {/* Blog Tab */}
         {activeTab === 'blog' && (
           <BlogAdminPanel />
