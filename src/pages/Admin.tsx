@@ -64,7 +64,7 @@ const Admin = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'properties' | 'users' | 'leads' | 'attendants' | 'sessions' | 'metrics' | 'conversions' | 'visits' | 'crm' | 'financial' | 'omnichat' | 'archive' | 'captacao' | 'storage' | 'blog' | 'sources'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'properties' | 'users' | 'leads' | 'attendants' | 'sessions' | 'metrics' | 'conversions' | 'visits' | 'crm' | 'financial' | 'omnichat' | 'archive' | 'captacao' | 'storage' | 'blog' | 'sources' | 'pages'>('dashboard');
   const [accessDenied, setAccessDenied] = useState(false);
 
   // 📱 PWA: troca o manifest dinamicamente para "Supreme Admin" e bloqueia o screen wake
@@ -426,6 +426,13 @@ const Admin = () => {
           >
             <Globe className="mr-2 h-4 w-4" />
             Origens
+          </Button>
+          <Button
+            variant={activeTab === 'pages' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('pages')}
+          >
+            <BarChart3 className="mr-2 h-4 w-4" />
+            Conversões por página
           </Button>
           <Button
             variant={activeTab === 'blog' ? 'default' : 'outline'}
