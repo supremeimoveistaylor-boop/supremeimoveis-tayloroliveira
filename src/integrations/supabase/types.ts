@@ -2049,6 +2049,36 @@ export type Database = {
           },
         ]
       }
+      schema_validation_checks: {
+        Row: {
+          checked_at: string
+          created_at: string
+          created_by: string | null
+          id: string
+          issues: Json
+          total_pages: number
+          valid_pages: number
+        }
+        Insert: {
+          checked_at?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          issues?: Json
+          total_pages?: number
+          valid_pages?: number
+        }
+        Update: {
+          checked_at?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          issues?: Json
+          total_pages?: number
+          valid_pages?: number
+        }
+        Relationships: []
+      }
       security_logs: {
         Row: {
           action: string
